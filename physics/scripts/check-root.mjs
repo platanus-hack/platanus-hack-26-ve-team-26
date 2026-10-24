@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createRobotPoseFilter } from '../src/filters.js';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
+import { createClearance } from '../src/clearance.js';
 import { createLeveler } from '../src/level.js';
 import { createRootTracker } from '../src/root.js';
 import { loadG1Node } from './node-model.mjs';
@@ -61,13 +62,16 @@ function run(poses) {
   const filter = createRobotPoseFilter(kinematic.nq);
   const root = createRootTracker(mujoco, kinematic, { mirror: false, legLength: retargeter.legLength });
   const leveler = createLeveler(mujoco, kinematic);
+  const clearance = createClearance(mujoco, kinematic); // as view.mimic does
+  const clear = clearance.createLive();
   const rows = poses.map((pose) => {
     const { qpos } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t), { travelYaw: root.travelYaw() });
-    return { q: Array.from(root.update(leveler.level(filter.filter(qpos, pose.t), pose.t), pose)), airborne: root.airborne() };
+    return { q: Array.from(root.update(clear(leveler.level(filter.filter(qpos, pose.t), pose.t), pose.t), pose)), airborne: root.airborne() };
   });
   retargeter.delete();
   root.delete();
   leveler.delete();
+  clearance.delete();
   return { rows, legLength: retargeter.legLength };
 }
 

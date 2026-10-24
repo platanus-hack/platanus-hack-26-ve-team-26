@@ -7,6 +7,7 @@
 //   position  the hips' path, scaled to the robot's legs, so its stride matches its travel
 //   heading   the direction of travel, because the hip line is noisy seen from the side
 import { createPoseTracker } from './pose.js';
+import { createClearance } from './clearance.js';
 import { levelClip } from './level.js';
 import { createReference } from './reference.js';
 import { createRetargeter } from './retarget.js';
@@ -271,6 +272,10 @@ export function smoothForDisplay(mujoco, model, motion, { plantFeet: planted = f
     const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
     // Upright sideways (level.js), then the feet back on the floor: leveling moves the soles a bit.
     levelClip(mujoco, model, qpos, motion.fps);
+    // Feet apart and hands out of the legs (clearance.js), before the feet go back on the floor.
+    const clearance = createClearance(mujoco, model);
+    clearance.clearClip(qpos, motion.fps);
+    clearance.delete();
     groundRows(mujoco, model, qpos);
     const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
     const height = movingAverage(qpos.map((row) => row[2]), window);

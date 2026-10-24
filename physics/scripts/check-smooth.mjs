@@ -4,6 +4,7 @@
 // robot look buggy even when it did not fall.
 // Run: npm run check
 import { readdirSync, readFileSync } from 'node:fs';
+import { CLEAR_M, FEET_APART_M } from '../src/clearance.js';
 import { createRobotPoseFilter } from '../src/filters.js';
 import { LOOP_BLEND_S, sampleLoopStart, sampleMotion, smoothForDisplay } from '../src/motion.js';
 import { createPoseTracker } from '../src/pose.js';
@@ -125,6 +126,56 @@ console.log('upright sideways: no constant lean in what the screen shows (level.
     const raw = read(`../motions/${id}`);
     const shown = leanOf(smoothForDisplay(mujoco, kinematic, raw));
     expect(Math.abs(shown) < MAX_LEAN_DEG, `${id.replace('.json', '')}: torso leans ${shown.toFixed(1)} degrees sideways on average (the reference: ${leanOf(raw).toFixed(1)}), under ${MAX_LEAN_DEG}`);
+  }
+}
+
+console.log('hands out of the legs, feet apart (clearance.js)');
+{
+  // The walk's hand passed through the thigh in 237 of 356 frames. Every shown frame must keep the
+  // wrist and the hand CLEAR_M from either thigh's axis (1 mm of slack for the search's 1 degree).
+  const body = (n) => mujoco.mj_name2id(kinematic, mujoco.mjtObj.mjOBJ_BODY.value, n);
+  const at = (id) => [data.xpos[3 * id], data.xpos[3 * id + 1], data.xpos[3 * id + 2]];
+  const toSegment = (p, a, b) => {
+    const ab = b.map((v, i) => v - a[i]);
+    const t = Math.max(0, Math.min(1, ab.reduce((sum, v, i) => sum + v * (p[i] - a[i]), 0) / ab.reduce((sum, v) => sum + v * v, 0)));
+    return Math.hypot(...p.map((v, i) => v - a[i] - t * ab[i]));
+  };
+  for (const id of readdirSync(new URL('../motions/', import.meta.url)).filter((f) => f.endsWith('.json'))) {
+    const gapOf = (motion) => {
+      let worst = Infinity;
+      for (const q of motion.qpos) {
+        data.qpos.set(q);
+        mujoco.mj_kinematics(kinematic, data);
+        for (const side of ['left', 'right']) {
+          const elbow = at(body(`${side}_elbow_link`));
+          const wrist = at(body(`${side}_wrist_yaw_link`));
+          const hand = wrist.map((v, i) => v + 0.6 * (v - elbow[i]));
+          for (const leg of ['left', 'right']) {
+            const [a, b] = [at(body(`${leg}_hip_pitch_link`)), at(body(`${leg}_knee_link`))];
+            worst = Math.min(worst, toSegment(wrist, a, b), toSegment(hand, a, b));
+          }
+        }
+      }
+      return worst;
+    };
+    // The ankles' sideways distance, in the robot's heading: the walk's came down to 6.5 cm.
+    const apartOf = (motion) => {
+      let worst = Infinity;
+      for (const q of motion.qpos) {
+        data.qpos.set(q);
+        mujoco.mj_kinematics(kinematic, data);
+        const [l, r] = ['left', 'right'].map((side) => at(body(`${side}_ankle_roll_link`)));
+        const yaw = 2 * Math.atan2(q[6], q[3]);
+        worst = Math.min(worst, -Math.sin(yaw) * (l[0] - r[0]) + Math.cos(yaw) * (l[1] - r[1]));
+      }
+      return worst;
+    };
+    const raw = read(`../motions/${id}`);
+    const displayed = smoothForDisplay(mujoco, kinematic, raw);
+    const apart = apartOf(displayed);
+    expect(apart >= FEET_APART_M - 0.002, `${id.replace('.json', '')}: ankles at least ${(100 * apart).toFixed(1)} cm apart sideways (the reference: ${(100 * apartOf(raw)).toFixed(1)}), ${100 * FEET_APART_M} needed`);
+    const shown = gapOf(displayed);
+    expect(shown >= CLEAR_M - 0.001, `${id.replace('.json', '')}: hands at least ${(100 * shown).toFixed(1)} cm from the thighs' axes (the reference: ${(100 * gapOf(raw)).toFixed(1)}), ${100 * CLEAR_M} needed`);
   }
 }
 
