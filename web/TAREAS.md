@@ -32,9 +32,10 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 
 - [x] **W8.1 Menú principal.** "Tridi" arriba al centro y tres opciones grandes, numeradas y con palabras simples: Entrena a Tridi en vivo, Sube un video, Ver simulaciones. En celular entran las tres sin scroll.
 - [x] **W8.2 Robots de puntos.** Uno por opción: bailando, sentado viendo un video y mirando el teléfono (un recap de lo que hizo). Con hover (o por turnos en pantallas táctiles), los puntos se juntan y forman la cara del robot. Un solo canvas WebGL para todo (`web/src/dots/`).
-- [x] **W8.3 Rutas y carga por etapas.** `#/`, `#/en-vivo`, `#/subir`, `#/simulaciones`. El menú solo carga three.js (144 KB comprimidos); cada pantalla es un pedazo aparte, y MuJoCo y el robot (30 MB) se precargan cuando el cursor llega a su tarjeta.
+- [x] **W8.3 Rutas y carga por etapas.** `#/`, `#/en-vivo`, `#/subir`, `#/simulaciones`. El menú solo carga three.js (144 KB comprimidos); cada pantalla es un pedazo aparte. El robot se carga una vez al abrir la página (W8.7).
 - [x] **W8.4 Nunca colgado.** Mientras baja el G1, en su panel saluda un robot de puntos con una barra de progreso; si una pantalla tarda, aparece "Cargando…"; si no se puede descargar, una pantalla explica qué hacer.
 - [x] **W8.5 Tarjetas 3D y entorno vivo.** Las tarjetas son placas de vidrio con grosor que se inclinan con el cursor, y la cámara de su robot gira con ellas. Los puntos del fondo se apartan del cursor, una luz suave lo sigue y los robots lo miran.
+- [x] **W8.7 Un solo robot y pantalla de carga.** El G1 se crea una vez al abrir la página (`web/src/robot-host.js`) y su canvas se mueve entre pantallas; una pantalla de carga con el robot de puntos cubre el inicio ([decisión](../docs/decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)). Con el arreglo de `physics/src/sim.js`, el robot pasó de 26 s a 6,6 s.
 - [x] **W8.6 Pantallas En vivo y Subir.** Conectadas (M4, M5 y M6). Empujar flota sobre el robot y se ve sin scroll en 390×844, 1280×720 y 1366×768.
 
 ## M3. Visor de la simulación (junto con Pastor)

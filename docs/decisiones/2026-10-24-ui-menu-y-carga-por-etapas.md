@@ -1,6 +1,6 @@
 # La web abre en un menú 3D liviano y carga lo pesado por etapas
 
-- **Fecha:** 2026-10-24 · **Quién:** César · **Estado:** vigente
+- **Fecha:** 2026-10-24 · **Quién:** César · **Estado:** vigente, salvo la precarga por intención: reemplazada por [`2026-10-24-robot-unico-y-carga-al-abrir.md`](2026-10-24-robot-unico-y-carga-al-abrir.md)
 
 ## Contexto
 

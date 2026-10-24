@@ -34,7 +34,7 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web con menú 3D ([decisión](decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)) y sus tres pantallas: **En vivo** (cámara con `data/live` y el G1 copiando con `view.mimic`), **Subir** (subida por partes, etapas, elegir persona y el clip en la galería) y **Simulaciones**. Si el servidor de video no responde, "Subir" queda visible como "No disponible ahora". "Empujar" flota sobre el robot y se ve sin scroll.
+- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web con menú 3D ([decisión](decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)) y sus tres pantallas: **En vivo** (cámara con `data/live` y el G1 copiando con `view.mimic`), **Subir** (subida por partes, etapas, elegir persona y el clip en la galería) y **Simulaciones**. Si el servidor de video no responde, "Subir" queda visible como "No disponible ahora". "Empujar" flota sobre el robot y se ve sin scroll. Un solo G1 para toda la web, cargado detrás de una pantalla de carga: listo en 6,6 s (antes 26 s) y al instante al volver a una pantalla ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
 - **En curso:** —
 - **Bloqueado por:** nada. Falta subir un video real de punta a punta con el servidor de Juan (la conexión y el CORS ya responden).
 - **Sigue:** Pastor pasa la raíz de Vercel a `web/` (la web ya hace todo lo de la página de `physics/`). W4.3 (grabar desde la cámara a la galería) si hay tiempo.
