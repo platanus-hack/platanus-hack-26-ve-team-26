@@ -34,6 +34,21 @@ try {
 
 La web pone el `<video>` (y un `<canvas>` encima para `drawSkeleton`, con el tamaño en píxeles del video). Con la opción `stream` se le puede pasar otro `MediaStream` en vez de la cámara, por ejemplo `videoDeArchivo.captureStream()`: así se probó sin webcam.
 
+## Subir videos al servidor (César, W5 y W6)
+
+```js
+import { uploadVideo, watchJob, chooseSubject, firstFrameUrl, fetchClip, UploadError } from 'tridi-live';
+
+const base = 'https://xxxx.trycloudflare.com'; // la URL que imprime data/serve.sh
+const jobId = await uploadVideo(base, file, { onProgress: ({ sent, total }) => {} }); // reintenta cada pedazo
+const job = await watchJob(base, jobId, { onUpdate: (job) => {} }); // etapas y avance de cada video
+const clip = await fetchClip(base, job.videos[0].clip_id);
+// W5.3: dibujar job.videos[n].people sobre firstFrameUrl(base, jobId, n); con un click:
+await chooseSubject(base, jobId, n, x, y); // y otra vez watchJob
+```
+
+Los errores del servidor llegan como `UploadError` con el mensaje en español. Formato de cada respuesta en el [contrato](../../docs/contrato.md).
+
 ## Cómo funciona
 
 | Archivo | Qué hace |
@@ -41,6 +56,7 @@ La web pone el `<video>` (y un `<canvas>` encima para `drawSkeleton`, con el tam
 | `src/index.js` | Carga MediaPipe (WASM desde jsDelivr y el modelo desde Google, versión fija), abre la cámara, procesa cada cuadro nuevo en modo VIDEO y guarda las muestras mientras se graba |
 | `src/poseclip.js` | Muestras → `PoseClip`. Los mismos pasos y umbrales que [`../lift.py`](../lift.py): visibilidad mínima, frames "volteados", trayectoria de las caderas por pie apoyado y por ajuste a la cámara, ejes y origen del contrato. Además remuestrea a 30 fps fijos, porque las webcams entregan cuadros a ritmo irregular |
 | `src/draw.js` | El esqueleto sobre el video, mismos colores que `data.overlay` |
+| `src/upload.js` | Cliente del servidor de video: subida por partes con reintentos, progreso, elegir sujeto |
 | `scripts/check.mjs` | Prueba sin navegador |
 
 ## Números medidos (Mac M2, 23 de octubre)
