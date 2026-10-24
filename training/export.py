@@ -25,6 +25,10 @@ from .ppo import ActorCritic, obs_size
 
 OUT = Path(__file__).parent / "policies"
 
+# The worlds an imitation policy trains in (physics/worlds/<id>.json). Only the flat floor until
+# MimicEnv draws a world per episode (ENT-3 in docs/plan-producto.md).
+TRAINED_WORLDS = ["plano"]
+
 
 class Deployed(nn.Module):
     def __init__(self, model: ActorCritic, env: G1Env, walk: bool = False):
@@ -83,6 +87,15 @@ def export(checkpoint: Path, policy_id: str, out: Path, task: str | None = None,
             obs = env.reset()
     assert worst < 1e-4, f"ONNX and torch disagree by {worst} rad"
 
+    followed = {}
+    if walk:
+        # How much of the clip this checkpoint follows from its first frame: what the web shows as
+        # training progress. Same measure as evaluate_walk.py, on the exported weights.
+        from .evaluate_walk import run
+
+        followed_s, duration_s, _, _ = run(model, motion)
+        followed = {"followed_s": round(followed_s, 2), "duration_s": round(duration_s, 2)}
+
     meta = {
         "id": policy_id,
         "robot": "unitree_g1",
@@ -95,11 +108,14 @@ def export(checkpoint: Path, policy_id: str, out: Path, task: str | None = None,
         # Imitation: the clip it follows, and how far ahead the observation shows it
         # (imitate.MimicEnv.observe).
         **({"motion": env.motions[0].id, "lookahead_s": list(LOOKAHEAD_S)} if walk else {}),
+        "worlds": TRAINED_WORLDS,
+        **followed,
         "steps": int(state["step"]),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
     (out / f"{policy_id}.json").write_text(json.dumps(meta, indent=2) + "\n")
-    print(f"{onnx_path} ({onnx_path.stat().st_size // 1024} KB), ONNX vs torch max diff {worst:.1e} rad")
+    follow = f", follows {followed['followed_s']} s of {followed['duration_s']} s" if followed else ""
+    print(f"{onnx_path} ({onnx_path.stat().st_size // 1024} KB), ONNX vs torch max diff {worst:.1e} rad{follow}")
     return onnx_path
 
 

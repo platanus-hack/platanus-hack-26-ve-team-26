@@ -15,7 +15,17 @@ uv run --project training python -m training.diagnose_reference [clip_id ...]   
 
 `diagnose_reference.py` revisa una referencia de imitación sin política, en 2 s: pies contra el piso, objetivos de los pies de la recompensa, rangos de los motores, y la referencia jugada por los motores con la pelvis sostenida (error, retraso de cada motor y contacto de los pies).
 
-Los checkpoints quedan en `training/runs/<run>/` (no se versionan) en los pasos 0, 10k, 100k, 1M, 3M, 10M… y al final, con `progress.csv` para la curva. Las políticas exportadas van a [`policies/`](policies).
+Los checkpoints quedan en `training/runs/<run>/` (no se versionan) en los pasos 0, 10k, 100k, 1M, 3M, 10M… (y cada `--every` pasos) y al final, con `progress.csv` para la curva. **Cada checkpoint se exporta a ONNX apenas se guarda** (`<prefix>-step-<N>.onnx` + `.json`, en la carpeta del run o en `--export-dir`; `--no-export` lo apaga), así la web puede cargarlo mientras sigue el entrenamiento. En imitación, el `.json` trae `followed_s`: cuánto del clip sigue desde el principio (la medida de `evaluate_walk.py`). Las políticas que se versionan van a [`policies/`](policies).
+
+Entrenar un clip cualquiera y sacar sus datos, como lo hace el servidor (el `RobotMotion` puede estar fuera de `physics/motions/`):
+
+```bash
+uv run --project training python -m training.ppo --task mimic --motion <RobotMotion.json> --run <clip_id> \
+  --steps 20000000 --every 2000000 --export-dir <carpeta> --policy-prefix <clip_id>
+uv run --project training python -m training.rollout <carpeta>/<clip_id>-step-<N>.json --motion <RobotMotion.json> --out <clip_id>.zip
+```
+
+`rollout.py` corre la política final (el ONNX) desde el inicio del clip en N episodios por mundo de `physics/worlds/`, con cada parámetro sorteado en su rango y aplicado como `applyWorld()` de `physics/src/sim.js`, y guarda `meta.json` + `rollouts.npz` con el formato del [contrato](../docs/contrato.md#datos-para-entrenar-robots-2026-10-24).
 
 ## El mundo (`env.py`)
 

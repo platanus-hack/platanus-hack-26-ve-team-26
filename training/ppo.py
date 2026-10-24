@@ -1,9 +1,12 @@
 """PPO for the G1: an MLP policy learns to stand and take pushes, saving checkpoints along the way.
 
     uv run --project training python -m training.ppo [--task stand|mimic] [--motion <clip>] [--steps 20000000] [--run stand]
+        [--every 2000000] [--export-dir <dir>] [--policy-prefix <id>]
 
 Checkpoints go to training/runs/<run>/ as step_<N>.pt plus a progress.csv, at 0, 10k, 100k, 1M,
-3M, 10M... environment steps: the pitch shows the same robot at several of them side by side.
+3M, 10M... environment steps (and every --every steps): the pitch shows the same robot at several of
+them side by side. Each one is also exported right away as <prefix>-step-<N>.onnx + .json (to
+--export-dir, the run folder by default), so the web can load a checkpoint while training goes on.
 """
 
 from __future__ import annotations
@@ -105,13 +108,22 @@ def obs_size(task: str) -> int:
     return OBS_DIM
 
 
-def save(model: ActorCritic, run_dir: Path, step: int, meta: dict) -> None:
-    """A checkpoint also says what it learned (task and motion), so export and evaluation need no flags."""
-    torch.save({"model": model.state_dict(), "step": step, **meta}, run_dir / f"step_{step}.pt")
+def save(model: ActorCritic, run_dir: Path, step: int, meta: dict, export_dir: Path | None = None,
+         prefix: str = "") -> None:
+    """A checkpoint also says what it learned (task and motion), so export and evaluation need no flags.
+    With export_dir it is exported to ONNX at once (export.py): every checkpoint is usable by the web
+    as soon as it exists, not only the last one."""
+    path = run_dir / f"step_{step}.pt"
+    torch.save({"model": model.state_dict(), "step": step, **meta}, path)
+    if export_dir is not None:
+        from .export import export
+
+        print()  # off the \r progress line
+        export(path, f"{prefix}-step-{step}", export_dir)
 
 
 def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str,
-          motion: str | None = None) -> None:
+          motion: str | None = None, every: int = 0, export_dir: Path | None = None, prefix: str | None = None) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(0)
@@ -123,8 +135,10 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
     envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n, task=task, motion=motion)
     obs = envs.reset()
     meta = {"task": task, "motion": motion} if task == "mimic" else {"task": task}
-    pending = [c for c in CHECKPOINTS if c <= total_steps]
-    save(model, run_dir, 0, meta)
+    extra = range(every, total_steps, every) if every > 0 else []
+    pending = sorted({c for c in CHECKPOINTS if c <= total_steps} | set(extra))
+    out = (export_dir, prefix or run)
+    save(model, run_dir, 0, meta, *out)
     pending.remove(0)
 
     log = open(run_dir / "progress.csv", "w", newline="")
@@ -210,8 +224,8 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
         print(f"\rstep {step:>10,} / {total_steps:,} ({100 * step / total_steps:4.1f}%)  reward/step {buf_rew.mean():.3f}  "
               f"episode {ep:5.1f} s  falls {falls:3d}  {sps:,.0f} steps/s", end="", flush=True)
         while pending and step >= pending[0]:
-            save(model, run_dir, pending.pop(0), meta)
-    save(model, run_dir, step, meta)
+            save(model, run_dir, pending.pop(0), meta, *out)
+    save(model, run_dir, step, meta, *out)
     print(f"\ndone: {step:,} steps in {(time.time() - start) / 60:.1f} min -> {run_dir}")
     envs.close()
 
@@ -224,6 +238,10 @@ def main() -> None:
                    help="stand: balance and pushes (env.py); mimic: imitate a RobotMotion (imitate.py); walk: old name of mimic")
     p.add_argument("--motion", help="mimic: a RobotMotion .json, or a clip id in physics/motions/ (default: the walk)")
     p.add_argument("--init", type=Path, help="checkpoint to continue from")
+    p.add_argument("--every", type=int, default=0, help="also save a checkpoint every this many steps")
+    p.add_argument("--export-dir", type=Path, help="export each checkpoint to ONNX here (default: the run folder)")
+    p.add_argument("--no-export", action="store_true", help="save .pt checkpoints only")
+    p.add_argument("--policy-prefix", help="policy id prefix of the exports (default: the run name)")
     p.add_argument("--push-min", type=float, default=PUSH_N[0], help="weakest random push, N")
     p.add_argument("--push-max", type=float, default=PUSH_N[1], help="strongest random push, N")
     # CPU by default: measured on an M2, 11.2k steps/s on CPU vs 10.1k on MPS. This network is so small
@@ -231,7 +249,9 @@ def main() -> None:
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
     task = "mimic" if args.task == "walk" else args.task
-    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), task, args.motion)
+    export_dir = None if args.no_export else (args.export_dir or RUNS / args.run)
+    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), task, args.motion,
+          args.every, export_dir, args.policy_prefix)
 
 
 if __name__ == "__main__":
