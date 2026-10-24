@@ -20,7 +20,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from .env import NU, OBS_DIM, PUSH_N
+from .env import NU, OBS_DIM, PUSH_EVERY_S, PUSH_N, Stance
 from .vec import VecEnv
 
 RUNS = Path(__file__).parent / "runs"
@@ -123,16 +123,22 @@ def save(model: ActorCritic, run_dir: Path, step: int, meta: dict, export_dir: P
 
 
 def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str,
-          motion: str | None = None, every: int = 0, export_dir: Path | None = None, prefix: str | None = None) -> None:
+          motion: str | None = None, every: int = 0, export_dir: Path | None = None, prefix: str | None = None,
+          push_every: tuple[float, float] = PUSH_EVERY_S, stance: Stance | None = None, std: float | None = None,
+          seed: int = 0) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
-    torch.manual_seed(0)
+    torch.manual_seed(seed)
     obs_dim = obs_size(task)
     model = ActorCritic(obs_dim)
     if init:  # continue from an earlier run (its steps are not counted again)
         model.load_state_dict(torch.load(init)["model"])
+    if std is not None:
+        # A continued run inherits a narrowed std (0.5 -> 0.2 after 40 M steps), and with no entropy
+        # bonus it only narrows further: a changed reward needs the exploration opened again.
+        model.log_std.data.fill_(np.log(std))
     opt = torch.optim.Adam(model.parameters(), lr=LR, eps=1e-5)
-    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n, task=task, motion=motion)
+    envs = VecEnv(NUM_ENVS, WORKERS, seed=seed, push_n=push_n, task=task, motion=motion, push_every=push_every, stance=stance)
     obs = envs.reset()
     meta = {"task": task, "motion": motion} if task == "mimic" else {"task": task}
     extra = range(every, total_steps, every) if every > 0 else []
@@ -244,14 +250,21 @@ def main() -> None:
     p.add_argument("--policy-prefix", help="policy id prefix of the exports (default: the run name)")
     p.add_argument("--push-min", type=float, default=PUSH_N[0], help="weakest random push, N")
     p.add_argument("--push-max", type=float, default=PUSH_N[1], help="strongest random push, N")
+    p.add_argument("--push-every", default=f"{PUSH_EVERY_S[0]},{PUSH_EVERY_S[1]}",
+                   help="seconds between random pushes, min,max (default 2,4; a quiet stance needs 4,8 to settle between them)")
+    p.add_argument("--reward", default="", help="stance terms (env.py Stance), e.g. turn=0.3,feet=0.5,planted=0.1,rate=0.02,calm_s=1")
+    p.add_argument("--std", type=float, help="reset the action std to this (e.g. 0.3) when continuing with --init")
+    p.add_argument("--seed", type=int, default=0, help="torch and environment seed (every run replays seed 0 otherwise)")
     # CPU by default: measured on an M2, 11.2k steps/s on CPU vs 10.1k on MPS. This network is so small
     # that moving each minibatch to the GPU costs more than the GPU saves. --device mps to compare.
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
     task = "mimic" if args.task == "walk" else args.task
     export_dir = None if args.no_export else (args.export_dir or RUNS / args.run)
+    stance = Stance(**{k: float(v) for k, v in (kv.split("=") for kv in args.reward.split(",") if kv)}) if args.reward else None
+    push_every = tuple(float(v) for v in args.push_every.split(","))
     train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), task, args.motion,
-          args.every, export_dir, args.policy_prefix)
+          args.every, export_dir, args.policy_prefix, push_every, stance, args.std, args.seed)
 
 
 if __name__ == "__main__":

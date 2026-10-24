@@ -10,19 +10,21 @@ import multiprocessing as mp
 
 import numpy as np
 
-from .env import PUSH_N, G1Env
+from .env import PUSH_EVERY_S, PUSH_N, G1Env, Stance
 
 
-def make_env(task: str, seed: int, push: bool, push_n: tuple[float, float], motion: str | None = None) -> G1Env:
+def make_env(task: str, seed: int, push: bool, push_n: tuple[float, float], motion: str | None = None,
+             push_every: tuple[float, float] = PUSH_EVERY_S, stance: Stance | None = None) -> G1Env:
     if task == "mimic":
         from .imitate import DEFAULT_MOTION, MimicEnv
 
         return MimicEnv(seed=seed, clips=(motion or DEFAULT_MOTION,))
-    return G1Env(seed=seed, push=push, push_n=push_n)
+    return G1Env(seed=seed, push=push, push_n=push_n, push_every=push_every, stance=stance)
 
 
-def _worker(conn, seeds: list[int], push: bool, push_n: tuple[float, float], task: str, motion: str | None) -> None:
-    envs = [make_env(task, s, push, push_n, motion) for s in seeds]
+def _worker(conn, seeds: list[int], push: bool, push_n: tuple[float, float], task: str, motion: str | None,
+            push_every: tuple[float, float], stance: Stance | None) -> None:
+    envs = [make_env(task, s, push, push_n, motion, push_every, stance) for s in seeds]
     while True:
         cmd, payload = conn.recv()
         if cmd == "reset":
@@ -43,14 +45,15 @@ def _worker(conn, seeds: list[int], push: bool, push_n: tuple[float, float], tas
 
 class VecEnv:
     def __init__(self, num_envs: int, workers: int, seed: int = 0, push: bool = True,
-                 push_n: tuple[float, float] = PUSH_N, task: str = "stand", motion: str | None = None):
+                 push_n: tuple[float, float] = PUSH_N, task: str = "stand", motion: str | None = None,
+                 push_every: tuple[float, float] = PUSH_EVERY_S, stance: Stance | None = None):
         self.num_envs = num_envs
         groups = np.array_split(np.arange(num_envs) + seed * 10_000, workers)
         ctx = mp.get_context("spawn")  # fork is unsafe on macOS once torch is loaded
         self.conns, self.procs = [], []
         for g in groups:
             parent, child = ctx.Pipe()
-            p = ctx.Process(target=_worker, args=(child, g.tolist(), push, push_n, task, motion), daemon=True)
+            p = ctx.Process(target=_worker, args=(child, g.tolist(), push, push_n, task, motion, push_every, stance), daemon=True)
             p.start()
             self.conns.append(parent)
             self.procs.append(p)
