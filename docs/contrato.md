@@ -73,7 +73,7 @@ Lo produce el retargeting en `physics/`. Ángulos de cada articulación del robo
 
 Se genera con `cd physics && npm run retarget -- ../data/clips/<clip>.json` y queda en [`physics/motions/<clip_id>.json`](../physics/motions). Los de los clips precargados están versionados ahí: son lo que imita `training/` y lo que la web reproduce junto a la persona.
 
-*(2026-10-24)* `npm run retarget -- <clip>.json --out <carpeta>` lo escribe en otra carpeta: el servidor guarda ahí los `RobotMotion` de los clips de usuarios, para no tocar `physics/motions/`, que está versionada.
+*(2026-10-24)* `npm run retarget -- <clip>.json --out <carpeta>` lo escribe en otra carpeta (ya existe): el servidor guarda ahí los `RobotMotion` de los clips de usuarios, para no tocar `physics/motions/`, que está versionada.
 
 `training/` no imita el `RobotMotion` tal cual: `imitate.Motion` lo limpia para el modelo de entrenamiento (suaviza, apoya un pie en el piso cuadro a cuadro con las esferas de sus pies y saca de ahí los objetivos de los pies). Quien corra una política de imitación fuera de Python tiene que repetir esa limpieza.
 

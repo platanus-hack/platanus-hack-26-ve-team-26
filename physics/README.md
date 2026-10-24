@@ -102,7 +102,10 @@ En el navegador, con la v1: 150 N aguantado desde los cuatro lados.
 
 ```bash
 npm run retarget -- ../data/clips/clip_2026-10-23_caminar-perfil_01.json   # -> motions/<clip_id>.json
+npm run retarget -- <PoseClip.json> --out <carpeta>                         # -> <carpeta>/<clip_id>.json
 ```
+
+Con `--out` el `RobotMotion` va a otra carpeta: así el servidor de video guarda los de los clips de usuarios sin tocar `motions/`, que está versionada.
 
 `src/motion.js` (`retargetClip`) hace lo mismo que la cámara en cada cuadro, y le suma lo que solo tiene un clip entero: el **recorrido** y el **rumbo** de la pelvis. Los `RobotMotion` de los clips precargados están en [`motions/`](motions) y los usa `training/` como referencia de imitación.
 
