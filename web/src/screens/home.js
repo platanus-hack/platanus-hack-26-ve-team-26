@@ -9,6 +9,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 import '../landing/landing.css';
 import curve from '../landing/training-curve.json';
+import { dressCity } from '../landing/city.js';
 import { dressStreet } from '../landing/street.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
@@ -306,6 +307,7 @@ export function mount(root, { api }) {
   let lights = []; // the landing's extra lights
   let key = null; // the one of them that rides with the camera
   let undressStreet = () => {}; // puts the floor back as the app screens expect it
+  let undressCity = () => {}; // takes the sky and the buildings out again
 
   // The camera eases toward the shot of the chapter on screen, blending between neighbours.
   const shot = { ...SHOTS.hero };
@@ -631,6 +633,7 @@ export function mount(root, { api }) {
       lights.forEach((light) => view.viewer.scene.add(light));
       // A street under the robot instead of the grid, while the landing has it.
       undressStreet = dressStreet(view.viewer.scene, view.viewer.renderer);
+      undressCity = dressCity(view.viewer.scene, view.viewer.renderer); // dusk sky and a city block around it
       film.classList.add('ready');
       $$('.hero-push').forEach((button) => (button.disabled = false));
     },
@@ -742,6 +745,7 @@ export function mount(root, { api }) {
       lights.forEach((light) => view.viewer.scene.remove(light));
       view.viewer.renderer.toneMappingExposure = saved.exposure;
       undressStreet();
+      undressCity();
     }
     robot.detach();
   };
