@@ -15,10 +15,12 @@ const STATS_WINDOW_S = 1;
  *   `puppet` is true while the robot copies a person (no dynamics, so `realtime` is 0)
  * @param options.mirror      when copying a person, move like their reflection (default: raise
  *   your right hand and the arm on the same side of the screen goes up) or like them
+ * @param options.theme       scene colors { background, ground, gridMajor, gridMinor }; any left out
+ *   keep the dark defaults of viewer.js
  */
-export async function createSimView(canvas, { onProgress, onStats, mirror = true } = {}) {
+export async function createSimView(canvas, { onProgress, onStats, mirror = true, theme } = {}) {
   const sim = await loadG1(onProgress);
-  const view = new RobotView(sim, canvas);
+  const view = new RobotView(sim, canvas, theme);
   // The first draw compiles the shaders (about a second); keep it out of the timing below.
   view.render();
 

@@ -22,6 +22,7 @@ import { createSimView } from 'tridi-physics'; // o '../physics/src/index.js'
 const view = await createSimView(canvas, {
   onProgress: ({ done, total, bytes }) => {},     // mientras bajan MuJoCo y el robot
   onStats: ({ realtime, pelvisHeight }) => {},    // una vez por segundo
+  theme: { background, ground, gridMajor, gridMinor }, // opcional: colores de la escena (por defecto, oscuros)
 });
 view.pause(); view.play(); view.setSpeed(0.5);
 view.reset(); view.push();

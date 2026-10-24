@@ -9,9 +9,12 @@ const VISIBLE_GROUPS = new Set([0, 1, 2]);
 // The camera aims at the pelvis height of the standing G1 (0.79 m) and follows the robot
 // sideways only, so a fall reads as a fall instead of the camera diving with it.
 const TARGET_HEIGHT = 0.75;
+// Scene colors; the web app passes its own palette through createSimView's `theme` option.
+export const DEFAULT_THEME = { background: 0x0e141b, ground: 0x18212c, gridMajor: 0x3a4a5c, gridMinor: 0x253140 };
 
 export class RobotView {
-  constructor(sim, canvas) {
+  constructor(sim, canvas, theme = {}) {
+    theme = { ...DEFAULT_THEME, ...theme };
     this.sim = sim;
     this.canvas = canvas;
 
@@ -22,8 +25,8 @@ export class RobotView {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
     const scene = (this.scene = new THREE.Scene());
-    scene.background = new THREE.Color(0x0e141b);
-    scene.fog = new THREE.Fog(0x0e141b, 8, 25);
+    scene.background = new THREE.Color(theme.background);
+    scene.fog = new THREE.Fog(theme.background, 8, 25);
     scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x1a2230, 1.6));
     const sun = (this.sun = new THREE.DirectionalLight(0xffffff, 2.2));
     sun.position.set(2, 4, 1.5);
@@ -34,11 +37,11 @@ export class RobotView {
 
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(60, 60),
-      new THREE.MeshStandardMaterial({ color: 0x18212c, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: theme.ground, roughness: 0.95 }),
     );
     ground.rotation.x = -Math.PI / 2;
     ground.receiveShadow = true;
-    const grid = new THREE.GridHelper(60, 120, 0x3a4a5c, 0x253140);
+    const grid = new THREE.GridHelper(60, 120, theme.gridMajor, theme.gridMinor);
     grid.position.y = 0.001;
     scene.add(ground, grid);
 
