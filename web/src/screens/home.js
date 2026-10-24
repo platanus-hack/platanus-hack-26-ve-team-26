@@ -22,7 +22,7 @@ const CHOICES = [
     route: 'subir',
     variant: watching,
     title: 'Sube un video',
-    text: 'Hasta 30 s de video. Tridi encuentra a la persona y saca su esqueleto 3D.',
+    text: 'Hasta 30 s. Tridi saca a la persona en 3D y borra el video: solo guarda el movimiento.',
     action: 'Elegir un video',
   },
   {
@@ -67,9 +67,10 @@ export function mount(root, { dots, api }) {
   root.innerHTML = `
     <section class="slide intro" aria-labelledby="intro-title">
       <div class="intro-copy">
+        <p class="kicker">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
         <h1 class="brand">Tridi</h1>
-        <h2 id="intro-title">Los humanoides ya tienen cuerpo. Les falta experiencia.</h2>
-        <p class="lead">Tridi convierte video en experiencia: saca el movimiento de una persona de cualquier video y el robot lo practica en física real hasta hacerlo sin caerse.</p>
+        <h2 id="intro-title">Convierte video en datos de entrenamiento para robots.</h2>
+        <p class="lead">Los humanoides ya tienen cuerpo; les falta ver cómo se mueve una persona. Tridi saca ese movimiento de cualquier video, lo pasa al cuerpo del robot y lo pone a practicar en física real.</p>
         <p class="flow" aria-label="Cómo funciona"><span>Video</span><i>→</i><span>Esqueleto 3D</span><i>→</i><span>Práctica en física real</span><i>→</i><span>Política y datos</span></p>
         <p class="motto">El video le dice qué hacer. La simulación le enseña cómo.</p>
         <div class="row">
@@ -79,6 +80,11 @@ export function mount(root, { dots, api }) {
       </div>
       <div class="intro-robot">
         ${robotPaneHTML('Unitree G1')}
+        <ul class="facts" aria-label="Medido en el repo">
+          <li><b>4 de 4</b> empujones de 250 N aguantados</li>
+          <li><b>73 min</b> de entrenamiento en una laptop</li>
+          <li><b>265 KB</b> de red, corriendo en tu navegador</li>
+        </ul>
         <p class="demo-note">Empújalo: un video de un robot no se deja empujar.</p>
       </div>
     </section>
@@ -86,7 +92,7 @@ export function mount(root, { dots, api }) {
     <section class="slide choose" id="elegir" aria-labelledby="choose-title">
       <h2 id="choose-title" class="choose-title">Elige cómo empezar</h2>
       <nav class="choices" aria-label="¿Qué quieres hacer?"></nav>
-      <p class="honest">El motor de física es MuJoCo, el estándar en robótica. Lo nuestro es el camino del video al robot, el mundo donde aprende y el entrenamiento. Y no es un LLM: es una red pequeña que mueve los motores.</p>
+      <p class="honest">El motor de física es MuJoCo, el estándar en robótica. Lo nuestro es el camino del video al robot, el mundo donde aprende y el entrenamiento. Y no es un LLM: es una red pequeña que mueve los motores. Hoy la red ya lo mantiene de pie ante empujones; aprender a caminar imitando el video y entregar los datos corregidos por la física siguen en desarrollo.</p>
     </section>`;
 
   const $ = (selector) => root.querySelector(selector);
@@ -114,7 +120,8 @@ export function mount(root, { dots, api }) {
     const [view, motion] = await Promise.all([robot.ready, motions[index]]);
     if (gone || !view || !motion || current !== index) return;
     view.playClip(motion);
-    label.textContent = `Unitree G1 · repite: ${DEMO_CLIPS[index].title.toLowerCase()}`;
+    // It replays the movement taken from the video (retargeting); the policy keeps it up after a push.
+    label.textContent = `Unitree G1 · movimiento de un video: ${DEMO_CLIPS[index].title.toLowerCase()}`;
     clearTimeout(switchTimer);
     switchTimer = setTimeout(() => playDemo((index + 1) % DEMO_CLIPS.length), DEMO_SWITCH_S * 1000);
   }

@@ -23,6 +23,8 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Segunda vuelta (César ya habló con Juan): menos texto y mejor uso del espacio. La slide 1 quedó en título, una frase, el flujo Video → Movimiento 3D → Robot y los botones; la figura ocupa 7 de 12 columnas. La slide 2 quedó en el título y las tarjetas, con textos cortos.
 - La figura ya no camina: pasa por bailar, boxeo, guitarra y coser, actividades que estiran la movilidad de un robot. Un esqueleto con parámetros (`rig` en `dots/figure.js`: giro e inclinación del torso, ángulos de brazos y piernas, cabeza) pone el pie más bajo en el piso, así que las rodillas dobladas agachan y los muslos horizontales sientan. La guitarra son puntos que salen del torso cuando toca. Una fila bajo la figura marca la actividad y permite saltar a otra.
 - Tercera vuelta: la pantalla de carga perdió la animación de puntos (la volvía lenta) y queda en nombre, barra y estado, con un mínimo de 0,9 s. En la slide 1, el G1 real reemplaza a la figura de puntos: pasa solo por los movimientos precargados que tienen `RobotMotion` guardado (caminar y correr, 9 s cada uno; `hasSavedMotion` en `web/src/motions.js`), y tras un empujón la etiqueta dice "se recupera solo" y a los 4 s vuelve al movimiento. César no quiso botones para elegir el movimiento. Textos tomados del pitch del equipo. Se borraron `dots/figure.js` y `addScene`, que ya no se usaban.
+- Cuarta vuelta, con lo que recolectaron Pastor y Juan: el pitch del producto (`docs/pitch/pitch-producto.md`, `8078d4c`) y el plan técnico (`docs/plan-producto.md`). La slide 1 abre con "La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento" y dice "Convierte video en datos de entrenamiento para robots". Bajo el robot, tres cifras medidas (4 de 4 empujones de 250 N, 73 min, red de 265 KB). La etiqueta del robot dice "movimiento de un video", y la slide 2 aclara que la caminata aprendida y los datos corregidos siguen en desarrollo, según la tabla de qué es verdad hoy del pitch. La tarjeta de Subir dice que el video se borra.
+- `AGENTS.md` (commit aparte, archivo del equipo): describe el producto con el pitch nuevo y pide revisar la tabla de qué es verdad hoy antes de escribir textos.
 
 ## Qué funcionó
 
@@ -33,6 +35,8 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- El repo privado `platanus-ideas` no está en esta máquina ni aparece con `gh`: lo del producto se tomó del repo público.
 
 - Si el cambio automático de movimiento caía justo después de un empujón, el robot retomaba el clip antes de recuperarse: el empujón ahora pausa la alternancia.
 

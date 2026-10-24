@@ -281,7 +281,33 @@ html.snap {
 }
 
 .intro-robot .robot-pane {
-  height: min(74vh, 680px);
+  height: min(64vh, 600px); /* leaves room for the numbers and the note under it */
+}
+
+/* Three measured numbers under the robot (training/README.md). */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.facts li {
+  display: grid;
+  gap: 2px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.3;
+}
+
+.facts b {
+  color: var(--ink);
+  font: 600 20px/1.1 var(--title);
 }
 
 .demo-note {
@@ -1072,6 +1098,15 @@ html.snap {
 
   .intro-robot .robot-pane {
     height: 62vh;
+  }
+
+  .facts li {
+    padding: 8px 10px;
+    font-size: 12px;
+  }
+
+  .facts b {
+    font-size: 17px;
   }
 
   .motto {
