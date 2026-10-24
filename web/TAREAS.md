@@ -11,9 +11,9 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 ## M0. Base (bloquea todo lo demás)
 
 - [x] **W0.1 Proyecto.** JavaScript y three.js sin framework; Vite solo para desarrollar y empaquetar a un `dist/` estático ([decisión](../docs/decisiones/2026-10-23-web-sin-framework.md)).
-- [ ] **W0.2 Deploy temprano.** Publicar `web/dist/` en el host que elija Pastor y poner la URL real en `deploy-url` de `platanus-hack-project.jsonc`.
+- [~] **W0.2 Deploy temprano.** Ya hay deploy en Vercel (https://tridi-alpha.vercel.app), pero publica `physics/`. Falta que Pastor pase la raíz del proyecto a `web/`.
 - [~] **W0.3 Tipos del contrato.** Copia provisional del borrador, como JSDoc, en `web/src/contract.js`. Cuando el contrato pase a "vigente", se mueve al archivo de tipos compartido en un commit de contrato aparte, y se agrega el manifiesto de precargadas.
-- [x] **W0.4 Datos falsos.** `web/public/preloaded/clip_synthetic_march_01.json`: 2,4 s de una persona marchando en el lugar, generado por `web/scripts/make-synthetic-clip.mjs`.
+- [x] **W0.4 Datos falsos.** `web/clips/clip_synthetic_march_01.json`: 2,4 s de una persona marchando en el lugar, generado por `web/scripts/make-synthetic-clip.mjs`.
 
 ## M1. Layout y estados
 
@@ -22,15 +22,15 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M2. Galería de precargadas (lo que se ve siempre)
 
-- [ ] **W2.1 Manifiesto.** Leer `preloaded/manifest.json`: lista de pares `PoseClip` + `Policy` con nombre y miniatura.
-- [ ] **W2.2 Tarjetas.** Click en una tarjeta la carga en el visor.
-- [ ] **W2.3 Arranque.** Al abrir la página se reproduce una precargada sola, en loop.
+- [x] **W2.1 Manifiesto.** `web/src/preloaded.json` (formato en [`../docs/contrato.md`](../docs/contrato.md)). Los clips se toman de `data/clips/` y `web/clips/` al compilar. Faltan las políticas, cuando existan.
+- [x] **W2.2 Tarjetas.** Título, duración, fps, % de frames detectados y crédito del video; un click la carga en el visor.
+- [x] **W2.3 Arranque.** Al abrir la página se reproduce la primera de la lista, en loop. El esqueleto pesa KB y aparece antes que el robot (30 MB).
 
 ## M3. Visor de la simulación (junto con Pastor)
 
 - [~] **W3.1 Interfaz con `physics/`.** Pastor ya la publicó: `createSimView(canvas, { onProgress, onStats })` con `play`, `pause`, `setSpeed`, `reset`, `push` y `dispose` ([`physics/README.md`](../physics/README.md)). La web ya la importa (`web/src/viewer.js`) y muestra al G1 de pie; `loadClip` y `loadPolicy` llegan después.
-- [ ] **W3.2 Visor provisional.** Esqueleto del `PoseClip` en three.js, para tener algo que mostrar antes de que exista el robot.
-- [~] **W3.3 Controles.** Listos: pausa, velocidad (x0,25, x0,5, x1), reiniciar, empujar y cámara orbital (la trae `physics/`). Falta: ver humano, robot o los dos lado a lado.
+- [x] **W3.2 Esqueleto.** El `PoseClip` en three.js (`web/src/skeleton.js`), en un panel junto al robot, con la misma escena que `physics/`. La cámara sigue a las caderas y el pie más bajo del clip queda sobre el piso.
+- [x] **W3.3 Controles.** Pausa, velocidad (x0,25, x0,5, x1) y reiniciar mueven a los dos paneles; empujar, solo al robot; cámara orbital en cada uno; selector Ambos, Humano o Robot. En celular los paneles se apilan y los controles van en su propia fila.
 - [ ] **W3.4 Carga pesada.** MuJoCo WASM, onnxruntime-web y la política se descargan con barra de progreso, y la precargada ya visible no se corta.
 
 ## M4. Captura en vivo

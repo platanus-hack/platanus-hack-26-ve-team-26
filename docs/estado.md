@@ -32,10 +32,10 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). La web en JavaScript y three.js sin framework ([decisión](decisiones/2026-10-23-web-sin-framework.md)) ya muestra al G1 de `physics/` con controles (pausa, velocidad, reiniciar, empujar) y un panel con Capturar, Subir y Galería, en escritorio y en celular. Hay un `PoseClip` sintético para trabajar sin datos reales.
+- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web en JavaScript y three.js sin framework ([decisión](decisiones/2026-10-23-web-sin-framework.md)): al abrir se ve el esqueleto del clip "Caminar" de Juan junto al G1 de `physics/`, con galería de precargadas (dos clips reales y uno sintético), controles compartidos y selector humano, robot o ambos. Funciona en escritorio y en celular. M0 a M2 hechos, más W3.2 y W3.3.
 - **En curso:** —
-- **Bloqueado por:** nada.
-- **Sigue:** M2 (galería de precargadas) y W3.2 (esqueleto del `PoseClip` junto al robot). Pedirle a Pastor que la raíz de Vercel pase a `web/` cuando la web supere a la página de `physics/`.
+- **Bloqueado por:** nada. El deploy de Vercel publica `physics/`: falta que Pastor pase la raíz a `web/`.
+- **Sigue:** M4 (cámara en vivo, con `data/live/` de Juan) y M5 y M6 (subida y progreso, con la API del contrato).
 
 ---
 
