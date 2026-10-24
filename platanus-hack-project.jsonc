@@ -12,6 +12,6 @@
   // Must be a valid URL, for example: https://my-project.vercel.app
   // If your project is an app, put the download link here instead
   // (for example, a URL to download an APK).
-  // Temporary: the repo URL until the web app is deployed; replace it then.
-  "deploy-url": "https://github.com/platanus-hack/platanus-hack-26-ve-team-26"
+  // Vercel project "tridi", built from the deploy mirror (docs/decisiones/2026-10-23-deploy.md).
+  "deploy-url": "https://tridi-alpha.vercel.app"
 }
