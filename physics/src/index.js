@@ -6,7 +6,7 @@ import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { RobotView } from './viewer.js';
-import { middleValues, WORLD_ORDER } from './worlds.js';
+import { middleValues, sceneFile as worldScene, WORLD_ORDER } from './worlds.js';
 
 // physics/worlds/*.json, in display order.
 const WORLD_FILES = import.meta.glob('../worlds/*.json', { eager: true, import: 'default' });
@@ -174,7 +174,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       if (typeof meta === 'string') meta = await (await fetch(meta)).json();
       // The policy's scene ('unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'), or the current world's
       // version of it (the same robot, another floor).
-      const sceneFile = world?.scene ?? meta.mjcf.slice(meta.mjcf.indexOf('/') + 1);
+      const sceneFile = world ? worldScene(world) : meta.mjcf.slice(meta.mjcf.indexOf('/') + 1);
       const { loadOrt } = await import('./ort.js');
       const ort = await loadOrt();
       const previous = { sceneFile: sim.sceneFile, keyName: sim.keyName };
@@ -204,8 +204,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      */
     async setWorld(next) {
       world = next;
-      if (sim.sceneFile !== next.scene) {
-        swapScene(next.scene, 'home');
+      if (sim.sceneFile !== worldScene(next)) {
+        swapScene(worldScene(next), 'home');
         if (lastPolicy) {
           const { loadOrt } = await import('./ort.js');
           sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta);

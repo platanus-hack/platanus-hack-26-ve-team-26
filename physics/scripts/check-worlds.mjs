@@ -6,7 +6,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import * as ort from 'onnxruntime-web';
 import { createPolicy } from '../src/policy.js';
-import { middleValues, WORLD_ORDER } from '../src/worlds.js';
+import { middleValues, sceneFile, WORLD_ORDER } from '../src/worlds.js';
 import { loadG1Node } from './node-model.mjs';
 
 const WORLDS_DIR = new URL('../worlds/', import.meta.url);
@@ -35,11 +35,12 @@ expect(
 
 for (const world of worlds.sort((a, b) => WORLD_ORDER.indexOf(a.id) - WORLD_ORDER.indexOf(b.id))) {
   console.log(`${world.id} (${world.scene})`);
-  for (const key of ['friction', 'wind_newtons', 'mass_scale', 'motor_scale', 'push_newtons']) {
+  for (const key of ['friction', 'wind_mps', 'mass_scale', 'motor_scale', 'push_n']) {
     const range = world[key];
     expect(Array.isArray(range) && range.length === 2 && range[0] <= range[1], `${key} is a [min, max] range: ${JSON.stringify(range)}`);
   }
-  sim.load(world.scene, 'home');
+  expect(typeof world.title === 'string' && typeof world.why === 'string', `has a title and its why: ${world.title}`);
+  sim.load(sceneFile(world), 'home');
   const baseMass = Array.from(sim.model.body_mass).reduce((a, b) => a + b, 0);
   const baseKp = sim.model.actuator_gainprm[0];
   const values = middleValues(world);

@@ -1,11 +1,11 @@
 {
   "id": "resbaloso",
-  "name": "Piso resbaloso",
-  "description": "Poco agarre, como un piso mojado o encerado.",
-  "scene": "scene_mjx.xml",
+  "title": "Piso resbaloso",
+  "scene": "unitree_g1/scene_mjx.xml",
   "friction": [0.25, 0.45],
-  "wind_newtons": [0, 0],
+  "wind_mps": [0.0, 0.0],
   "mass_scale": [0.95, 1.05],
   "motor_scale": [0.9, 1.1],
-  "push_newtons": [0, 200]
+  "push_n": [0.0, 200.0],
+  "why": "Agarre de piso mojado o encerado (fricción cerca de 0,3). Empujones más suaves: en ese piso, 300 N solo prueban que resbala."
 }

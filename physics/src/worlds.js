@@ -8,12 +8,22 @@ export const WORLD_ORDER = ['plano', 'piedras', 'resbaloso', 'viento'];
 
 const mid = ([min, max]) => (min + max) / 2;
 
+// Wind in m/s becomes a force on the torso by the drag formula F = ½·ρ·Cd·A·v²: air at
+// 1.2 kg/m³, and Cd·A ≈ 0.5 m² for a person standing (about 0.4 m² of front, Cd about 1.2).
+// 10 m/s, a strong wind, pushes with about 30 N.
+const AIR_DENSITY = 1.2;
+const DRAG_AREA_M2 = 0.5;
+export const windForce = (mps) => 0.5 * AIR_DENSITY * DRAG_AREA_M2 * mps * mps;
+
+/** The world's scene file relative to the G1's folder: 'unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'. */
+export const sceneFile = (world) => world.scene.slice(world.scene.indexOf('/') + 1);
+
 /** The one value per parameter that the web shows: the middle of each range. */
 export function middleValues(world) {
   return {
     friction: mid(world.friction),
     mass_scale: mid(world.mass_scale),
     motor_scale: mid(world.motor_scale),
-    wind_newtons: mid(world.wind_newtons),
+    wind_newtons: windForce(mid(world.wind_mps)),
   };
 }

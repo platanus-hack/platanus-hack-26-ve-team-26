@@ -1,11 +1,11 @@
 {
   "id": "plano",
-  "name": "Piso plano",
-  "description": "El mundo de referencia: piso parejo y el robot tal como es.",
-  "scene": "scene_mjx.xml",
+  "title": "Piso plano",
+  "scene": "unitree_g1/scene_mjx.xml",
   "friction": [1.0, 1.0],
-  "wind_newtons": [0, 0],
+  "wind_mps": [0.0, 0.0],
   "mass_scale": [1.0, 1.0],
   "motor_scale": [1.0, 1.0],
-  "push_newtons": [0, 300]
+  "push_n": [0.0, 300.0],
+  "why": "La referencia: el robot y el piso de siempre. Los empujones son los de training/env.py."
 }

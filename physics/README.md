@@ -157,7 +157,7 @@ Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos c
 
 ## Mundos: `view.setWorld(world)`
 
-Los mundos donde el robot entrena y se muestra (SIM-3 del [plan del producto](../docs/plan-producto.md)). Un archivo por mundo en [`worlds/`](worlds), leído por el entrenamiento y por la web, para que lo que se ve sea lo que se entrenó. Cada parámetro es un rango `[mín, máx]`: el entrenamiento sortea un valor por episodio; la web muestra el del medio.
+Los mundos donde el robot entrena y se muestra (SIM-3 del [plan del producto](../docs/plan-producto.md)). Un archivo por mundo en [`worlds/`](worlds), con el formato del contrato, leído por el entrenamiento y por la web, para que lo que se ve sea lo que se entrenó. Cada parámetro es un rango `[mín, máx]`: el entrenamiento sortea un valor por episodio; la web muestra el del medio.
 
 ```js
 import { WORLDS } from 'tridi-physics'; // los cuatro, en orden: plano, piedras, resbaloso, viento
@@ -165,16 +165,18 @@ await view.setWorld(WORLDS[1]);          // corta un clip o la cámara; con otra
 view.world();                            // el mundo actual, o null
 ```
 
-| Mundo | Escena | Fricción del piso | Viento (N, de costado) | Masas | Motores | Empujones al entrenar (N) | Por qué esos valores |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `plano` | `scene_mjx.xml` | 1 | 0 | ×1 | ×1 | 0–300 | La referencia: el robot y el piso de siempre; los empujones son los de `training/env.py` |
-| `piedras` | `scene_mjx_stones.xml` | 0,8–1,2 | 0 | ×0,95–1,05 | ×0,9–1,1 | 0–300 | Piedras de hasta 3 cm: el pie cae inclinado, y la altura de la pelvis de un clip grabado en plano sigue valiendo |
-| `resbaloso` | `scene_mjx.xml` | 0,25–0,45 | 0 | ×0,95–1,05 | ×0,9–1,1 | 0–200 | Agarre de piso mojado o encerado (≈0,3); empujones más suaves, porque en ese piso 300 N solo prueban que resbala |
-| `viento` | `scene_mjx.xml` | 0,9–1,1 | 20–60 | ×0,9–1,1 | ×0,85–1,15 | 0–300 | Una fuerza constante sobre el torso, como un viento fuerte; masas y motores varían más para que no aprenda un solo robot |
+| Mundo | Escena | Fricción del piso | Viento (m/s, de costado) | Masas | Motores | Empujones al entrenar (N) |
+| --- | --- | --- | --- | --- | --- | --- |
+| `plano` | `scene_mjx.xml` | 1 | 0 | ×1 | ×1 | 0–300 |
+| `piedras` | `scene_mjx_stones.xml` | 0,8–1,2 | 0 | ×0,95–1,05 | ×0,9–1,1 | 0–300 |
+| `resbaloso` | `scene_mjx.xml` | 0,25–0,45 | 0 | ×0,95–1,05 | ×0,9–1,1 | 0–200 |
+| `viento` | `scene_mjx.xml` | 0,9–1,1 | 6–14 | ×0,9–1,1 | ×0,85–1,15 | 0–300 |
 
-- **Cómo se aplica** (`sim.applyWorld`): la fricción, en los pares de contacto con el piso (y con las piedras), que pisan la de las geometrías; las masas, en `body_mass` y `body_inertia`, y después `mj_setConst`; los motores, en `kp` y `kv` de cada actuador y en el tope de torque de cada articulación; el viento, como fuerza en el torso que se suma a los empujones. Siempre parte de los valores del modelo, así que cambiar de mundo no acumula.
+El formato es el de "Mundos" en [`../docs/contrato.md`](../docs/contrato.md) (`title`, `scene`, `friction`, `wind_mps`, `mass_scale`, `motor_scale`, `push_n`), y cada archivo dice el porqué de sus valores en `why`.
+
+- **Cómo se aplica** (`sim.applyWorld`): la fricción, en los pares de contacto con el piso (y con las piedras), que pisan la de las geometrías; las masas, en `body_mass` y `body_inertia`, y después `mj_setConst`; los motores, en `kp` y `kv` de cada actuador y en el tope de torque de cada articulación; el viento, como fuerza en el torso que se suma a los empujones: ½·ρ·Cd·A·v² con aire de 1,2 kg/m³ y Cd·A ≈ 0,5 m² (una persona de pie), así que 10 m/s son unos 30 N (`src/worlds.js`). Siempre parte de los valores del modelo, así que cambiar de mundo no acumula.
 - **Las piedras** son un mapa de alturas de 161×161 celdas de 5 cm sobre 8×8 m, con una semilla fija: siempre el mismo terreno. Lo genera `npm run make-stones-scene` a partir de `scene_mjx.xml` (el robot y los contactos no cambian; los pies tienen pares también con las piedras). Hay que regenerarlo si cambia `scene_mjx.xml`.
-- **`npm run check`** incluye `check-worlds`: cada mundo carga y sus parámetros llegan a MuJoCo. Informa, sin exigirlo, cuánto aguanta de pie la política de hoy (entrenada solo en plano): 10 s en plano, piedras y resbaloso; con el viento de 40 N se cae a los 3,5 s. Medir la robustez de verdad es SIM-5, con una política entrenada en estos mundos.
+- **`npm run check`** incluye `check-worlds`: cada mundo carga y sus parámetros llegan a MuJoCo. Informa, sin exigirlo, cuánto aguanta de pie la política de hoy (entrenada solo en plano): con los valores del medio aguanta los 10 s en los cuatro mundos. Los extremos de los rangos y los mundos que no vio son la prueba de verdad (SIM-5); con 40 N de viento, por ejemplo, se cae a los 3,5 s. Medir la robustez de verdad es SIM-5, con una política entrenada en estos mundos.
 - **Falta en Python:** el lector de `worlds/` para `training/env.py` (ENT-3) tiene que aplicar lo mismo que `applyWorld`, con los mismos campos.
 
 ## Cómo funciona

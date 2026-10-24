@@ -1,11 +1,11 @@
 {
   "id": "piedras",
-  "name": "Piedras",
-  "description": "Piedras bajas de hasta 3 cm en el piso: el pie cae inclinado.",
-  "scene": "scene_mjx_stones.xml",
+  "title": "Piedras",
+  "scene": "unitree_g1/scene_mjx_stones.xml",
   "friction": [0.8, 1.2],
-  "wind_newtons": [0, 0],
+  "wind_mps": [0.0, 0.0],
   "mass_scale": [0.95, 1.05],
   "motor_scale": [0.9, 1.1],
-  "push_newtons": [0, 300]
+  "push_n": [0.0, 300.0],
+  "why": "Piedras de hasta 3 cm (scripts/make-stones-scene.mjs): el pie cae inclinado, y la altura de la pelvis de un clip grabado en plano sigue valiendo. Masas y motores varían un poco para no aprender un solo robot."
 }
