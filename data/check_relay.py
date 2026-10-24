@@ -60,8 +60,12 @@ async def main() -> None:
         ]:
             r = await c.post(live, json=bad)
             expect(r.status_code == 400, f"{why} -> 400: {r.json()['detail']}")
-        big = {"width": 1, "height": 1, "frames": [frame(k / 30) for k in range(60)]}
-        expect((await c.post(live, json=big)).status_code == 413, "a batch over 64 KB -> 413")
+        for jpeg, why in [(123, "a jpeg that is not a string"), ("<script>", "a jpeg that is not base64"),
+                          ("A" * (relay.MAX_JPEG_CHARS + 4), "a jpeg over the cap")]:
+            r = await c.post(live, json={"width": 1, "height": 1, "frames": [{"t": 0, "jpeg": jpeg}]})
+            expect(r.status_code == 400, f"{why} -> 400")
+        big = {"width": 1, "height": 1, "frames": [frame(k / 30) for k in range(250)]}
+        expect((await c.post(live, json=big)).status_code == 413, "a batch over 256 KB -> 413")
 
         # Nothing yet: a plain GET answers at once, a GET with wait holds for that long.
         r = await c.get(live, params={"since": 0})
@@ -83,6 +87,11 @@ async def main() -> None:
         r = await c.post(live, json={"width": 1280, "height": 720, "frames": [frame(10.1, body=False), frame(10.13)]})
         r = await c.get(live, params={"since": 3})
         expect(r.json()["next"] == 5 and r.json()["frames"][0] == {"t": 10.1}, "a frame without body stays a bare t")
+        # The camera image rides in its frame, with or without a body; the next test starts at 7.
+        with_image = [{**frame(10.16), "jpeg": "/9j/4AAQ"}, {"t": 10.2, "jpeg": "/9j/4AAR"}]
+        await c.post(live, json={"width": 1280, "height": 720, "frames": with_image})
+        r = await c.get(live, params={"since": 5})
+        expect(r.json()["frames"] == with_image, "frames keep their jpeg, with or without a body")
 
         # Long poll: the GET waits and answers as soon as the phone posts.
         async def post_later():
@@ -91,20 +100,26 @@ async def main() -> None:
 
         task = asyncio.create_task(post_later())
         t = time.perf_counter()
-        r = await c.get(live, params={"since": 5, "wait": 2000})
+        r = await c.get(live, params={"since": 7, "wait": 2000})
         woke = time.perf_counter() - t
         await task
         expect(len(r.json()["frames"]) == 3 and 0.15 < woke < 0.6, f"long poll woke on the POST after {woke * 1000:.0f} ms")
-        expect(r.json()["next"] == 8, "and next moved on")
+        expect(r.json()["next"] == 10, "and next moved on")
 
         # Only the last KEEP_FRAMES stay; an old since starts at the oldest kept.
         for k in range(60):
-            await c.post(live, json=batch(20 + k / 10))
+            b = batch(20 + k / 10)
+            for f in b["frames"]:
+                f["jpeg"] = "/9j/4AAQ"
+            await c.post(live, json=b)
         r = await c.get(live, params={"since": 0})
         got = r.json()
-        expect(len(got["frames"]) == relay.KEEP_FRAMES and got["next"] == 8 + 180, f"after 180 more frames, {relay.KEEP_FRAMES} are kept")
-        # 188 frames in all, 150 kept: the oldest kept is overall frame 38 = new frame 30 = batch 10's first.
+        expect(len(got["frames"]) == relay.KEEP_FRAMES and got["next"] == 10 + 180, f"after 180 more frames, {relay.KEEP_FRAMES} are kept")
+        # 190 frames in all, 150 kept: the oldest kept is overall frame 40 = new frame 30 = batch 10's first.
         expect(got["frames"][0]["t"] == 20 + 10 / 10, "the oldest kept is the 150th from the end")
+        images = ["jpeg" in f for f in got["frames"]]
+        expect(images == [False] * (relay.KEEP_FRAMES - relay.KEEP_IMAGE_FRAMES) + [True] * relay.KEEP_IMAGE_FRAMES,
+               f"only the last {relay.KEEP_IMAGE_FRAMES} frames keep their image")
 
         # The wait is capped.
         t = time.perf_counter()

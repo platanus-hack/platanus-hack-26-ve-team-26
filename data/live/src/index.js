@@ -9,7 +9,7 @@ export { PoseFilter } from './oneeuro.js';
 export { drawSkeleton } from './draw.js';
 export { checkApi, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, sendClip, trainClip, uploadVideo, watchJob, watchTraining } from './upload.js';
-export { PHONE_SILENCE_S, closePhoneSession, createPhoneCapture, createPhoneSender, openPhoneSession, phonePageUrl } from './relay.js';
+export { IMAGE_FPS, PHONE_SILENCE_S, closePhoneSession, createImageGrabber, createPhoneCapture, createPhoneSender, openPhoneSession, phonePageUrl } from './relay.js';
 
 // The WASM runtime and the models come from their official hosts, pinned to the package version
 // in package.json, so the web build does not have to copy them.

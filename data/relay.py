@@ -36,9 +36,20 @@ TTL_S = 180
 # losing frames of a recording; further back the robot would be copying the past. ~250 KB.
 KEEP_FRAMES = 150
 
-# A 100 ms batch at 30 fps is ~5 KB; 64 KB is a full second of frames, and no visitor can fill the
-# server's memory from the internet.
-MAX_BATCH_BYTES = 64 * 1024
+# A 100 ms batch at 30 fps is ~5 KB of poses plus ~40 KB of camera images; 256 KB leaves room for a
+# batch delayed by a tunnel cut (the phone retries those without their images), and no visitor can
+# fill the server's memory from the internet.
+MAX_BATCH_BYTES = 256 * 1024
+
+# The phone's camera image rides in its frame (480 px JPEG, ~15 to 25 KB in base64). 128 K
+# characters is a generous cap for one image; the alphabet check keeps anything but base64 out of
+# the data: URL the Mac builds from it.
+MAX_JPEG_CHARS = 128 * 1024
+BASE64 = re.compile(r"^[A-Za-z0-9+/]+={0,2}$")
+
+# Only the last second of frames keeps its image: the Mac shows the newest one, so an older image is
+# never shown, and 20 sessions stay under ~15 MB.
+KEEP_IMAGE_FRAMES = 30
 
 # The longest a GET waits for new frames. The Mac asks with 1000 ms and asks again at once; the cap
 # frees the connection of a Mac that left.
@@ -112,13 +123,18 @@ def _clean_batch(batch) -> tuple[dict | None, str | None]:
     for i, f in enumerate(frames):
         if not isinstance(f, dict) or not _number(f.get("t")):
             return None, f"el cuadro {i} debe tener t"
-        if "world" not in f and "image" not in f:
-            clean.append({"t": f["t"]})  # no body in this frame
-            continue
-        problem = _points(f.get("world"), "world", i) or _points(f.get("image"), "image", i)
-        if problem:
-            return None, problem
-        clean.append({"t": f["t"], "world": f["world"], "image": f["image"]})
+        frame = {"t": f["t"]}
+        if "world" in f or "image" in f:  # without both, a frame with no body in it
+            problem = _points(f.get("world"), "world", i) or _points(f.get("image"), "image", i)
+            if problem:
+                return None, problem
+            frame.update(world=f["world"], image=f["image"])
+        if "jpeg" in f:
+            jpeg = f["jpeg"]
+            if not isinstance(jpeg, str) or len(jpeg) > MAX_JPEG_CHARS or not BASE64.match(jpeg):
+                return None, f"la imagen del cuadro {i} debe ser un JPEG en base64 de menos de {MAX_JPEG_CHARS // 1024} KB"
+            frame["jpeg"] = jpeg
+        clean.append(frame)
     return {"width": int(size[0]), "height": int(size[1]), "frames": clean}, None
 
 
@@ -156,6 +172,8 @@ async def post_poses(session_id: str, request: Request) -> dict:
         drop = len(s.frames) - KEEP_FRAMES
         del s.frames[:drop]
         s.first_seq += drop
+    for f in s.frames[:-KEEP_IMAGE_FRAMES]:
+        f.pop("jpeg", None)
     s.changed.set()
     return {
         "received": len(batch["frames"]),

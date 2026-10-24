@@ -1,7 +1,8 @@
 // Both halves of the phone-as-camera relay (src/relay.js) against a running server, without a
 // browser: a fake phone sends the synthetic walker of check.mjs at 30 fps through createPhoneSender,
 // a fake Mac receives it through createPhoneCapture, records, and the PoseClip must follow the
-// contract and keep the walker's speed. Then the phone goes quiet and the Mac must notice.
+// contract and keep the walker's speed; every other frame carries a camera image of a real JPEG's
+// size, which the Mac must show. Then the phone goes quiet and the Mac must notice.
 //
 //   uv run --project data python -m data.server &      # or data/serve.sh
 //   cd data/live && npm run check-relay                 # TRIDI_API=<url> for another server
@@ -68,8 +69,10 @@ check(/^[23456789abcdefghjkmnpqrstuvwxyz]{8}$/.test(sessionId), `session ${sessi
 
 const statuses = [];
 const poses = [];
+const images = [];
 const mac = createPhoneCapture(API, sessionId, {
   onPose: (p) => poses.push(p),
+  onImage: (src) => images.push(src),
   onStatus: (s) => statuses.push(s.state),
 });
 await sleep(300);
@@ -83,7 +86,9 @@ let recordingStarted = false;
 const phoneTimer = setInterval(() => {
   const now = performance.now() / 1000;
   if (now - t0 > SECONDS) return;
-  phone.push(frames % 40 === 39 ? null : pose(now - t0, now), W, H); // one lost frame in 40, like a webcam
+  // One lost frame in 40, like a webcam; an image every other frame, ~20 KB of base64 like a real one.
+  const jpeg = frames % 2 ? null : `/9j/${String(frames).padStart(4, '0')}${'A'.repeat(20_000)}`;
+  phone.push(frames % 40 === 39 ? null : pose(now - t0, now), W, H, jpeg);
   frames++;
   if (!recordingStarted && poses.length) {
     mac.startRecording(); // the screen records from the first frame that arrives
@@ -104,6 +109,10 @@ check(phoneStatuses.at(-1)?.state === 'sending' && phoneStatuses.at(-1).fps >= 2
 check(clip.skeleton === 'mediapipe33' && clip.fps === 30 && clip.frames.length >= (SECONDS - 1) * 30, `PoseClip with ${clip.frames.length} frames`);
 check(clip.quality.valid_ratio > 0.9 && clip.quality.valid_ratio < 1, `valid_ratio ${clip.quality.valid_ratio} (the lost frames count)`);
 check(Math.abs(speed - SPEED) < 0.2, `the walker's speed came through: ${speed.toFixed(2)} m/s (expected ${SPEED})`);
+check(images.length >= (frames / 2) * 0.95, `the Mac showed ${images.length} images of ${Math.ceil(frames / 2)}`);
+check(images.every((src) => src.startsWith('data:image/jpeg;base64,/9j/')), 'as data: URLs of a JPEG');
+const order = images.map((src) => Number(src.slice(27, 31)));
+check(order.every((n, i) => !i || n > order[i - 1]), 'in the order they were filmed');
 check(mac.size().width === W && mac.size().height === H, 'the phone image size came along');
 
 // The phone goes quiet: the Mac notices in PHONE_SILENCE_S.
