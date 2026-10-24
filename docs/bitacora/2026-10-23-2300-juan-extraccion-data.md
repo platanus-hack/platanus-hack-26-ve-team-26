@@ -81,6 +81,10 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 
 - Se probó automatizarlos (`scripts/discord.py` con un webhook), pero en `#team-26-interno` no se pueden crear webhooks: el servidor es de Platanus. Juan decidió mandarlos a mano; el script se borró.
 
+## Marca corporativa
+
+- Juan decidió (innegociable): la web es un producto para empresas de robots humanoides, profesional y sobria, con estilo propio y sin logos de terceros. Decisión en `docs/decisiones/2026-10-24-marca-b2b-robotica.md`, guía en `docs/marca.md` (público, mensaje, principios visuales, 8 secciones de la landing, 10 referencias para votar) y tarea M9 en `web/TAREAS.md`.
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.

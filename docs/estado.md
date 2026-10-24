@@ -25,6 +25,7 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 - **En curso:** `training/`: la primera política (`training/policies/g1-stand.onnx`) sostiene al G1 de pie y aguanta los 4 empujones de 250 N de la prueba (40 M pasos, ~73 min en una M2). Sigue: imitación con los `RobotMotion` de Pastor. Formato de la observación para la web en [`../training/README.md`](../training/README.md).
 - **Bloqueado por:** —
 - **Integración probada (24/10):** servidor + túnel: el clip sale en 25 s por internet. Los dos clips mueven al G1 con `mimic` (356/356 cuadros, 3,2 cm). La galería de César los muestra. Se arregló un salto de 6 m en `correr-perfil` (ajuste a la cámara atípico al entrar al cuadro). Detalle en la [bitácora](bitacora/2026-10-24-0010-juan-integracion.md).
+- **Decidió:** la web es un producto para empresas de humanoides, con estilo corporativo propio ([decisión](decisiones/2026-10-24-marca-b2b-robotica.md), [guía de marca](marca.md)); César la aplica en M9.
 - **Sigue:** César conecta `web/` con `resolveApiUrl` (la URL del servidor llega por `?api=`, que imprime `data/serve.sh`). Pastor: `playClip` con la trayectoria de la pelvis. Revisar por qué en vivo la velocidad sale 50% más alta que offline. Grabar precargadas propias de perfil. Límite clave: de frente el avance sale ≈ 0, hay que grabar de perfil.
 
 ---
