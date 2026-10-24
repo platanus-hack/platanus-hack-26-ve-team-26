@@ -6,12 +6,14 @@ Para no esperar a nadie, la web arranca con **datos falsos**: un `PoseClip` sint
 
 Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
+**Correr la web:** `cd web && npm install && npm run dev`. El clip sintético se regenera con `node scripts/make-synthetic-clip.mjs`.
+
 ## M0. Base (bloquea todo lo demás)
 
-- [ ] **W0.1 Proyecto.** Vite + React + TypeScript en `web/`, con scripts `dev`, `build` y `lint`. Propuesta; si alguien prefiere otra cosa, se decide antes de empezar.
+- [x] **W0.1 Proyecto.** Vite + React + TypeScript en `web/`, con scripts `dev`, `build` y `lint`.
 - [ ] **W0.2 Deploy temprano.** Publicar en Vercel una página vacía y poner la URL real en `deploy-url` de `platanus-hack-project.jsonc`. Depende de cómo se espeje el repo (ver preguntas abiertas).
-- [ ] **W0.3 Tipos del contrato.** `PoseClip`, `Policy` y el manifiesto de precargadas en TypeScript, cuando el contrato pase a "vigente". Es un commit de contrato aparte.
-- [ ] **W0.4 Datos falsos.** Un `PoseClip` sintético (un esqueleto que camina en el lugar) en `web/public/preloaded/` para trabajar sin `data/`.
+- [~] **W0.3 Tipos del contrato.** Copia provisional del borrador en `web/src/contract.ts`. Cuando el contrato pase a "vigente", se mueve al archivo de tipos compartido en un commit de contrato aparte, y se agrega el manifiesto de precargadas.
+- [x] **W0.4 Datos falsos.** `web/public/preloaded/clip_synthetic_march_01.json`: 2,4 s de una persona marchando en el lugar, generado por `web/scripts/make-synthetic-clip.mjs`.
 
 ## M1. Layout y estados
 
