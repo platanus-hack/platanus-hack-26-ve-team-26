@@ -673,7 +673,7 @@ html.is-landing.lenis body {
 /* Gym: three stops of the training, one screen of scroll each */
 
 .gym {
-  height: 400svh; /* the panel sticks for three screens, one per stage (home.js gymStage, gymGate) */
+  height: 500svh; /* the panel sticks for four screens, one per stage (home.js gymStage, gymGate) */
 }
 
 /* Gym and Policy: their words sit on a dark card, since the street behind them is busy. No
@@ -801,7 +801,7 @@ html.is-landing.lenis body {
 /* The three checkpoints as a segmented control. */
 .axis-stops {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr); /* one per GYM_STAGES entry (home.js) */
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
@@ -813,8 +813,9 @@ html.is-landing.lenis body {
   display: grid;
   justify-items: start;
   gap: 5px;
+  min-width: 0;
   min-height: 0;
-  padding: 10px 12px;
+  padding: 10px 8px;
   border: 0;
   border-radius: 8px;
   background: none;

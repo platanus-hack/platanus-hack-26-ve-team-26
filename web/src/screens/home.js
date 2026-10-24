@@ -39,14 +39,20 @@ const GYM_PUSH_EVERY_S = 2.5; // the Gym pushes the standing robot this often, s
 const GYM_FIRST_PUSH_S = 2.0;
 const GYM_RESTART_S = 1.6; // a fallen robot lies this long before it is stood up again
 const AFTER_PUSH_S = 5; // after a push in the hero, the robot stands this long before it is reset
-// The Gym in three stops of the real training, each a saved checkpoint, with what
-// training/README.md measured for it: seconds standing (of 20) and 250 N pushes held (of 4).
+// The Gym in four stops of the real training, each a saved checkpoint of its iterations, with what
+// training/README.md measured for it: seconds standing (of 20) and 250 N pushes held (of 4). The
+// third is v2, the first that held every push; the last is the one the page uses (stand-v7d),
+// which gave up a few pushes to stop pivoting on one foot.
 const GYM_STAGES = [
-  { level: 'g1-stand-step-0', steps: 0, verdict: 'No sirve', up: '1,1 s', pushes: '0 de 4', text: 'Sin práctica se cae en un segundo.' },
-  { level: 'g1-stand-step-10000000', steps: 10e6, verdict: 'Más o menos', up: '9,6 s', pushes: '1 de 4', text: 'Ya se para, pero un empujón lo tumba casi siempre.' },
-  // More steps only help a harder test from here: with 350 N it holds 1.2 of 4 (training/README.md).
-  { level: 'g1-stand', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Pasa la prueba entera. Más práctica serviría para empujones más fuertes: con 350 N aguanta 1 de 4.' },
+  { level: 'g1-stand-step-0', steps: 0, verdict: 'No sirve', up: '1,1 s', pushes: '0 de 4', text: 'Se cae en un segundo.' },
+  { level: 'g1-stand-step-10000000', steps: 10e6, verdict: 'A medias', up: '9,6 s', pushes: '1 de 4', text: 'Se para, pero un empujón lo tumba.' },
+  { level: 'g1-stand-v2', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Aguanta todo, pero girando sobre un pie.' },
+  { level: 'g1-stand', steps: 60e6, verdict: 'Quieto', up: '20 s', pushes: '3,6 de 4', text: 'Estable y sin girar. Es el de arriba.' },
 ];
+// Training speed on the M2 (training/README.md: 64 robots, 11.400 steps per second), for the time
+// of the steps past the training log (curve.minutes covers its first 40 M).
+const STEPS_PER_S = 11400;
+const TRAINING_MINUTES = Math.round(curve.minutes + (GYM_STAGES.at(-1).steps - curve.steps) / STEPS_PER_S / 60);
 // What a step is, for the Gym's explanation (training/README.md): the policy decides 50 times a
 // second, and training runs 64 simulated robots at once.
 const DECISIONS_PER_S = 50;
@@ -150,7 +156,7 @@ export function mount(root, { api }) {
         <div class="caption capture-caption">
           <p class="product">Tridi Capture</p>
           <h2>De un video de celular al cuerpo del robot</h2>
-          <p>Saca el esqueleto 3D de la persona, 33 puntos 30 veces por segundo, y lo pasa a las 29 articulaciones del robot con 3,2 cm de error. Aquí lo copia sin física todavía.</p>
+          <p>El esqueleto 3D de la persona, pasado a las 29 articulaciones del robot. Aquí lo copia sin física.</p>
         </div>
       </div>
     </section>
@@ -160,10 +166,10 @@ export function mount(root, { api }) {
         <div class="caption gym-caption panel">
           <p class="product">Tridi Gym</p>
           <h2>Practica hasta no caerse</h2>
-          <p class="gym-text">Nadie le programa cómo pararse: lo intenta en física simulada, se cae y vuelve a intentarlo. Cada ${num(GYM_PUSH_EVERY_S, 1)} s lo empujamos para ver qué aprendió.</p>
+          <p class="gym-text">Nadie le programa cómo pararse: lo intenta, se cae y vuelve a intentarlo.</p>
           <div class="steps-meter">
             <p class="steps-now"><b data-gym="steps">0</b><span>pasos de<br>práctica</span></p>
-            <p class="steps-explain">Un paso es una decisión del robot: cómo mover sus 29 motores durante 1/${DECISIONS_PER_S} de segundo. ${GYM_STAGES.at(-1).steps / 1e6} millones son unas ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, que ${PARALLEL_ROBOTS} robots simulados a la vez hacen en ${curve.minutes} minutos de laptop.</p>
+            <p class="steps-explain">${GYM_STAGES.at(-1).steps / 1e6} M pasos son ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, hechas en ${TRAINING_MINUTES} minutos de laptop con ${PARALLEL_ROBOTS} robots a la vez.</p>
             <div class="steps-axis">
               <div class="axis-track" aria-hidden="true">
                 <i class="axis-line"><i class="axis-fill"></i></i>
@@ -184,10 +190,10 @@ export function mount(root, { api }) {
             </div>
           </div>
           <p class="gym-status"><i class="live-dot"></i><span><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></span></p>
-          <p class="gym-hint">Baja para entrenarlo · toca una etapa para ir a ella</p>
+          <p class="gym-hint">Baja para entrenarlo · cada ${num(GYM_PUSH_EVERY_S, 1)} s lo empujamos</p>
           <figure class="chart-fig">
             <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a unos 15 s, con empujones más fuertes en la segunda mitad"></svg>
-            <figcaption>Segundos de pie por intento durante el entrenamiento · log real</figcaption>
+            <figcaption>Segundos de pie por intento · log real de los primeros ${curve.steps / 1e6 | 0} M</figcaption>
           </figure>
         </div>
       </div>
@@ -204,7 +210,7 @@ export function mount(root, { api }) {
             <li><b>20 ms</b><span>entre una decisión y la siguiente</span></li>
             <li><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></li>
           </ul>
-          <p class="policy-note">Entregamos la política, que corre aquí, en tu navegador, y los datos: el movimiento de la persona corregido por la física, probado en cuatro mundos, para entrenar tu propio robot. La de pie aguanta 4 de 4 empujones de 250 N; la de la caminata todavía sigue 3,5 s de 11,8.</p>
+          <p class="policy-note">La política corre aquí, en tu navegador. Con ella van los datos del movimiento, probados en cuatro mundos.</p>
         </div>
       </div>
     </section>
@@ -214,7 +220,7 @@ export function mount(root, { api }) {
         <p class="product">Para equipos de humanoides</p>
         <p class="lede">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
         <h2 class="manifesto">Los robots ya tienen cuerpo. Les falta experiencia.</h2>
-        <p class="closing-text">Enseñarle un movimiento nuevo a un humanoide hoy exige trajes de captura, un estudio y mucho tiempo. Con Tridi, cualquier video de una persona se vuelve práctica para tu robot.</p>
+        <p class="closing-text">Sin trajes de captura ni estudio: cualquier video de una persona se vuelve práctica para tu robot.</p>
         <div class="progress-track" aria-label="Dónde estamos">
           <div class="track-line" aria-hidden="true"><i class="track-fill"></i></div>
           <ol class="milestones">
@@ -222,7 +228,7 @@ export function mount(root, { api }) {
               <i class="dot" aria-hidden="true"></i>
               <span class="when">Hoy</span>
               <b>Pararse y recuperarse de empujones</b>
-              <span class="proof">4 de 4 empujones de ${PUSH_N} N</span>
+              <span class="proof">${GYM_STAGES.at(-1).pushes} empujones de ${PUSH_N} N</span>
             </li>
             <li class="now">
               <i class="dot" aria-hidden="true"></i>
@@ -379,17 +385,24 @@ export function mount(root, { api }) {
     const { camera, controls } = v.viewer;
     const az = (shot.az * Math.PI) / 180;
     const el = (shot.el * Math.PI) / 180;
-    v.viewer.targetHeight = shot.aim;
+    // The camera is level and the picture is shifted instead (an architect's shift lens): a camera
+    // tilted down to the aim made every vertical away from the image's center lean, and with the
+    // robot slid to the side for the words (shift) and running ahead of the camera in the walk, the
+    // robot leaned visibly at the end of Capture, where the shot rises toward the Gym's.
+    const height = shot.aim + Math.sin(el) * shot.dist;
+    v.viewer.targetHeight = height;
+    controls.maxPolarAngle = Math.PI / 2; // OrbitControls would lift a level camera off its height
     const { x, z } = controls.target;
-    camera.position.set(
-      x + Math.cos(az) * Math.cos(el) * shot.dist,
-      shot.aim + Math.sin(el) * shot.dist,
-      z - Math.sin(az) * Math.cos(el) * shot.dist,
-    );
+    camera.position.set(x + Math.cos(az) * Math.cos(el) * shot.dist, height, z - Math.sin(az) * Math.cos(el) * shot.dist);
     // Slide the image sideways (three.js film offset), so the robot stands where the words are not.
     const filmWidth = camera.filmGauge * Math.min(camera.aspect, 1);
     camera.filmOffset = -shot.shift * camera.aspect * 2 * Math.tan((camera.fov * Math.PI) / 360) * filmWidth;
     camera.updateProjectionMatrix();
+    // And up, so the aim (el degrees below the level line of sight) sits at the image's center as
+    // the tilted camera had it: the projection's vertical offset, in units of the image's half height.
+    const m = camera.projectionMatrix.elements;
+    m[9] = -m[5] * Math.tan(el);
+    camera.projectionMatrixInverse.copy(camera.projectionMatrix).invert();
     key?.position.copy(camera.position).add(KEY_LIFT);
   }
   const KEY_LIFT = new THREE.Vector3(0, 0.8, 0); // the key light sits a little above the lens
@@ -652,7 +665,7 @@ export function mount(root, { api }) {
       },
     });
     // The training log draws itself up to this stage's steps.
-    const upTo = GYM_STAGES[stage].steps / curve.steps;
+    const upTo = Math.min(1, GYM_STAGES[stage].steps / curve.steps); // the log ends at 40 M
     gsap.to('.chart .line', { strokeDashoffset: 1 - Math.max(upTo, 0.02), duration: reducedMotion ? 0 : 0.9, ease: 'power2.out' });
   }
   // Times are the simulation's own clock, not the wall's: a slow or hidden tab cannot fake them.
@@ -766,7 +779,7 @@ export function mount(root, { api }) {
       if (!loaded || gone) return;
       view = loaded;
       const { camera, controls } = view.viewer;
-      saved = { offset: camera.position.clone().sub(controls.target), targetHeight: view.viewer.targetHeight };
+      saved = { offset: camera.position.clone().sub(controls.target), targetHeight: view.viewer.targetHeight, maxPolarAngle: controls.maxPolarAngle };
       controls.enabled = false; // the scroll directs the camera here
       // Trailer lighting while the landing has the robot: a key light that rides with the camera
       // (directCamera moves it), so every shot is lit from the front whatever the angle, and a
@@ -892,7 +905,8 @@ export function mount(root, { api }) {
       controls.target.y = saved.targetHeight;
       camera.position.copy(controls.target).add(saved.offset);
       camera.filmOffset = 0;
-      camera.updateProjectionMatrix();
+      camera.updateProjectionMatrix(); // also drops the vertical shift
+      controls.maxPolarAngle = saved.maxPolarAngle;
       controls.enabled = true;
       view.viewer.followTau = 0; // the app screens follow the robot rigidly
       lights.forEach((light) => view.viewer.scene.remove(light));
