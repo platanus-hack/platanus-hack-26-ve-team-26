@@ -116,8 +116,9 @@ const WAIST = { joints: ['waist_yaw_joint', 'waist_roll_joint', 'waist_pitch_joi
  * @param model   the G1's MjModel (it must have the "stand" keyframe)
  * @param options.mirror  move like a reflection (default) or like the person, left with left
  * @param options.live    for the live camera: the wrists follow the hand, and the shoulders may
- *   twist freely while the person faces the camera. Off for clips, whose RobotMotions are the
- *   training references and must not change.
+ *   twist freely while the person faces the camera. Also for clips recorded with the live camera
+ *   (motion.js), so they train on what the robot did; off for clips of uploaded videos, whose
+ *   RobotMotions are the training references they were measured with.
  * @returns { solve(pose) -> { qpos, residual, tracked } }
  */
 export function createRetargeter(mujoco, model, { mirror = true, live = false } = {}) {

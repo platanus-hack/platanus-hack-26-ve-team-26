@@ -73,7 +73,10 @@ export async function retargetClipAsync(mujoco, model, clip, { onProgress, budge
 // One yield per frame (its index), and the result as the return value, so the two entry points
 // above share every line of the work.
 function* retargetSteps(mujoco, model, clip, { mirror = false } = {}) {
-  const retargeter = createRetargeter(mujoco, model, { mirror });
+  // A clip recorded with the live camera trains on what the robot did while it was recorded: the
+  // wrists and palms, and the freer shoulder twist facing the camera (retarget.js `live`). Clips
+  // from uploaded videos keep the retargeting their references were measured with.
+  const retargeter = createRetargeter(mujoco, model, { mirror, live: clip.source === 'camera' });
   const tracker = createPoseTracker();
   const { frames } = clip;
 
