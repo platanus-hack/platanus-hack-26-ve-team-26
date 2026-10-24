@@ -45,6 +45,14 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
 
 - El error que queda no es la gravedad (0,016 rad con la pose quieta) ni el piso (0,102 rad sin contacto): es retraso. Caderas y tobillos siguen la referencia 60 a 100 ms tarde (kp = 75 y 20 con kv = 2 en `scene_mjx.xml`), y la observación muestra la referencia solo 20 ms adelante.
 - Con la referencia limpia el entrenamiento corre (`ppo.py --task walk`, 20 k pasos de prueba) a 14.400 pasos/s en la M5.
+- Entrenamiento `walk-clean` (10 M pasos, referencia limpia, 13,3 min en la M5). Episodio medio de `progress.csv`:
+
+  | Pasos | 0,1 M | 1 M | 3 M | 5 M | 7 M | 10 M |
+  | --- | --- | --- | --- | --- | --- | --- |
+  | `walk-clean` | 0,54 s | 0,66 s | 0,75 s | **0,93 s** | 1,02 s | 1,03 s |
+  | `walk-v2` (Juan, M2) | | | | **0,9 s** | | |
+
+  Desde el inicio del clip (`evaluate_walk.py`): sigue 0,7 s sin entrenar, 1,3 s a los 3 M y 1,0 s a los 10 M, de 11,8 s.
 
 ## Qué no funcionó
 
@@ -52,6 +60,8 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
 - El primer diagnóstico de ENT-1 en el plan decía "reproducir la referencia solo con los motores". Eso ya lo hace `evaluate_walk.py` (fila "sin política") y no prueba nada: sin red el robot se cae aunque la referencia sea buena. Corregido a reproducirla con la pelvis sostenida y medir el seguimiento de los ángulos y el apoyo de los pies.
 - La primera versión del diagnóstico marcaba ángulos "fuera de rango" que se pasaban 0,00 rad: el retargeting los deja justo en el límite. Ahora cuenta solo si se pasan más de 0,01 rad. El deslizamiento medido cada 20 ms se inflaba con el temblor; ahora se mide en ventanas de 0,3 s, como en `physics/README.md`.
 - Adelantar el objetivo de cada motor por la amortiguación (`kv/kp × velocidad`) no bajó el error (0,123 → 0,133 rad): el retraso es de inercia, no de amortiguación.
+- **La referencia limpia no aceleró el aprendizaje:** a los 5 M pasos, 0,93 s contra 0,9 s de `walk-v2`. Los dos errores de la referencia eran reales, pero no eran lo que frenaba.
+- **Por qué terminan los episodios** (40 episodios desde instantes al azar): sin entrenar, 33 por caída y 7 por alejarse del recorrido; a los 10 M, 6 por caída, 33 por alejarse del recorrido (la pelvis a más de 0,6 m de la referencia) y 1 completo. La red aprendió a no caerse, pero no da los pasos para avanzar con la referencia. El techo de ~1 s es ese corte: la referencia avanza a 0,59 m/s y se aleja 0,6 m en 1,0 s. Los 0,9 s de `walk-v2` probablemente son el mismo techo. La recompensa de los pies queda en 0,02 de 0,15: los pies no van donde la referencia pide.
 - La carrera (`correr-perfil`) no sirve como referencia por ahora: el pie "apoyado" se mueve a 2,3 m/s, casi lo mismo que la pelvis. Es la profundidad de MediaPipe, ya anotada como límite en `data/`.
 
 ## Decisiones
@@ -76,5 +86,8 @@ El detalle está en [`../plan-producto.md`](../plan-producto.md). En corto:
 - El equipo: revisar el pitch y el plan, y repartir las tareas.
 - Primero, el cambio de contrato, en un commit aparte.
 - Lo crítico: que la imitación aprenda la caminata (ENT-1), con punto de control el sábado a las 12:00.
-- ENT-1: entrenar con la referencia limpia y comparar con `walk-v2` (0,9 s por episodio a los 5 M pasos). Si sigue lento, sumar a la observación la referencia más adelante (0,1 y 0,25 s) para que la red se anticipe al retraso de los motores; cambia `obs_dim`, así que hay que decidirlo antes de SIM-1.
+- ENT-1, próximas pruebas, de la más directa a la de respaldo:
+  1. Sumar a la observación la referencia más adelante (0,1 y 0,25 s), para que la red se anticipe al retraso de 60 a 100 ms de los motores y dé el paso a tiempo. Cambia `obs_dim`, así que hay que decidirlo antes de SIM-1.
+  2. Un movimiento en el lugar (jumping jacks, brazos, baile sin desplazarse): no tiene recorrido del que alejarse, que es justo donde falla hoy. Se puede grabar con la página de `data/live` (tiene botón Grabar), pasar por `npm run retarget` y revisar con `diagnose_reference.py`.
+  3. Más pasos (30 M o más) en las dos Macs, si la curva sigue subiendo con 1 o 2.
 - El cambio en `imitate.Motion` afecta a cualquier entrenamiento de imitación nuevo: avisar a quien esté entrenando antes de shipearlo.
