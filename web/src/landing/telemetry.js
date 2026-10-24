@@ -6,7 +6,7 @@
 // MuJoCo every frame (view.sim), nothing is animated by hand.
 import * as THREE from 'three';
 
-const SIGNAL = 0xff4f1a; // --signal in landing.css
+const SIGNAL = 0xc8ff2e; // --signal in style.css
 const INK = 0xefede8; // --fg
 const GRID_M = 4.5; // the grid fades out this far from the robot
 const PULSE_EVERY_S = 3.2;
@@ -51,7 +51,7 @@ const gridMaterial = () =>
         float front = mod(uTime, ${PULSE_EVERY_S.toFixed(2)}) * ${PULSE_MPS.toFixed(2)};
         float ring = exp(-pow((d - front) / 0.05, 2.0));
         float wake = (1.0 - smoothstep(0.0, 1.2, front - d)) * step(d, front); // the grid just swept
-        // Ink, not the signal: orange is for what the physics measures (feet, center of mass, pushes).
+        // Ink, not the signal: the signal is for what the physics measures (feet, center of mass, pushes).
         float alpha = (grid * (0.2 + 0.35 * wake) + 0.45 * ring) * fade * uOpacity;
         gl_FragColor = vec4(uInk, alpha);
         #include <colorspace_fragment>

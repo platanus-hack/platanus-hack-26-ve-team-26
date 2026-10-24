@@ -1,37 +1,120 @@
-/* Tridi: dark like the landing (landing/landing.css) and the delivery (screens/delivery.css), so
-   every screen reads as one product: near-black, light text, one signal orange for what moves or
-   can be touched, a tight grotesk (Inter Tight) for words and a mono (Geist Mono) for numbers and
-   labels. --ink is the text color and --bg the page, as before, now light on dark. */
+/* Tridi's design system. Built for the people it sells to, teams that train humanoid robots: it
+   reads like a lab instrument. Cool graphite black, light text, and one electric lime signal for
+   what moves, what is measured and what can be touched (the robot's pushes, the skeleton, every
+   button); lime because it cuts through the warm street of the landing's film and is the color
+   of "live" in robotics tools. Corners are sharp (2 and 4 px) and keypoints are squares, like the
+   joints of the logo (brand.js). Words in a tight grotesk (Inter Tight), numbers and labels in a
+   mono (Geist Mono). Spacing runs on a 4 px scale (--s-1 to --s-9). */
 
 :root {
-  --paper: #eeece7;
-  --scene: #111110; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
-  --ink: #efede8;
-  --ink-2: #171715;
-  --ink-soft: #b5b2aa;
-  --muted: #8f8c84;
-  --muted-light: #8f8c84;
-  --muted-dark: #8f8c84;
-  --line: rgb(239 237 232 / 0.14);
-  --line-dark: rgb(238 236 231 / 0.16);
-  --signal: #ff4f1a;
-  --signal-ink: #ff4f1a; /* the signal as text: on the dark page it reads as is */
+  /* Color */
+  --bg: #08090b;
+  --bg-deep: #0f1112;
+  --scene: #0f1112; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
+  --ink: #f1f3ee;
+  --ink-soft: #a9ada4;
+  --muted: #7d8279;
+  --line: rgb(241 243 238 / 0.12);
+  --line-strong: rgb(241 243 238 / 0.28);
+  --surface: rgb(241 243 238 / 0.04);
+  --signal: #c8ff2e;
+  --signal-2: #9fd61c; /* the logo's shaded faces */
+  --signal-3: #6b8f0e;
+  --signal-glow: rgb(200 255 46 / 0.35);
+  --signal-soft: rgb(200 255 46 / 0.12);
+  --on-signal: #08090b; /* text on the lime */
+  --ok: #6fcf8a;
+  --error: #ff6a5a;
+
+  /* Shape: sharp, like an instrument; round only for what is literally a dot. */
+  --r-1: 2px;
+  --r-2: 4px;
+
+  /* Spacing, 4 px scale */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+  --s-9: 96px;
+
+  /* Type */
   --display: 'Inter Tight Variable', system-ui, -apple-system, sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* The app screens' names for the same palette. */
-  --bg: #0a0a09;
-  --bg-deep: #111110;
-  --surface: rgb(239 237 232 / 0.04);
+  /* The app screens' older names for the same tokens. */
+  --paper: var(--ink);
+  --ink-2: var(--bg-deep);
+  --muted-light: var(--muted);
+  --muted-dark: var(--muted);
+  --line-dark: var(--line);
+  --signal-ink: var(--signal);
   --accent: var(--signal);
-  --accent-ink: #0a0a09; /* text on the orange */
-  --accent-soft: rgb(255 79 26 / 0.15);
-  --error: #ff6a5a;
-  --radius: 4px;
+  --accent-ink: var(--on-signal);
+  --accent-soft: var(--signal-soft);
+  --radius: var(--r-2);
   --shadow: 0 24px 60px -32px rgb(0 0 0 / 0.8);
   --title: var(--display);
   --text: var(--display);
   color-scheme: dark;
+}
+
+/* ---- Brand: the mark and the wordmark (brand.js) ---- */
+
+.logo {
+  display: block;
+  width: 28px;
+  height: 28px;
+  flex: none;
+}
+
+.logo-top {
+  fill: var(--signal);
+}
+
+.logo-left {
+  fill: var(--signal-2);
+}
+
+.logo-right {
+  fill: var(--signal-3);
+}
+
+.logo-bones {
+  fill: none;
+  stroke: var(--bg);
+  stroke-width: 1.8;
+  stroke-linecap: square;
+}
+
+.logo-joint {
+  fill: var(--bg);
+}
+
+.wm {
+  font-weight: 800;
+  letter-spacing: -0.06em;
+  white-space: nowrap;
+}
+
+/* The i-dots: square lime joints instead of the font's round dots. */
+.wm-i {
+  position: relative;
+  display: inline-block;
+}
+
+.wm-i::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0.16em;
+  width: 0.19em;
+  height: 0.19em;
+  background: var(--signal);
+  transform: translateX(-50%);
 }
 
 * {
@@ -68,7 +151,7 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(255 79 26 / 0.06), transparent 60%);
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(200 255 46 / 0.05), transparent 60%);
 }
 
 #app {
@@ -90,7 +173,7 @@ body::before {
   z-index: 2;
   margin: 0;
   padding: 10px 20px;
-  border-radius: 999px;
+  border-radius: var(--r-1);
   background: var(--surface);
   color: var(--muted);
   transform: translate(-50%, -50%);
@@ -119,8 +202,8 @@ select {
   min-height: 52px; /* comfortable for a fingertip, above the 44 px accessibility minimum */
   padding: 0 22px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(239 237 232 / 0.06);
+  border-radius: var(--r-1);
+  background: var(--surface);
   color: var(--ink);
   font: 600 17px/1 var(--text);
   cursor: pointer;
@@ -154,7 +237,7 @@ select:disabled {
   align-items: center;
   min-height: 48px;
   padding: 0 18px;
-  border-radius: 999px;
+  border-radius: var(--r-1);
   background: var(--surface);
   backdrop-filter: blur(10px);
   color: var(--ink);
@@ -320,7 +403,7 @@ select:disabled {
 .track {
   width: 100%;
   height: 6px;
-  border-radius: 3px;
+  border-radius: var(--r-1);
   background: var(--line);
   overflow: hidden;
 }
@@ -346,7 +429,7 @@ select:disabled {
   bottom: 14px;
   border-color: transparent;
   background: var(--signal); /* as the landing's push button */
-  color: #0a0a09;
+  color: var(--on-signal);
   box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.7);
 }
 
@@ -361,7 +444,7 @@ select:disabled {
   left: 14px;
   margin: 0;
   padding: 6px 12px;
-  border-radius: 999px;
+  border-radius: var(--r-1);
   background: var(--surface);
   color: var(--ink);
   font-size: 14px;
@@ -485,7 +568,7 @@ select:disabled {
 .icon-btn.speed {
   width: auto;
   padding: 0 14px;
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font-variant-numeric: tabular-nums;
 }
 
@@ -500,7 +583,7 @@ select:disabled {
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-1);
 }
 
 .mode button {
@@ -655,7 +738,7 @@ select:disabled {
   width: 100%;
   min-height: 0;
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: var(--r-2);
   text-align: left;
   font-weight: 400;
   line-height: 1.35;
@@ -683,8 +766,8 @@ select:disabled {
   min-height: 52px;
   padding: 0 22px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(239 237 232 / 0.06);
+  border-radius: var(--r-1);
+  background: var(--surface);
   color: var(--ink);
   font-weight: 700;
   text-decoration: none;
@@ -794,7 +877,7 @@ select:disabled {
 .live-warning {
   margin: 0;
   padding: 8px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-2);
   background: rgb(255 170 60 / 0.12);
   color: #ffcf8a;
 }
@@ -834,7 +917,7 @@ select:disabled {
   justify-items: center;
   gap: 10px;
   padding: 14px 18px;
-  border-radius: 16px;
+  border-radius: var(--r-2);
   background: var(--surface);
 }
 
@@ -909,7 +992,7 @@ select:disabled {
 .phone-note {
   margin: 0;
   padding: 8px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-2);
   background: var(--surface);
   color: var(--ink-soft);
   font-size: 15px;
@@ -953,7 +1036,7 @@ select:disabled {
   bottom: 12px;
   margin: 0;
   padding: 12px 16px;
-  border-radius: 12px;
+  border-radius: var(--r-2);
   background: rgb(13 13 11 / 0.72);
   color: var(--paper);
   font-size: 22px;
@@ -1027,9 +1110,9 @@ select:disabled {
   justify-items: center;
   gap: 4px;
   padding: 36px 20px;
-  border: 2px dashed rgb(239 237 232 / 0.22);
-  border-radius: 20px;
-  background: rgb(239 237 232 / 0.03);
+  border: 2px dashed rgb(241 243 238 / 0.22);
+  border-radius: var(--r-2);
+  background: rgb(241 243 238 / 0.03);
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
@@ -1043,7 +1126,7 @@ select:disabled {
 
 .dropzone strong {
   padding: 14px 28px;
-  border-radius: 999px;
+  border-radius: var(--r-1);
   background: var(--accent);
   color: var(--accent-ink);
   font-size: 19px;
@@ -1060,7 +1143,7 @@ select:disabled {
 
 .track.big {
   height: 10px;
-  border-radius: 5px;
+  border-radius: var(--r-1);
 }
 
 .bar {
@@ -1113,7 +1196,7 @@ select:disabled {
 
 .stages li.current::before {
   background: var(--accent);
-  color: #0a0a09;
+  color: var(--on-signal);
   animation: pulse 1.4s ease-in-out infinite;
 }
 
@@ -1140,7 +1223,7 @@ select:disabled {
 
 .frame {
   position: relative;
-  border-radius: 14px;
+  border-radius: var(--r-2);
   overflow: hidden;
 }
 
@@ -1303,8 +1386,8 @@ select:disabled {
 /* Native dropdown lists follow the dark page. */
 select option,
 select optgroup {
-  background: #111110;
-  color: #efede8;
+  background: #0f1112;
+  color: #f1f3ee;
 }
 
 /* Page headers as the landing's captions: uppercase titles, a quiet back link. */

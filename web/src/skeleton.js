@@ -34,7 +34,7 @@ const ESTIMATED = 0.3;
 const FADED = 0.35;
 const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next to a limb
 const JOINT_RADIUS = 0.03;
-const HUMAN_COLOR = 0xff4f1a; // the brand's signal: the human is orange, the robot keeps its own colors
+const HUMAN_COLOR = 0xc8ff2e; // the brand's signal: the human is lime, the robot keeps its own colors
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 // The camera follows the hips, so a walk only shows as the floor sliding under the skeleton and
 // as the path it leaves behind. The grid is brighter than SCENE_THEME's (where it is a backdrop
@@ -47,7 +47,7 @@ const TRAIL_OPACITY = 0.7;
 const TRAIL_WIDTH_M = 0.04; // a ribbon: a one-pixel line vanished in the landing's frame (~75 px per meter)
 
 /** Dark stage colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
-export const SCENE_THEME = { background: 0x111110, ground: 0x181816, gridMajor: 0x3a3833, gridMinor: 0x242320 };
+export const SCENE_THEME = { background: 0x0f1112, ground: 0x15181a, gridMajor: 0x353b3e, gridMinor: 0x202527 }; // --scene in style.css
 
 export class SkeletonView {
   constructor(canvas) {

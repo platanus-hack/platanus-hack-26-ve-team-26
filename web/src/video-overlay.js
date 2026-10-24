@@ -1,5 +1,5 @@
 // The person's pane, for a clip whose source video is in the repo: the recording the robot learned
-// from, with its skeleton drawn over it in orange (the 2D points MediaPipe found in each frame,
+// from, with its skeleton drawn over it in the signal lime (the 2D points MediaPipe found in each frame,
 // scripts/make-video-overlay.py). Clips without a video keep the 3D skeleton (skeleton.js).
 const BASE = import.meta.env.BASE_URL;
 
@@ -14,7 +14,7 @@ const BONES = [
   [23, 25], [25, 27], [27, 29], [29, 31], [27, 31], [24, 26], [26, 28], [28, 30], [30, 32], [28, 32],
 ];
 const MIN_VISIBILITY = 0.5; // as data/live's drawSkeleton and MediaPipe's own drawing
-const ORANGE = '#ff4f1a'; // the brand's signal color, as the 3D skeleton
+const SIGNAL = '#c8ff2e'; // the brand's signal color, as the 3D skeleton
 
 /**
  * @param pane  the person's pane; a <video> and a <canvas> are added to it
@@ -70,7 +70,7 @@ export function createVideoOverlay(pane) {
     const at = (p) => frame[index.get(p)];
     const seen = (p) => at(p) && at(p)[2] >= MIN_VISIBILITY;
     const xy = (p) => [r.x + at(p)[0] * r.w, r.y + at(p)[1] * r.h];
-    ctx.strokeStyle = ORANGE;
+    ctx.strokeStyle = SIGNAL;
     ctx.lineWidth = Math.max(2.5, r.h / 160);
     ctx.lineCap = 'round';
     for (const [a, b] of BONES) {

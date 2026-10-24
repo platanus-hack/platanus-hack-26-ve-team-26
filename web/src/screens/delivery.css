@@ -1,11 +1,11 @@
 /* La entrega (screens/delivery.js): one delivery as a control room. Dark like the landing, one
-   signal orange for what moves or can be touched (the data, the playhead, the selection), Geist
+   signal lime for what moves or can be touched (the data, the playhead, the selection), Geist
    Mono for every number and label. Everything is scoped to .dl; html.is-delivery darkens the page
    behind it and hides the app screens' dot field. */
 
 html.is-delivery,
 html.is-delivery body {
-  background: #0a0a09;
+  background: #08090b;
 }
 
 html.is-delivery #scene,
@@ -14,15 +14,15 @@ html.is-delivery body::before {
 }
 
 .dl {
-  --bg: #0a0a09;
-  --panel: #111110; /* the 3D scene's background (skeleton.js SCENE_THEME): the canvas blends in */
+  --bg: #08090b;
+  --panel: #0f1112; /* the 3D scene's background (skeleton.js SCENE_THEME): the canvas blends in */
   --bar: #000;
-  --fg: #efede8;
-  --fg-2: #b5b2aa;
-  --dim: #8f8c84;
-  --line: rgb(239 237 232 / 0.14);
-  --hair: rgb(239 237 232 / 0.07);
-  --signal: #ff4f1a;
+  --fg: #f1f3ee;
+  --fg-2: #a9ada4;
+  --dim: #7d8279;
+  --line: rgb(241 243 238 / 0.14);
+  --hair: rgb(241 243 238 / 0.07);
+  --signal: #c8ff2e;
   --gutter: 16px;
   --gap: 12px;
   min-height: 100vh;
@@ -105,7 +105,7 @@ html.is-delivery body::before {
   flex: none;
   padding: 9px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font: 500 11px/1 var(--mono);
   text-transform: uppercase;
   text-decoration: none;
@@ -189,7 +189,7 @@ html.is-delivery body::before {
   flex: none;
   padding: 9px 14px;
   border: 1px solid var(--signal);
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font: 500 12px/1 var(--display);
   color: var(--signal);
 }
@@ -228,7 +228,7 @@ html.is-delivery body::before {
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-1);
   background: var(--panel);
 }
 
@@ -314,7 +314,7 @@ html.is-delivery body::before {
 
 .dl-hud > span {
   padding: 6px 8px;
-  border-radius: 3px;
+  border-radius: var(--r-1);
   background: rgb(0 0 0 / 0.55);
 }
 
@@ -465,7 +465,7 @@ html.is-delivery body::before {
   flex: none;
   overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-1);
 }
 
 .dl-speeds button,
@@ -484,7 +484,7 @@ html.is-delivery body::before {
 
 .dl .dl-table-toggle {
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-1);
 }
 
 .dl-speeds button:hover,
@@ -496,7 +496,7 @@ html.is-delivery body::before {
 .dl-speeds [aria-pressed='true'],
 .dl-seg [aria-pressed='true'],
 .dl .dl-table-toggle[aria-pressed='true'] {
-  background: rgb(255 79 26 / 0.16);
+  background: rgb(200 255 46 / 0.16);
   color: var(--fg);
 }
 
@@ -575,8 +575,8 @@ html.is-delivery body::before {
   position: relative;
   height: 40px;
   padding: 6px 5px;
-  border-radius: 3px;
-  background: rgb(239 237 232 / 0.045);
+  border-radius: var(--r-1);
+  background: rgb(241 243 238 / 0.045);
   text-align: left;
   font: 500 11px/1 var(--mono);
   font-variant-numeric: tabular-nums;
@@ -606,12 +606,12 @@ html.is-delivery body::before {
 }
 
 .dl .dl-cell:hover {
-  background: rgb(239 237 232 / 0.1);
+  background: rgb(241 243 238 / 0.1);
   color: var(--fg);
 }
 
 .dl .dl-cell.on {
-  background: rgb(255 79 26 / 0.16);
+  background: rgb(200 255 46 / 0.16);
   color: var(--fg);
 }
 
@@ -624,7 +624,7 @@ html.is-delivery body::before {
   position: absolute;
   inset: 0;
   border: 1px solid var(--signal);
-  border-radius: 3px;
+  border-radius: var(--r-1);
   pointer-events: none;
 }
 
@@ -761,8 +761,8 @@ html.is-delivery body::before {
   position: absolute;
   top: 4px;
   height: 4px;
-  border-radius: 2px;
-  background: rgb(239 237 232 / 0.3);
+  border-radius: var(--r-1);
+  background: rgb(241 243 238 / 0.3);
 }
 
 .dl-range b {
@@ -1058,7 +1058,7 @@ html.is-delivery body::before {
   justify-self: end;
   padding: 8px 14px;
   border: 1px solid var(--signal);
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font: 500 12px/1 var(--display);
   text-decoration: none;
   color: var(--signal);
@@ -1109,8 +1109,8 @@ html.is-delivery body::before {
 
 .dl code {
   padding: 1px 4px;
-  border-radius: 3px;
-  background: rgb(239 237 232 / 0.06);
+  border-radius: var(--r-1);
+  background: rgb(241 243 238 / 0.06);
   font: 400 12px var(--mono);
   color: var(--fg);
 }
@@ -1120,7 +1120,7 @@ html.is-delivery body::before {
   padding: 14px;
   overflow: auto;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-1);
   background: #000;
   font: 400 12px/1.6 var(--mono);
   color: var(--fg-2);
@@ -1142,7 +1142,7 @@ html.is-delivery body::before {
   max-width: 300px;
   padding: 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: var(--r-1);
   background: #000;
   box-shadow: 0 12px 30px -12px rgb(0 0 0 / 0.8);
   font: 400 11px/1.5 var(--mono);

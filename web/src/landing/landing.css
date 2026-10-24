@@ -1,11 +1,10 @@
 /* The landing (screens/home.js), told like a film: the real G1 fills the screen behind the page
-   (.film) and every chapter is a shot over it, with a caption in the corner. Dark, one signal
-   orange for what moves or can be touched, uppercase captions, mono for numbers.
-   The palette is scoped to .landing; the app screens keep the light tokens of style.css. */
+   (.film) and every chapter is a shot over it, with a caption in the corner. Colors, corners and
+   spacing come from the design system in style.css; .landing only gives them its short names. */
 
 html.is-landing,
 html.is-landing body {
-  background: #0a0a09;
+  background: var(--bg);
 }
 
 html.is-landing #scene,
@@ -21,13 +20,10 @@ html.is-landing.lenis body {
 }
 
 .landing {
-  --bg: #0a0a09;
-  --fg: #efede8;
-  --fg-2: #b5b2aa;
-  --dim: #77746d;
-  --line: rgb(239 237 232 / 0.14);
-  --signal: #ff4f1a;
-  --gutter: clamp(16px, 3.4vw, 48px);
+  --fg: var(--ink);
+  --fg-2: var(--ink-soft);
+  --dim: var(--muted);
+  --gutter: clamp(var(--s-4), 3.4vw, var(--s-7));
   position: relative;
   color: var(--fg);
   font: 400 17px/1.5 var(--display);
@@ -37,7 +33,7 @@ html.is-landing.lenis body {
 .landing h2 {
   margin: 0;
   font-family: var(--display);
-  font-weight: 500;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: -0.025em;
   line-height: 0.98;
@@ -85,7 +81,7 @@ html.is-landing.lenis body {
   position: fixed;
   inset: 0;
   z-index: 0;
-  background: rgb(10 10 9 / var(--shade));
+  background: rgb(8 9 11 / var(--shade));
   pointer-events: none;
 }
 
@@ -101,9 +97,9 @@ html.is-landing.lenis body {
   pointer-events: none;
   background:
     /* Darker since the landing's street is lit and full of shops: the words sit over a busy picture. */
-    linear-gradient(90deg, rgb(10 10 9 / calc(0.78 * var(--wash-left))), rgb(10 10 9 / calc(0.42 * var(--wash-left))) 34%, transparent 56%),
-    linear-gradient(270deg, rgb(10 10 9 / calc(0.78 * var(--wash-right))), rgb(10 10 9 / calc(0.42 * var(--wash-right))) 34%, transparent 56%),
-    linear-gradient(transparent 30%, rgb(10 10 9 / calc(0.82 * var(--wash-floor))) 66%); /* phones: the hero's title starts at a third of the screen */
+    linear-gradient(90deg, rgb(8 9 11 / calc(0.78 * var(--wash-left))), rgb(8 9 11 / calc(0.42 * var(--wash-left))) 34%, transparent 56%),
+    linear-gradient(270deg, rgb(8 9 11 / calc(0.78 * var(--wash-right))), rgb(8 9 11 / calc(0.42 * var(--wash-right))) 34%, transparent 56%),
+    linear-gradient(transparent 30%, rgb(8 9 11 / calc(0.82 * var(--wash-floor))) 66%); /* phones: the hero's title starts at a third of the screen */
 }
 
 /* The film's frame: viewfinder corners and the simulation's own readout (home.js updateReadout),
@@ -126,7 +122,7 @@ html.is-landing.lenis body {
   position: absolute;
   width: 18px;
   height: 18px;
-  border: 0 solid rgb(239 237 232 / 0.4);
+  border: 0 solid rgb(241 243 238 / 0.4);
 }
 
 .corner.tl {
@@ -161,8 +157,8 @@ html.is-landing.lenis body {
   gap: 16px;
   padding: 8px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(10 10 9 / 0.55);
+  border-radius: var(--r-1);
+  background: rgb(8 9 11 / 0.55);
   font: 500 11px/1 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -218,16 +214,16 @@ html.is-landing.lenis body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: var(--s-3);
   min-height: 48px;
-  padding: 0 20px;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: rgb(10 10 9 / 0.35);
+  padding: 0 var(--s-5);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  background: rgb(8 9 11 / 0.35);
   backdrop-filter: blur(10px);
   color: var(--fg);
-  font: 500 14px/1 var(--display);
-  letter-spacing: 0.02em;
+  font: 600 13px/1 var(--display);
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   text-decoration: none;
   cursor: pointer;
@@ -239,23 +235,21 @@ html.is-landing.lenis body {
   box-shadow: none;
 }
 
-.btn-light {
+.btn-small {
   min-height: 38px;
-  border-color: var(--fg);
-  background: var(--fg);
-  color: var(--bg);
+  padding: 0 var(--s-4);
   font-size: 12px;
 }
 
 .btn-signal {
   border-color: var(--signal);
   background: var(--signal);
-  color: #0a0a09;
+  color: var(--on-signal);
 }
 
 .btn-signal:hover:not(:disabled) {
   border-color: var(--signal);
-  box-shadow: 0 0 44px -8px rgb(255 79 26 / 0.8);
+  box-shadow: 0 0 40px -6px var(--signal-glow);
 }
 
 .btn:disabled {
@@ -265,8 +259,8 @@ html.is-landing.lenis body {
 
 .btn kbd {
   padding: 3px 6px;
-  border: 1px solid rgb(10 10 9 / 0.35);
-  border-radius: 4px;
+  border: 1px solid rgb(8 9 11 / 0.35);
+  border-radius: var(--r-1);
   font: 500 10px/1 var(--mono);
 }
 
@@ -277,11 +271,11 @@ html.is-landing.lenis body {
 @keyframes kick {
   20% {
     transform: scale(0.94);
-    box-shadow: 0 0 0 0 rgb(255 79 26 / 0.7);
+    box-shadow: 0 0 0 0 rgb(200 255 46 / 0.7);
   }
   100% {
     transform: none;
-    box-shadow: 0 0 0 28px rgb(255 79 26 / 0);
+    box-shadow: 0 0 0 28px rgb(200 255 46 / 0);
   }
 }
 
@@ -289,18 +283,18 @@ html.is-landing.lenis body {
 
 .topbar {
   position: fixed;
-  inset: 12px var(--gutter) auto;
+  inset: var(--s-3) var(--gutter) auto;
   z-index: 20;
   display: flex;
   align-items: center;
-  gap: 32px;
-  padding: 8px 8px 8px 18px;
+  gap: var(--s-6);
+  padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: var(--r-2);
   /* Detached from the edges and always on its own dark glass: over the hero the street behind it
      is bright (shop windows, the sky), and the words and the button need the same ground there
      as everywhere else. */
-  background: rgb(10 10 9 / 0.62);
+  background: rgb(8 9 11 / 0.62);
   backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: 0 16px 40px -20px rgb(0 0 0 / 0.8);
   transition: background-color 0.3s;
@@ -309,44 +303,23 @@ html.is-landing.lenis body {
 /* Past the hero the chapters' words scroll under the bar (home.js): a denser ground keeps the
    12 px nav readable even over a full white glyph before the blur. */
 .topbar.solid {
-  background: rgb(10 10 9 / 0.82);
+  background: rgb(8 9 11 / 0.82);
 }
 
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font: 700 21px/1 var(--display);
-  letter-spacing: -0.045em;
+  gap: var(--s-2);
+  font: 800 24px/1 var(--display);
   color: var(--fg);
   text-decoration: none;
 }
 
-.wordmark svg {
-  width: 24px;
-  height: 24px;
-}
-
-.wordmark rect {
-  fill: var(--signal);
-}
-
-.wordmark circle {
-  fill: #0a0a09;
-}
-
-.wordmark path {
-  fill: none;
-  stroke: #0a0a09;
-  stroke-width: 2.2;
-  stroke-linecap: square;
-}
-
 .topnav {
   display: flex;
-  gap: 32px;
+  gap: var(--s-6);
   margin-left: auto;
-  font: 500 12px/1 var(--display);
+  font: 500 12px/1 var(--mono);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -434,8 +407,8 @@ html.is-landing.lenis body {
   left: var(--gutter);
   padding: 8px 14px 8px 12px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(10 10 9 / 0.55);
+  border-radius: var(--r-1);
+  background: rgb(8 9 11 / 0.55);
   font: 500 11px/1 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -499,8 +472,8 @@ html.is-landing.lenis body {
   gap: 10px;
   padding: 8px 12px 8px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(10 10 9 / 0.55);
+  border-radius: var(--r-1);
+  background: rgb(8 9 11 / 0.55);
   font: 500 12px/1 var(--mono);
   letter-spacing: 0.02em;
   text-transform: uppercase;
@@ -538,8 +511,8 @@ html.is-landing.lenis body {
   gap: 10px;
   padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgb(10 10 9 / 0.62);
+  border-radius: var(--r-1);
+  background: rgb(8 9 11 / 0.62);
   backdrop-filter: blur(10px);
   color: var(--fg);
 }
@@ -615,7 +588,7 @@ html.is-landing.lenis body {
 .frame {
   position: relative;
   overflow: hidden;
-  border-radius: 10px;
+  border-radius: var(--r-2);
   background: #000;
 }
 
@@ -678,11 +651,13 @@ html.is-landing.lenis body {
 
 /* Gym and Policy: their words sit on a dark card, since the street behind them is busy. No
    backdrop blur: one this size filters the whole film under it again every frame. */
+/* A lime edge on top marks a live readout, as on an instrument. */
 .panel {
-  padding: 26px 28px 24px;
+  padding: var(--s-5) var(--s-6);
   border: 1px solid var(--line);
-  border-radius: 16px;
-  background: rgb(10 10 9 / 0.76);
+  border-top: 2px solid var(--signal);
+  border-radius: var(--r-2);
+  background: rgb(8 9 11 / 0.76);
   box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.8);
 }
 
@@ -696,16 +671,21 @@ html.is-landing.lenis body {
   width: min(36vw, 500px);
 }
 
-.gym-text {
-  margin-top: 12px !important;
-  font-size: 15px;
-}
 
 .gym-hint {
-  margin-top: 4px !important;
+  margin-top: var(--s-2) !important;
   font: 500 10px/1.4 var(--mono);
   text-transform: uppercase;
   color: var(--dim) !important;
+}
+
+.gym-hint kbd {
+  margin-right: var(--s-1);
+  padding: 2px 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-1);
+  font: inherit;
+  color: var(--fg);
 }
 
 /* The steps: a big count of the stage on screen, what a step is, the real 0 to 40 M scale with
@@ -738,12 +718,6 @@ html.is-landing.lenis body {
   color: var(--fg-2);
 }
 
-.steps-explain {
-  margin: 0 !important;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--fg-2) !important;
-}
 
 .steps-axis {
   display: grid;
@@ -762,7 +736,7 @@ html.is-landing.lenis body {
   right: 0;
   top: 4px;
   height: 2px;
-  border-radius: 2px;
+  border-radius: var(--r-1);
   background: var(--line);
 }
 
@@ -770,7 +744,7 @@ html.is-landing.lenis body {
   position: absolute;
   inset: 0 auto 0 0;
   width: 0;
-  border-radius: 2px;
+  border-radius: var(--r-1);
   background: var(--signal);
   transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -782,9 +756,8 @@ html.is-landing.lenis body {
   width: 10px;
   height: 10px;
   border: 2px solid var(--fg-2);
-  border-radius: 50%;
-  background: #0a0a09;
-  transform: translateX(-50%);
+  background: var(--bg);
+  transform: translateX(-50%) rotate(45deg); /* a keypoint, like the logo's joints */
   transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
@@ -795,7 +768,7 @@ html.is-landing.lenis body {
 }
 
 .axis-tick.on {
-  box-shadow: 0 0 0 4px rgb(255 79 26 / 0.25);
+  box-shadow: 0 0 0 4px rgb(200 255 46 / 0.25);
 }
 
 /* The three checkpoints as a segmented control. */
@@ -805,8 +778,8 @@ html.is-landing.lenis body {
   gap: 4px;
   padding: 4px;
   border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgb(239 237 232 / 0.03);
+  border-radius: var(--r-2);
+  background: rgb(241 243 238 / 0.03);
 }
 
 .axis-stop {
@@ -817,7 +790,7 @@ html.is-landing.lenis body {
   min-height: 0;
   padding: 10px 8px;
   border: 0;
-  border-radius: 8px;
+  border-radius: var(--r-2);
   background: none;
   color: var(--fg-2);
   text-align: left;
@@ -826,13 +799,13 @@ html.is-landing.lenis body {
 }
 
 .axis-stop:hover {
-  background: rgb(239 237 232 / 0.07);
+  background: rgb(241 243 238 / 0.07);
   color: var(--fg);
 }
 
 .axis-stop.on {
   background: var(--signal);
-  color: #0a0a09;
+  color: var(--bg);
 }
 
 .axis-label {
@@ -854,14 +827,9 @@ html.is-landing.lenis body {
   padding: 12px 14px;
   border-left: 3px solid var(--signal);
   border-radius: 0 8px 8px 0;
-  background: rgb(239 237 232 / 0.05);
+  background: rgb(241 243 238 / 0.05);
 }
 
-.stage-verdict {
-  font: 500 clamp(19px, 1.6vw, 24px)/1.1 var(--display);
-  letter-spacing: -0.02em;
-  color: var(--signal);
-}
 
 .stage-text {
   font-size: 15px;
@@ -878,7 +846,7 @@ html.is-landing.lenis body {
 .stage-numbers span {
   padding: 6px 10px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font: 500 11px/1 var(--mono);
   text-transform: uppercase;
   color: var(--fg-2);
@@ -898,50 +866,11 @@ html.is-landing.lenis body {
   color: var(--signal) !important;
 }
 
-.chart-fig {
-  display: grid;
-  gap: 6px;
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line);
-}
 
-.chart-fig figcaption {
-  font: 500 10px/1.4 var(--mono);
-  text-transform: uppercase;
-  color: var(--dim);
-}
 
-.chart {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 110px;
-}
 
-.chart .grid line {
-  stroke: var(--line);
-}
 
-.chart text {
-  fill: var(--dim);
-  font: 500 9px var(--mono);
-}
 
-.chart .line {
-  fill: none;
-  stroke: var(--signal);
-  stroke-width: 1.6;
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-}
-
-/* A laptop screen (900 px tall and less) has no room for the log under the meter. */
-@media (max-height: 940px) {
-  .gym .chart-fig {
-    display: none;
-  }
-}
 
 /* Policy: the whole robot the network moves, the numbers beside it */
 
@@ -999,12 +928,6 @@ html.is-landing.lenis body {
   margin: 0 auto;
 }
 
-.lede {
-  max-width: 30em;
-  margin-bottom: 28px !important;
-  font-size: clamp(18px, 1.6vw, 22px);
-  color: var(--fg-2);
-}
 
 .manifesto {
   font-size: clamp(44px, 7vw, 116px) !important;
@@ -1086,7 +1009,6 @@ html.is-landing.lenis body {
   height: var(--dot);
   margin-bottom: 14px;
   border: 2px solid var(--fg-2);
-  border-radius: 50%;
   background: var(--scene);
 }
 
@@ -1102,10 +1024,10 @@ html.is-landing.lenis body {
 
 @keyframes milestone {
   0% {
-    box-shadow: 0 0 0 0 rgb(255 79 26 / 0.6);
+    box-shadow: 0 0 0 0 rgb(200 255 46 / 0.6);
   }
   100% {
-    box-shadow: 0 0 0 14px rgb(255 79 26 / 0);
+    box-shadow: 0 0 0 14px rgb(200 255 46 / 0);
   }
 }
 
@@ -1136,24 +1058,8 @@ html.is-landing.lenis body {
   color: var(--dim);
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
 
-.next .chips {
-  justify-content: flex-end;
-}
 
-.chips em {
-  padding: 4px 10px;
-  border: 1px solid var(--line-dark);
-  border-radius: 999px;
-  font: 500 12px/1.2 var(--display);
-  font-style: normal;
-  color: var(--fg-2);
-}
 
 
 .tries {
@@ -1167,13 +1073,13 @@ html.is-landing.lenis body {
    they read as different and clickable. */
 .try {
   display: grid;
-  grid-template-rows: auto auto 1fr auto auto;
-  gap: 10px;
-  min-height: 250px;
-  padding: 24px;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--s-4);
+  min-height: 200px;
+  padding: var(--s-5);
   border: 1px solid var(--line-dark);
-  border-radius: 12px;
-  background: rgb(238 236 231 / 0.04);
+  border-radius: var(--r-2);
+  background: rgb(241 243 238 / 0.04);
   color: var(--fg);
   text-decoration: none;
   transition: transform 0.25s ease, border-color 0.25s, background 0.25s;
@@ -1183,7 +1089,7 @@ html.is-landing.lenis body {
 .try:focus-visible {
   transform: translateY(-4px);
   border-color: var(--signal);
-  background: rgb(255 79 26 / 0.08);
+  background: rgb(200 255 46 / 0.08);
 }
 
 .try-icon {
@@ -1197,28 +1103,19 @@ html.is-landing.lenis body {
   stroke-linejoin: round;
 }
 
-.try-kind {
-  font: 500 11px/1 var(--mono);
-  text-transform: uppercase;
-  color: var(--dim);
-}
 
 .try b {
   font: 500 clamp(20px, 1.8vw, 26px)/1.1 var(--display);
   letter-spacing: -0.02em;
 }
 
-.try-detail {
-  font-size: 14px;
-  color: var(--fg-2);
-}
 
 .try-go {
   justify-self: start;
   margin-top: 6px;
   padding: 10px 16px;
   border: 1px solid var(--signal);
-  border-radius: 999px;
+  border-radius: var(--r-1);
   font: 500 14px/1 var(--display);
   color: var(--signal);
   transition: background 0.25s, color 0.25s;
@@ -1227,7 +1124,7 @@ html.is-landing.lenis body {
 .try:hover .try-go,
 .try:focus-visible .try-go {
   background: var(--signal);
-  color: var(--ink);
+  color: var(--on-signal);
 }
 
 .try.unavailable {
@@ -1238,11 +1135,6 @@ html.is-landing.lenis body {
   border-color: var(--line-dark);
 }
 
-.try.unavailable .try-go {
-  border-color: var(--line-dark);
-  background: none;
-  color: var(--dim);
-}
 
 .footer {
   display: grid;
@@ -1328,15 +1220,13 @@ html.is-landing.lenis body {
     bottom: 120px;
   }
 
-  /* Gym on a phone: only the stage on screen, low, under the robot; the chart stays for wide screens. */
+  /* Gym on a phone: only the stage on screen, low, under the robot. */
   .gym-caption {
     top: auto;
     bottom: 24px;
     transform: none;
   }
 
-  .gym .chart-fig,
-  .steps-explain,
   .gym-caption h2,
   .gym-hint {
     display: none;
@@ -1396,8 +1286,6 @@ html.is-landing.lenis body {
     transform: none;
   }
 
-  .gym-text,
-  .chart-fig,
   .policy-note {
     display: none;
   }
@@ -1445,10 +1333,6 @@ html.is-landing.lenis body {
     left: 0;
     top: 0;
     margin: 0;
-  }
-
-  .next .chips {
-    justify-content: flex-start;
   }
 }
 

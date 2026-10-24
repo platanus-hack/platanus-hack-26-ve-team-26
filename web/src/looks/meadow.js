@@ -115,7 +115,7 @@ function flag(uniforms) {
   pole.castShadow = true;
   const cloth = new THREE.PlaneGeometry(1.2, 0.75, 24, 8);
   cloth.translate(0.6, 0, 0);
-  const material = new THREE.MeshStandardMaterial({ color: 0xff4f1a, roughness: 0.7, side: THREE.DoubleSide });
+  const material = new THREE.MeshStandardMaterial({ color: 0xc8ff2e, roughness: 0.7, side: THREE.DoubleSide });
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, uniforms);
     shader.vertexShader = shader.vertexShader
