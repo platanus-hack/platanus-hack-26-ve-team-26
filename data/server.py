@@ -2,8 +2,8 @@
 
     uv run --project data python -m data.server [--port 8000]
 
-The API is in docs/contrato.md ("API del servidor de video"). Jobs live in memory: a restart
-forgets them (the uploaded files and clips stay on disk).
+The API is in docs/contrato.md ("API del servidor de video"). Only PoseClips are kept; videos are
+deleted once processed. Jobs live in memory: a restart forgets them (the clips stay on disk).
 """
 
 from __future__ import annotations
@@ -15,6 +15,7 @@ import queue
 import re
 import shutil
 import threading
+import time
 import uuid
 import zipfile
 from dataclasses import dataclass, field
@@ -36,9 +37,20 @@ DATA_DIR = Path(os.environ.get("TRIDI_DATA_DIR", Path(__file__).parent / "server
 # video is ~128 requests instead of thousands.
 CHUNK_SIZE = 8 * 1024 * 1024
 
-# The server is reachable from the internet through a tunnel; 2 GB per upload covers a few minutes
-# of 4K phone video and keeps one upload from filling the disk. Override with TRIDI_MAX_UPLOAD_MB.
-MAX_UPLOAD = int(os.environ.get("TRIDI_MAX_UPLOAD_MB", 2048)) * 1024 * 1024
+# The server is reachable from the internet and runs on a laptop during a live demo. 60 MB is 30 s
+# of 1080p phone video (~16 Mbit/s), enough for a walk or a run, and no visitor can fill the disk.
+# Override with TRIDI_MAX_UPLOAD_MB.
+MAX_UPLOAD = int(os.environ.get("TRIDI_MAX_UPLOAD_MB", 60)) * 1024 * 1024
+
+# 30 s per video: a few gait cycles are all imitation needs, and it caps processing at ~2 min.
+MAX_DURATION_S = float(os.environ.get("TRIDI_MAX_DURATION_S", 30))
+
+# Only PoseClips are kept: they are the training data. A video stays 10 minutes after it is done,
+# the time to pick another person in it (that re-runs the 3D on the same video), then it is deleted.
+# Failed or cancelled videos go at once, and an upload nobody finishes goes after an hour.
+KEEP_VIDEO_S = 10 * 60
+UPLOAD_TTL_S = 60 * 60
+JANITOR_EVERY_S = 30
 
 # Browsers on these origins may call the API: the deployed web and the Vite dev servers.
 # Override with TRIDI_CORS_ORIGINS (comma separated).
@@ -57,6 +69,7 @@ class Upload:
     size: int
     total_chunks: int
     received: set[int] = field(default_factory=set)
+    touched: float = field(default_factory=time.time)  # last chunk, for abandoned uploads
 
     @property
     def dir(self) -> Path:
@@ -77,6 +90,14 @@ class Video:
     error: str | None = None
     tracking: Tracking | None = None  # kept so a new subject does not track again
     click: tuple[float, float] | None = None
+    done_at: float | None = None
+    deleted: bool = False  # the video file is gone; its clip stays
+
+    def delete(self) -> None:
+        self.path.unlink(missing_ok=True)
+        self.path.with_suffix(".first.jpg").unlink(missing_ok=True)
+        self.tracking = None
+        self.deleted = True
 
     def public(self) -> dict:
         return {
@@ -97,6 +118,7 @@ class Job:
     id: str
     videos: list[Video]
     state: str = "queued"  # queued | running | done | failed
+    cancelled: bool = False
 
     @property
     def dir(self) -> Path:
@@ -127,6 +149,11 @@ def _process_video(job: Job, video: Video) -> None:
         video.progress = i / total if total > 0 else 0.0
 
     if video.tracking is None:
+        cap = cv2.VideoCapture(str(video.path))
+        frames, fps = cap.get(cv2.CAP_PROP_FRAME_COUNT), cap.get(cv2.CAP_PROP_FPS) or 30.0
+        cap.release()
+        if frames / fps > MAX_DURATION_S:
+            raise RuntimeError(f"el video dura {frames / fps:.0f} s y el máximo es {MAX_DURATION_S:.0f} s: recórtalo")
         video.stage, video.progress = "tracking", 0.0
         video.tracking = track_people(video.path, progress)
         tr = video.tracking
@@ -155,19 +182,46 @@ def _process_video(job: Job, video: Video) -> None:
 def _worker() -> None:
     while True:
         job_id, only = work.get()
-        job = jobs[job_id]
         with lock:
-            pending.remove(job_id)
+            if job_id in pending:
+                pending.remove(job_id)
+            job = jobs.get(job_id)
+        if job is None or job.cancelled:
+            continue
         job.state = "running"
         targets = [job.videos[only]] if only is not None else job.videos
         for video in targets:
+            if job.cancelled or video.deleted:
+                break
             video.error = None
             try:
                 _process_video(job, video)
+                video.done_at = time.time()
             except Exception as e:  # one broken video must not stop the others
                 video.stage = "failed"
                 video.error = str(e) if isinstance(e, RuntimeError) else f"error inesperado: {e}"
+                video.delete()
+            if job.cancelled:  # cancelled while this video ran
+                video.delete()
         job.state = "done" if any(v.stage == "done" for v in job.videos) else "failed"
+
+
+def _janitor() -> None:
+    while True:
+        time.sleep(JANITOR_EVERY_S)
+        sweep(time.time())
+
+
+def sweep(now: float) -> None:
+    """Deletes what is no longer needed: done videos after KEEP_VIDEO_S, abandoned uploads."""
+    for job in list(jobs.values()):
+        for v in job.videos:
+            if v.done_at and not v.deleted and v.stage == "done" and now - v.done_at > KEEP_VIDEO_S:
+                v.delete()
+    for up in list(uploads.values()):
+        if now - up.touched > UPLOAD_TTL_S:
+            shutil.rmtree(up.dir, ignore_errors=True)
+            uploads.pop(up.id, None)
 
 
 def _enqueue(job: Job, only: int | None = None) -> None:
@@ -257,7 +311,16 @@ async def put_chunk(upload_id: str, index: int, request: Request) -> dict:
         raise HTTPException(400, f"el pedazo {index} llegó con {len(data)} bytes de {expected}")
     (up.dir / f"{index:06d}.part").write_bytes(data)
     up.received.add(index)
+    up.touched = time.time()
     return {"received": sorted(up.received), "total_chunks": up.total_chunks}
+
+
+@app.delete("/uploads/{upload_id}", status_code=204)
+def cancel_upload(upload_id: str) -> Response:
+    up: Upload = _get(uploads, upload_id, "la subida")
+    shutil.rmtree(up.dir, ignore_errors=True)
+    del uploads[up.id]
+    return Response(status_code=204)
 
 
 @app.get("/uploads/{upload_id}")
@@ -299,6 +362,20 @@ def get_job(job_id: str) -> dict:
     return {"job_id": job.id, "state": job.state, "position": position, "videos": [v.public() for v in job.videos]}
 
 
+@app.delete("/jobs/{job_id}", status_code=204)
+def cancel_job(job_id: str) -> Response:
+    job: Job = _get(jobs, job_id, "el trabajo")
+    job.cancelled = True
+    with lock:
+        if job_id in pending:
+            pending.remove(job_id)
+        del jobs[job_id]
+    for v in job.videos:
+        if v.stage not in ("tracking", "pose3d"):  # the one running is deleted by the worker when it stops
+            v.delete()
+    return Response(status_code=204)
+
+
 def _video(job_id: str, n: int) -> tuple[Job, Video]:
     job: Job = _get(jobs, job_id, "el trabajo")
     if not 0 <= n < len(job.videos):
@@ -309,6 +386,8 @@ def _video(job_id: str, n: int) -> tuple[Job, Video]:
 @app.get("/jobs/{job_id}/videos/{n}/first-frame.jpg")
 def first_frame(job_id: str, n: int) -> FileResponse:
     _, video = _video(job_id, n)
+    if video.deleted:
+        raise HTTPException(410, "el video ya se borró: solo se guardan los clips")
     path = video.path.with_suffix(".first.jpg")
     if not path.exists():
         raise HTTPException(409, "el primer cuadro está listo cuando termina la etapa tracking")
@@ -318,6 +397,8 @@ def first_frame(job_id: str, n: int) -> FileResponse:
 @app.post("/jobs/{job_id}/videos/{n}/subject", status_code=202)
 def choose_subject(job_id: str, n: int, body: Click) -> dict:
     job, video = _video(job_id, n)
+    if video.deleted:
+        raise HTTPException(410, "el video ya se borró (se guarda 10 minutos): súbelo de nuevo para elegir a otra persona")
     if video.tracking is None or video.stage in ("tracking", "pose3d", "waiting"):
         raise HTTPException(409, "se puede elegir otra persona cuando el video termina de procesarse")
     first = video.tracking.people_at_first_frame()
@@ -340,6 +421,7 @@ def get_clip(clip_id: str) -> Response:
 
 
 threading.Thread(target=_worker, daemon=True, name="tridi-worker").start()
+threading.Thread(target=_janitor, daemon=True, name="tridi-janitor").start()
 
 
 def main() -> None:

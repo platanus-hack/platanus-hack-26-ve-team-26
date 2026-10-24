@@ -4,7 +4,8 @@
 
 Uploads a .zip of the given videos plus a broken one in small chunks (one sent twice, as a retry
 would), follows the job until it ends, picks another person when there is one, and checks every
-error path the web can hit. Exits 1 on the first failure.
+error path the web can hit, that only PoseClips are kept, the 30 s limit and cancelling.
+Exits 1 on the first failure.
 """
 
 from __future__ import annotations
@@ -128,6 +129,35 @@ def main() -> None:
         clip = client.get(f"/clips/{v2['clip_id']}.json").json()
         expect(clip["subject"]["selected_by"] == "user", "the new clip says selected_by: user")
         break
+
+    # Only PoseClips are kept: the broken video is gone at once, a done one stays until it expires.
+    job_dir = server.DATA_DIR / "jobs" / job_id
+    expect(not (job_dir / f"{len(videos)}.mp4").exists(), "the failed video was deleted at once")
+    expect((job_dir / "0.mp4").exists(), "a done video stays for the 10-minute subject window")
+    server.sweep(time.time() + server.KEEP_VIDEO_S + 1)
+    expect(not any(job_dir.glob("*.mp4")), "after 10 minutes every video is deleted")
+    expect(client.get(f"/clips/{good[0]['clip_id']}.json").status_code == 200, "the clips stay")
+    r = client.post(f"/jobs/{job_id}/videos/0/subject", json={"x": 1, "y": 1})
+    expect(r.status_code == 410, f"choosing a person after that -> 410: {r.json()['detail']}")
+
+    # Over 30 s (here, a 1 s limit) fails with a reason and leaves nothing behind.
+    server.MAX_DURATION_S = 1
+    short_job = upload(client, videos[0].name, videos[0].read_bytes())
+    v = wait(client, short_job)["videos"][0]
+    expect(v["stage"] == "failed" and "máximo" in v["error"], f"too long -> failed: {v['error']}")
+    expect(not any((server.DATA_DIR / "jobs" / short_job).glob("*.mp4")), "and its video is deleted")
+    server.MAX_DURATION_S = 30
+
+    # Cancelling.
+    up = client.post("/uploads", json={"filename": "a.mp4", "size": 10}).json()
+    client.put(f"/uploads/{up['upload_id']}/chunks/0", content=b"0123456789")
+    expect(client.delete(f"/uploads/{up['upload_id']}").status_code == 204, "DELETE /uploads -> 204")
+    expect(not (server.DATA_DIR / "uploads" / up["upload_id"]).exists(), "and its chunks are deleted")
+    cancel_job = upload(client, videos[0].name, videos[0].read_bytes())
+    expect(client.delete(f"/jobs/{cancel_job}").status_code == 204, "DELETE /jobs -> 204")
+    expect(client.get(f"/jobs/{cancel_job}").status_code == 404, "the cancelled job is gone")
+    time.sleep(1)
+    expect(not any((server.DATA_DIR / "jobs" / cancel_job).glob("*.mp4")), "and its video is deleted")
 
     print("server check passed", file=sys.stderr)
 
