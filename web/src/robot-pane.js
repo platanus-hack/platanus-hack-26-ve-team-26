@@ -1,7 +1,9 @@
 // A pane showing the app's one G1 (robot-host.js), shared by the simulations and live screens.
-// While the robot is still loading, a dot robot waves in its place with a progress bar; "Empujar"
-// floats over the pane so it is always on screen without scrolling (the pitch's key moment).
-import { waiting } from './dots/poses.js';
+// While the robot is still loading, a wireframe cube turns over a floor grid in its place (the
+// scene being built, in the brand's signal color) with a progress bar; "Empujar" floats over the
+// pane so it is always on screen without scrolling (the pitch's key moment), and draws the push's
+// arrow in the scene, as the landing does.
+import { createPushArrow } from './push-arrow.js';
 import { attachRobot, onRobotProgress, robotView } from './robot-host.js';
 
 /** Markup for a robot pane; mountRobotPane fills it in. */
@@ -9,6 +11,10 @@ export function robotPaneHTML(label) {
   return `
     <section class="pane robot-pane">
       <div class="robot-loading">
+        <div class="loader-3d" aria-hidden="true">
+          <div class="loader-floor"></div>
+          <div class="loader-cube">${['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => `<i class="${face}"></i>`).join('')}</div>
+        </div>
         <div class="track"><div class="robot-progress"></div></div>
         <p class="robot-status">Preparando el mundo de física…</p>
       </div>
@@ -19,14 +25,14 @@ export function robotPaneHTML(label) {
 
 /**
  * @param pane  the .robot-pane element
- * @param dots  the page's DotStage, for the placeholder robot
  * @param options.beforePush  called before the shove (the live screen turns the camera off)
  * @returns {{ ready: Promise<object | null>, view: object | null, dispose(): void }}
  */
-export function mountRobotPane(pane, dots, { beforePush } = {}) {
+export function mountRobotPane(pane, { beforePush } = {}) {
   const $ = (selector) => pane.querySelector(selector);
   const robot = attachRobot(pane);
-  let placeholder = null;
+  let arrow = null;
+  let frameId = 0;
   const handle = { view: null, ready: robot.ready, dispose };
 
   const stopProgress = onRobotProgress(({ done, total, compiling, policy }) => {
@@ -34,21 +40,24 @@ export function mountRobotPane(pane, dots, { beforePush } = {}) {
     if (policy) $('.robot-status').textContent = 'Enseñándole a mantenerse de pie…';
     else if (compiling) $('.robot-status').textContent = 'Armando al robot…';
   });
-  // Already loaded (any visit after the first): no placeholder and no fade, the robot is there.
+  // Already loaded (any visit after the first): no loader and no fade, the robot is there.
   if (robotView()) pane.classList.add('ready', 'instant');
-  else placeholder = dots.addView(pane, waiting);
 
   robot.ready
     .then((view) => {
       if (!view) return;
       handle.view = view;
-      if (placeholder) dots.removeView(placeholder);
-      placeholder = null;
       pane.classList.add('ready');
+      arrow = createPushArrow(view.viewer.scene);
+      frameId = requestAnimationFrame(function frame() {
+        arrow.update();
+        frameId = requestAnimationFrame(frame);
+      });
       $('.push').disabled = false;
       $('.push').onclick = () => {
         beforePush?.();
         view.push();
+        arrow.point(view);
       };
     })
     .catch((error) => {
@@ -59,8 +68,9 @@ export function mountRobotPane(pane, dots, { beforePush } = {}) {
   function dispose() {
     stopProgress();
     robot.detach();
-    if (placeholder) dots.removeView(placeholder);
-    placeholder = null;
+    cancelAnimationFrame(frameId);
+    arrow?.dispose(); // the scene is the one robot's, shared with the other screens
+    arrow = null;
   }
   return handle;
 }

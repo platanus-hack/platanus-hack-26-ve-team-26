@@ -17,6 +17,7 @@ import { FINAL_LEVEL, policyUrls } from '../policies.js';
 const walkPolicy = Object.values(import.meta.glob('../../../training/policies/g1-walk.json', { eager: true, import: 'default' }))[0] ?? null;
 import { fetchClip, preloaded } from '../preloaded.js';
 import { LOGO, WORDMARK } from '../brand.js';
+import { createPushArrow } from '../push-arrow.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import { prefetch } from '../router.js';
 import { SkeletonView } from '../skeleton.js';
@@ -393,21 +394,12 @@ export function mount(root, { api }) {
   }
   const KEY_LIFT = new THREE.Vector3(0, 0.8, 0); // the key light sits a little above the lens
 
-  // ---- The push, drawn in the robot's scene: an arrow from where the shove comes, and the Gym's
-  // test ring on the floor around the robot it trains ----
+  // ---- The push, drawn in the robot's scene: the arrow from where the shove comes
+  // (push-arrow.js), and the Gym's test ring on the floor around the robot it trains ----
   const SIGNAL = 0xc8ff2e; // --signal in style.css
-  const ARROW_S = 0.9; // an arrow stays this long after its push (the push itself lasts 0.1 s)
   const RING_M = 1.2; // a fall of the G1 reaches about this far from where it stood
-  let marks = null; // { arrow, ring, arrowMaterial, ringMaterial, pushedAt }
+  let marks = null; // { arrow, ring, ringMaterial }
   function makeMarks(scene) {
-    const arrowMaterial = new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, depthWrite: false, toneMapped: false });
-    const arrow = new THREE.Group();
-    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 10), arrowMaterial);
-    shaft.position.y = 0.25;
-    const head = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.18, 16), arrowMaterial);
-    head.position.y = 0.59;
-    arrow.add(shaft, head);
-    arrow.visible = false;
     // The ring: a circle with a tick every 15°, flat on the sidewalk.
     const ringMaterial = new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
     const ring = new THREE.Group();
@@ -423,32 +415,17 @@ export function mount(root, { api }) {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.006;
     ring.visible = false;
-    scene.add(arrow, ring);
-    return { arrow, ring, arrowMaterial, ringMaterial, pushedAt: -Infinity };
+    scene.add(ring);
+    return { arrow: createPushArrow(scene), ring, ringMaterial };
   }
-  // Right after view.push(): the force on the torso says where the shove comes from.
-  const tip = new THREE.Vector3();
-  const along = new THREE.Vector3();
+  // Right after view.push(). Smaller in the hero, whose camera stands 1.35 m from the robot
+  // instead of 3.7 m.
   function drawPush() {
-    if (!marks || !view) return;
-    const { sim } = view;
-    const force = sim.data.xfrc_applied;
-    const xpos = sim.data.xpos;
-    const i = sim.pushBodyId;
-    along.set(force[6 * i], 0, -force[6 * i + 1]).normalize(); // MuJoCo (x, y, z) is three.js (x, z, -y)
-    tip.set(xpos[3 * i], xpos[3 * i + 2], -xpos[3 * i + 1]).addScaledVector(along, -0.16); // just short of the torso
-    // Smaller in the hero, whose camera stands 1.35 m from the robot instead of 3.7 m.
-    const size = mode === 'gym' ? 1 : 0.6;
-    marks.arrow.scale.setScalar(size);
-    marks.arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along);
-    marks.arrow.position.copy(tip).addScaledVector(along, -0.68 * size);
-    marks.pushedAt = performance.now();
+    if (marks && view) marks.arrow.point(view, mode === 'gym' ? 1 : 0.6);
   }
   function updateMarks() {
     if (!marks) return;
-    const t = (performance.now() - marks.pushedAt) / 1000;
-    marks.arrow.visible = t < ARROW_S;
-    marks.arrowMaterial.opacity = 1 - (t / ARROW_S) ** 3;
+    marks.arrow.update();
     const goal = mode === 'gym' ? 0.6 : 0;
     const ring = marks.ringMaterial;
     ring.opacity += (goal - ring.opacity) * (reducedMotion ? 1 : 0.08);
@@ -987,9 +964,9 @@ export function mount(root, { api }) {
       undressCity();
       telemetry?.dispose();
       if (marks) {
-        view.viewer.scene.remove(marks.arrow, marks.ring);
-        [marks.arrow, marks.ring].forEach((group) => group.traverse((o) => o.geometry?.dispose()));
-        marks.arrowMaterial.dispose();
+        marks.arrow.dispose();
+        view.viewer.scene.remove(marks.ring);
+        marks.ring.traverse((o) => o.geometry?.dispose());
         marks.ringMaterial.dispose();
       }
     }

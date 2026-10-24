@@ -95,8 +95,8 @@ export function mount(root, { api }, [sessionId] = []) {
     lastReport = now;
     if (server.state === 'offline') big('Sin conexión con el servidor. Sigo intentando…', true);
     else if (server.state === 'unwatched') big('La pantalla grande no está escuchando. ¿Sigue abierta En vivo?', true);
-    else if (!pose) big('No veo a nadie. Que se vea el cuerpo entero.');
-    else if (!pose.visible) big('Se ve a medias: aléjate hasta que entre de la cabeza a los pies.');
+    else if (!pose) big('No veo a nadie. Que se vea al menos de la cintura para arriba.');
+    else if (!pose.visible) big('Se ve a medias: que entren los hombros, los brazos y las manos.');
     else big('Conectado. El robot copia a quien filmas.');
     const fps = live?.fps() ?? 0;
     $('.phone-meta').textContent = `${fps} ${fps === 1 ? 'cuadro' : 'cuadros'} por segundo${fps < MIN_FPS ? ' · lento: el robot puede moverse a saltos' : ''}`;

@@ -42,7 +42,7 @@ const FOLLOW_S = 0.5;
 
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
-export function mount(root, { dots, api }) {
+export function mount(root, { api }) {
   root.innerHTML = `
     <section class="page live">
       <header class="page-head">
@@ -57,7 +57,7 @@ export function mount(root, { dots, api }) {
           <div class="camera-off">
             <ol class="steps">
               <li>Deja que la página use tu cámara.</li>
-              <li>Aléjate hasta que se vea todo tu cuerpo.</li>
+              <li>Que se vean tus hombros, brazos y manos. Para que camine, aléjate hasta los pies.</li>
               <li>Muévete despacio: Tridi copia lo que haces.</li>
             </ol>
           </div>
@@ -114,7 +114,7 @@ export function mount(root, { dots, api }) {
   let disposed = false;
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
-  const robot = mountRobotPane($('.robot-pane'), dots, { beforePush: () => stop() });
+  const robot = mountRobotPane($('.robot-pane'), { beforePush: () => stop() });
   robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
 
   // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
@@ -153,7 +153,7 @@ export function mount(root, { dots, api }) {
     try {
       clip = live.stopRecording();
     } catch {
-      return result('No se vio a nadie lo suficiente. Que se vea todo tu cuerpo y graba otra vez.');
+      return result('No se te vio lo suficiente. Que se vean tus hombros, brazos y manos, y graba otra vez.');
     }
     if (seconds < MIN_RECORD_S) return result('La grabación fue muy corta. Graba al menos 2 segundos.');
     const time = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
@@ -191,8 +191,8 @@ export function mount(root, { dots, api }) {
     lastReport = now;
     const phone = isPhone();
     if (!robot.view) say('El robot todavía está cargando; ya te va a copiar.');
-    else if (!pose) say(phone ? 'El teléfono no ve a nadie. Que se vea el cuerpo entero.' : 'No te veo. Aléjate hasta que se vea todo tu cuerpo.');
-    else if (!pose.visible) say(phone ? 'El teléfono ve a medias. Que se vea el cuerpo entero, de la cabeza a los pies.' : 'Te veo a medias. Que se vea todo tu cuerpo, de la cabeza a los pies.');
+    else if (!pose) say(phone ? 'El teléfono no ve a nadie. Que se vea al menos de la cintura para arriba.' : 'No te veo. Que se vea al menos de la cintura para arriba.');
+    else if (!pose.visible) say(phone ? 'El teléfono ve a medias. Que se vean los hombros, los brazos y las manos.' : 'Te veo a medias. Que se vean tus hombros, brazos y manos.');
     else say(phone ? '¡Conectado! Tridi copia a quien filma el teléfono.' : '¡Te veo! Muévete despacio y Tridi te copia.');
     const fps = live?.fps() ?? 0;
     const slow = now - startedAt > WARMUP_MS && fps < MIN_FPS;

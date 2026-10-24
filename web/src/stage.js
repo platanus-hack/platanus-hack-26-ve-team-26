@@ -37,14 +37,13 @@ const MAX_FRAME_S = 1 / 30;
 
 /**
  * @param root  element holding the stage markup of screens/simulations.js
- * @param dots  the page's DotStage, for the placeholder robot
  */
-export function mountStage(root, dots) {
+export function mountStage(root) {
   const $ = (id) => root.querySelector(`#${id}`);
   const skeleton = new SkeletonView($('human'));
   const label = root.querySelector('.robot-pane .pane-label');
   // The robot is physical (policy in control) after a push; otherwise it plays the clip.
-  const robot = mountRobotPane(root.querySelector('.robot-pane'), dots, {
+  const robot = mountRobotPane(root.querySelector('.robot-pane'), {
     beforePush() {
       copying = false;
       setRobotLabel();

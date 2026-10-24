@@ -28,7 +28,7 @@ const TRAIN_STEPS = [
   ['data', 'Probar en 4 mundos y armar la entrega'],
 ];
 
-export function mount(root, { dots, api }, [clipId] = []) {
+export function mount(root, { api }, [clipId] = []) {
   root.innerHTML = `
     <section class="page sims">
       <header class="page-head">
@@ -129,7 +129,7 @@ export function mount(root, { dots, api }, [clipId] = []) {
   // The physics sliders are open on wide screens; on phones they fold under "Ajustar la física"
   // (style.css hides the toggle on wide screens), so the scene and the clips come first.
   root.querySelector('.tune').open = !matchMedia('(max-width: 720px)').matches;
-  const stage = mountStage(root, dots);
+  const stage = mountStage(root);
   const trainBox = mountTrainBox(root, api);
   mountGallery(root, stage, clipId, trainBox.show);
   return () => {

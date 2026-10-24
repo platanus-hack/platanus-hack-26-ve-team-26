@@ -384,8 +384,8 @@ select:disabled {
   height: 100%;
 }
 
-/* Until the robot arrives its canvas stays invisible and the waving dot robot, drawn on the
-   page canvas behind, shows through. */
+/* Until the robot arrives its canvas stays invisible and the loader (a wireframe cube turning
+   over a floor grid, below) takes its place. */
 .robot-pane .robot-canvas {
   opacity: 0;
   transition: opacity 0.6s ease;
@@ -402,14 +402,98 @@ select:disabled {
 
 .robot-loading {
   position: absolute;
-  left: 50%;
-  bottom: 22px;
+  inset: 0;
   display: grid;
-  gap: 8px;
+  align-content: center;
+  gap: var(--s-3);
   justify-items: center;
-  width: min(280px, 80%);
-  transform: translateX(-50%);
+  padding: 0 10%;
   transition: opacity 0.4s;
+}
+
+.robot-loading .track {
+  width: min(280px, 100%);
+}
+
+/* The loader: a cube of lime edges turning in 3D above a floor grid that recedes into the scene,
+   the same ink-and-signal of the landing's telemetry. CSS only, so it shows before any WebGL. */
+.loader-3d {
+  position: relative;
+  width: 160px;
+  height: 150px;
+  perspective: 520px;
+  perspective-origin: 50% 30%;
+}
+
+.loader-floor {
+  position: absolute;
+  left: -50%;
+  bottom: 0;
+  width: 200%;
+  height: 120px;
+  background:
+    linear-gradient(var(--line-strong) 1px, transparent 1px) 0 0 / 20px 20px,
+    linear-gradient(90deg, var(--line-strong) 1px, transparent 1px) 0 0 / 20px 20px;
+  transform: rotateX(72deg);
+  transform-origin: 50% 100%;
+  mask-image: radial-gradient(closest-side, #000 30%, transparent);
+  animation: loader-floor 1.6s linear infinite;
+}
+
+@keyframes loader-floor {
+  to {
+    background-position: 0 20px, 0 20px;
+  }
+}
+
+.loader-cube {
+  --size: 56px;
+  position: absolute;
+  left: calc(50% - var(--size) / 2);
+  top: 22px;
+  width: var(--size);
+  height: var(--size);
+  transform-style: preserve-3d;
+  animation: loader-cube 3.2s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+}
+
+.loader-cube i {
+  position: absolute;
+  inset: 0;
+  border: 1.5px solid var(--signal);
+  background: var(--signal-soft);
+  box-shadow: 0 0 18px -4px var(--signal-glow) inset;
+}
+
+.loader-cube .front { transform: translateZ(calc(var(--size) / 2)); }
+.loader-cube .back { transform: rotateY(180deg) translateZ(calc(var(--size) / 2)); }
+.loader-cube .left { transform: rotateY(-90deg) translateZ(calc(var(--size) / 2)); }
+.loader-cube .right { transform: rotateY(90deg) translateZ(calc(var(--size) / 2)); }
+.loader-cube .top { transform: rotateX(90deg) translateZ(calc(var(--size) / 2)); }
+.loader-cube .bottom { transform: rotateX(-90deg) translateZ(calc(var(--size) / 2)); }
+
+/* A quarter turn on each axis per beat, with a small hop: something being assembled, not a spinner. */
+@keyframes loader-cube {
+  0% {
+    transform: translateY(0) rotateX(-24deg) rotateY(45deg);
+  }
+  50% {
+    transform: translateY(-10px) rotateX(-24deg) rotateY(135deg) rotateZ(90deg);
+  }
+  100% {
+    transform: translateY(0) rotateX(-24deg) rotateY(225deg) rotateZ(180deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loader-floor,
+  .loader-cube {
+    animation: none;
+  }
+
+  .loader-cube {
+    transform: rotateX(-24deg) rotateY(45deg);
+  }
 }
 
 .robot-pane.ready .robot-loading {
@@ -434,7 +518,7 @@ select:disabled {
 .robot-status {
   margin: 0;
   color: var(--muted);
-  font-size: 15px;
+  font: 13px var(--mono);
   text-align: center;
 }
 
@@ -872,9 +956,18 @@ select:disabled {
 .live-bar {
   display: grid;
   justify-items: center;
-  gap: 6px;
-  margin-top: 16px;
+  gap: var(--s-4);
+  margin-top: var(--s-5);
   text-align: center;
+}
+
+.live-bar .row {
+  justify-content: center;
+  gap: var(--s-4);
+}
+
+.live-bar > p {
+  margin: 0;
 }
 
 .camera-toggle {
@@ -1477,6 +1570,7 @@ select optgroup {
     position: sticky;
     bottom: 0;
     z-index: 5;
+    gap: var(--s-3);
     margin: var(--s-3) calc(-1 * var(--s-3)) 0;
     padding: var(--s-3);
     border-top: 1px solid var(--line);
@@ -1488,6 +1582,7 @@ select optgroup {
   .upload .row {
     display: grid;
     grid-template-columns: 1fr 1fr;
+    gap: var(--s-3);
     width: 100%;
   }
 
