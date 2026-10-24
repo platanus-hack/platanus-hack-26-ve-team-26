@@ -44,6 +44,7 @@ La ciudad de César (`f7a6baa`) se veía lejos: edificios a 21 m, la calle corr�
 - **Gym**: tarjeta oscura con título, qué es un paso en una línea, la escala real 0-40 M y las tres etapas como control segmentado, cifras como chips. La etapa "Estable" responde si más pasos sirven: pasa la prueba entera; más práctica serviría para empujones más fuertes (con 350 N aguanta 1,2 de 4, `training/README.md`). El log se esconde en pantallas de 940 px de alto o menos.
 - **Policy**: misma tarjeta oscura; el texto ya no queda sobre el café.
 - **Esqueleto** (`skeleton.js`, también lo usan Simulaciones y En vivo): los 11 puntos de la cara (nariz, ojos, orejas, boca) se dibujaban como un grumo; ahora una cabeza (esfera de 9 cm entre las orejas, corrida hacia la nariz) y un cuello desde los hombros.
+- En `main` como `271ea6e` ([PR #79](https://github.com/platanus-hack/platanus-hack-26-ve-team-26/pull/79)) y en el espejo. Ship otra vez desde un worktree temporal; el squash se llevó también `c9a377f` (`docs(contract)`: las filas de replay se muestran como se grabaron), que otra sesión había commiteado en `juan/pipeline` justo antes. Eran 2 líneas de `docs/contrato.md`, ya en `main` dentro de este commit.
 
 ## Sigue
 
