@@ -51,7 +51,7 @@ uv run --project training python -m training.deliver training/policies/g1-walk.j
   --clip data/clips/clip_2026-10-23_caminar-perfil_01.json --out data/deliveries/clip_2026-10-23_caminar-perfil_01 --title "Caminar"
 ```
 
-Para regenerarla con los mismos números, sin volver a correr los 32 episodios: `--dataset data/deliveries/clip_2026-10-23_caminar-perfil_01/dataset.zip`.
+Para regenerarla con los mismos números, sin volver a correr los 32 episodios: `--dataset data/deliveries/clip_2026-10-23_caminar-perfil_01/dataset.zip`. La escalera sale de `--checkpoints training/runs/walk-v4` (los checkpoints exportados de esa corrida, que están en la Mac de Pastor y no se versionan): sin esa carpeta, la entrega queda sin escalera.
 
 | Mundo | Episodios | Llegan al final (11,85 s) | Segundos: media (mín-máx) |
 | --- | --- | --- | --- |

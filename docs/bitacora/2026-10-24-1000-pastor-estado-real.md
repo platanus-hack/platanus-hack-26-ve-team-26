@@ -41,3 +41,15 @@ Comparar el repo con la visión del producto (Physical AI: video → imitación 
 - **Ale:** la escalera ya no está bloqueada; falta elegir la corrida (ENT-6).
 - **César:** WEB-2 y WEB-3, con el servidor listo.
 - Esta rama va 5 commits atrás de `main`: sincronizar antes de shipear.
+
+## Parte 2: la escalera en la entrega de Caminar
+
+- **Revisión del panel de entrega de Juan** (`3561e6b`, en `main` y en el deploy desde las 10:03): repetición de los 32 episodios, la matriz de 4 mundos × 8 episodios, telemetría, las 6 descargas (las 6 responden 200 en el deploy) y la escalera, que venía vacía porque Juan no tenía los checkpoints de `walk-v4`.
+- **Rama sincronizada** con `main` (rebase sin conflictos).
+- **Entrega regenerada** con `training.deliver ... --dataset <copia del mismo dataset.zip> --checkpoints training/runs/walk-v4`: solo cambia `delivery.json` (la escalera y `created_at`); el dataset y los demás archivos son idénticos (mismo sha1 del zip, mismos números por mundo). Escalera: 0,86 → 0,88 → 1,00 → 2,88 → 1,98 → 3,68 → 3,54 s, a los 0, 10 k, 100 k, 1 M, 3 M, 10 M y 20 M pasos.
+- **Verificado en el navegador** (`npm run dev` en `web/`, `#/entrega/clip_2026-10-23_caminar-perfil_01`): el gráfico dibuja los 7 puntos con el final marcado, sin errores salvo el aviso esperable de que el servidor de videos local está apagado.
+- `plan-producto.md`, `estado.md` y `training/README.md` (cómo regenerarla con la escalera) al día.
+
+### Qué no está bien todavía
+
+- **El "0 pasos" de `walk-v4` no es un robot sin entrenar:** la corrida arrancó de los 30 M pasos de `walk-long`, y la ficha dice "20,0 M pasos" cuando en total practicó 50 M (30 M con las referencias viejas). Es lo que guardan los checkpoints; no se cambió el panel (es de Juan). Para mostrar en el pitch cómo aprende desde cero, la escalera buena es la de `jacks-v2`.
