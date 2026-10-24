@@ -102,7 +102,7 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Web (`web/`)
 
-- [ ] **WEB-1. La cámara graba al encenderse.** `startRecording()` al encender (ya existe en `data/live`), contador hasta 30 s y botón Parar. El `PoseClip` aparece en la galería (marioneta) y se manda con `POST /clips`. *Necesita:* SRV-1 para mandarlo; grabar y mostrarlo, no.
+- [~] **WEB-1. La cámara graba al encenderse.** Hecho grabar, el contador, Parar y la galería; falta mandarlo (SRV-1). `startRecording()` al encender (ya existe en `data/live`), contador hasta 30 s y botón Parar. El `PoseClip` aparece en la galería (marioneta) y se manda con `POST /clips`. *Necesita:* SRV-1 para mandarlo; grabar y mostrarlo, no.
 - [ ] **WEB-2. Entrenar.** Botón "Entrenar al robot con este video" en clips de cámara y subidos. Etapa "Entrenando": posición en la cola, porcentaje, tiempo estimado y el robot del usuario en cada checkpoint nuevo (carga el ONNX en cuanto aparece). Mientras tanto, las precargadas. *Necesita:* SRV-2, SRV-3 y SIM-1.
 - [ ] **WEB-3. Resultado.** El robot con su política (con física), Empujar, un selector de mundos (`view.setWorld`) y botones para descargar la política y los datos. *Necesita:* WEB-2 y SIM-3.
 - [ ] **WEB-4. Precargadas con imitación.** Cada entrada del manifiesto suma `policy`, y la galería las muestra con su robot entrenado. *Necesita:* SIM-1 y las precargadas entrenadas.
