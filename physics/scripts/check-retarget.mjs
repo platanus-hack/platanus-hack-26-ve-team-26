@@ -1,11 +1,11 @@
 // Headless check of the camera retargeting: synthetic people in MediaPipe's own format go in,
 // G1 joint angles come out, and each answer is known in advance.
 // Run: npm run check
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { loadG1Node } from './node-model.mjs';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
-import { motionDuration, retargetClip, sampleMotion } from '../src/motion.js';
+import { motionDuration, retargetClip, retargetClipAsync, sampleMotion } from '../src/motion.js';
 
 // Above this a limb ended up farther than 8 cm from where the person put it (Sombra's REACH_TOLERANCE).
 const REACH_TOLERANCE = 0.08;
@@ -226,6 +226,19 @@ console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis pat
   const robot = slideRatio(robotFeet, rows.map((q) => [q[0], q[1]]));
   expect(robot <= human, `planted foot slides ${robot.toFixed(2)} of the pelvis speed (the person in the data: ${human.toFixed(2)})`);
 
+  // The sliced version (what the browser runs) must give exactly the same motion.
+  const progress = [];
+  const sliced = await retargetClipAsync(mujoco, sim.model, clip, { budgetMs: 1, onProgress: (p) => progress.push(p) });
+  expect(JSON.stringify(sliced.motion) === JSON.stringify(motion), `the sliced retargeting gives the same motion (${progress.length} slices)`);
+  expect(progress.length > 3 && progress.every((p, i) => i === 0 || p >= progress[i - 1]), 'and reports a progress that only goes forward');
+
+  // The mesh-free model the page retargets on must give the same motion as the full G1.
+  const kinematics = sim.createModel('g1_kinematics.xml', ['g1_kinematics.xml']);
+  const lean = retargetClip(mujoco, kinematics, clip).motion;
+  kinematics.delete();
+  const leanDiff = Math.max(...rows.flatMap((row, i) => row.map((v, j) => Math.abs(v - lean.qpos[i][j]))));
+  expect(leanDiff < 1e-6, `the model without meshes gives the same motion (differs by at most ${leanDiff.toExponential(1)})`);
+
   // Playback: sampling a RobotMotion between its frames.
   const out = new Float64Array(sim.model.nq);
   // The rows keep 5 decimals, so their quaternions are unit length only to about 1e-5.
@@ -238,6 +251,18 @@ console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis pat
   const halfway = rows[10].map((v, i) => (v + rows[11][i]) / 2);
   expect([0, 1, 2, ...Array.from({ length: 29 }, (_, k) => 7 + k)].every((i) => Math.abs(out[i] - halfway[i]) < 1e-9), 'between two frames, joints and position are blended');
   expect(Math.abs(Math.hypot(out[3], out[4], out[5], out[6]) - 1) < 1e-9, 'the blended pelvis orientation stays a unit quaternion');
+}
+
+console.log('the RobotMotions saved in motions/ are up to date with the clips in data/clips');
+{
+  const dir = new URL('../motions/', import.meta.url);
+  for (const file of readdirSync(dir).filter((f) => f.endsWith('.json'))) {
+    const saved = JSON.parse(readFileSync(new URL(file, dir)));
+    const clip = JSON.parse(readFileSync(new URL(`../../data/clips/${file}`, import.meta.url)));
+    const { motion } = retargetClip(mujoco, sim.model, clip);
+    const worst = Math.max(...saved.qpos.flatMap((row, i) => row.map((v, j) => Math.abs(v - motion.qpos[i][j]))));
+    expect(saved.qpos.length === motion.qpos.length && worst < 1e-4, `${file}: ${saved.qpos.length} frames, differs by at most ${worst.toExponential(1)} (run npm run retarget if not)`);
+  }
 }
 
 console.log('speed');

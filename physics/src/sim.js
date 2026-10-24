@@ -40,14 +40,7 @@ export class Simulation {
    */
   load(sceneFile, keyName) {
     const { mujoco } = this;
-    const vfs = new mujoco.MjVFS();
-    let model;
-    try {
-      for (const [path, bytes] of Object.entries(this.files)) vfs.addBuffer(path, bytes);
-      model = mujoco.MjModel.from_xml_path(sceneFile, vfs);
-    } finally {
-      vfs.delete();
-    }
+    const model = this.createModel(sceneFile);
     this.data?.delete();
     this.model?.delete();
     this.model = model;
@@ -58,6 +51,23 @@ export class Simulation {
     this.pushBodyId = this.id('BODY', PUSH_BODY);
     this.policy = null;
     this.reset();
+  }
+
+  // A new MjModel from `sceneFile`, owned by the caller (delete() it). Not the one simulated.
+  // `paths` limits which of the files the model can read: a model without meshes needs only its
+  // own XML, and copying all 19 MB into MuJoCo's virtual file system takes a while.
+  createModel(sceneFile, paths = Object.keys(this.files)) {
+    const { mujoco } = this;
+    const vfs = new mujoco.MjVFS();
+    try {
+      for (const path of paths) {
+        if (!this.files[path]) throw new Error(`The model file "${path}" was not loaded (is it in physics/models/unitree_g1?)`);
+        vfs.addBuffer(path, this.files[path]);
+      }
+      return mujoco.MjModel.from_xml_path(sceneFile, vfs);
+    } finally {
+      vfs.delete();
+    }
   }
 
   id(type, name) {

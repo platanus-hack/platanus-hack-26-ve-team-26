@@ -33,7 +33,42 @@ const round = (v) => Math.round(v * 10 ** DECIMALS) / 10 ** DECIMALS;
  *   frames, tracked (frames where the shoulders were seen), reached (fraction of frames with every
  *   limb within 8 cm of the person's), scale (robot leg / person leg) and travel (m, robot's)
  */
-export function retargetClip(mujoco, model, clip, { mirror = false } = {}) {
+export function retargetClip(mujoco, model, clip, options) {
+  const steps = retargetSteps(mujoco, model, clip, options);
+  let step;
+  while (!(step = steps.next()).done);
+  return step.value;
+}
+
+/**
+ * The same as retargetClip, in slices: it works for `budgetMs` and then lets the page breathe
+ * (draw, answer clicks) before going on. A frame costs about 2 ms (Node and browser alike), so a
+ * 12 s clip is 0.7 s of work: short, but a camera frame is 16 ms and an upload can be 30 s.
+ * @param options.onProgress  called with 0 to 1 after each slice
+ * @param options.budgetMs    how long to work between pauses (default 8: about half a frame at 60 fps)
+ * @param options.cancelled   checked after each slice; if it returns true the work stops and the
+ *   result is null (the model may be freed by then)
+ */
+export async function retargetClipAsync(mujoco, model, clip, { onProgress, budgetMs = 8, cancelled, ...options } = {}) {
+  const steps = retargetSteps(mujoco, model, clip, options);
+  let sliceStart = performance.now();
+  for (let step = steps.next(); ; step = steps.next()) {
+    if (step.done) return step.value;
+    if (performance.now() - sliceStart >= budgetMs) {
+      onProgress?.(step.value / clip.frames.length);
+      await new Promise((resolve) => setTimeout(resolve));
+      if (cancelled?.()) {
+        steps.return(); // runs the generator's cleanup
+        return null;
+      }
+      sliceStart = performance.now();
+    }
+  }
+}
+
+// One yield per frame (its index), and the result as the return value, so the two entry points
+// above share every line of the work.
+function* retargetSteps(mujoco, model, clip, { mirror = false } = {}) {
   const retargeter = createRetargeter(mujoco, model, { mirror });
   const tracker = createPoseTracker();
   const { frames } = clip;
@@ -46,19 +81,24 @@ export function retargetClip(mujoco, model, clip, { mirror = false } = {}) {
   let tracked = 0;
   let reached = 0;
   let travel = 0;
-  frames.forEach((frame, i) => {
-    // The tracker and the solver read MediaPipe's own axes (y down, z away from the camera).
-    const world = frame.joints.map(([x, y, z, visibility]) => ({ x, y: -y, z: -z, visibility }));
-    const result = retargeter.solve(tracker.update(world, world, frame.t), { travelYaw: travelHeading(frames, hips, i) });
-    const qpos = Array.from(result.qpos, round);
-    qpos[0] = round(scale * (hips[i][0] - hips[0][0]));
-    qpos[1] = round(scale * (hips[i][1] - hips[0][1]));
-    rows.push(qpos);
-    if (result.tracked) tracked++;
-    if (result.tracked && result.residual < REACH_TOLERANCE) reached++;
-    travel = Math.hypot(qpos[0], qpos[1]);
-  });
-  retargeter.delete();
+  try {
+    for (let i = 0; i < frames.length; i++) {
+      const frame = frames[i];
+      // The tracker and the solver read MediaPipe's own axes (y down, z away from the camera).
+      const world = frame.joints.map(([x, y, z, visibility]) => ({ x, y: -y, z: -z, visibility }));
+      const result = retargeter.solve(tracker.update(world, world, frame.t), { travelYaw: travelHeading(frames, hips, i) });
+      const qpos = Array.from(result.qpos, round);
+      qpos[0] = round(scale * (hips[i][0] - hips[0][0]));
+      qpos[1] = round(scale * (hips[i][1] - hips[0][1]));
+      rows.push(qpos);
+      if (result.tracked) tracked++;
+      if (result.tracked && result.residual < REACH_TOLERANCE) reached++;
+      travel = Math.hypot(qpos[0], qpos[1]);
+      yield i + 1;
+    }
+  } finally {
+    retargeter.delete();
+  }
 
   return {
     motion: { clip_id: clip.id, robot: 'unitree_g1', fps: clip.fps, qpos: rows },

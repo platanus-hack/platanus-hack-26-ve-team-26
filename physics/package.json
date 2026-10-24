@@ -9,7 +9,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs",
-    "retarget": "node scripts/retarget-clip.mjs"
+    "retarget": "node scripts/retarget-clip.mjs",
+    "make-kinematic-model": "node scripts/make-kinematic-model.mjs"
   },
   "dependencies": {
     "@mujoco/mujoco": "3.16.0",

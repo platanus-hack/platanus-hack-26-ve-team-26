@@ -1,7 +1,7 @@
 // Public API of physics/ for the web app: give it a canvas and it loads MuJoCo and the G1,
 // simulates in real time and draws every frame until dispose().
 import { loadG1 } from './load.js';
-import { motionDuration, sampleMotion } from './motion.js';
+import { motionDuration, retargetClipAsync, sampleMotion } from './motion.js';
 import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
@@ -70,16 +70,21 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   }
   frameId = requestAnimationFrame(frame);
 
-  // Built on first use: only the camera needs them.
+  // Built on first use: only the camera and retargeting need them.
   let tracker = null;
   let retargeter = null;
+  // Retargeting runs on its own model of the G1: the kinematic chain and the soles, without meshes
+  // (a model with them takes ~3 s to build in a browser, and would freeze the first camera frame).
+  // It does not depend on which model the simulation shows, and its joints are laid out exactly
+  // like the policy's model, so the result serves both.
+  let kinematic = null;
+  const KINEMATICS = 'g1_kinematics.xml';
+  const kinematicModel = () => (kinematic ??= sim.createModel(KINEMATICS, [KINEMATICS]));
 
   // Loads another model into the Simulation. Whatever was built from the old one goes: the
   // retargeter and the policy, and the drawn robot is rebuilt.
   function swapScene(sceneFile, keyName) {
     sim.policy?.dispose();
-    retargeter?.delete();
-    tracker = retargeter = null;
     clip = null;
     sim.load(sceneFile, keyName);
     view.rebuild();
@@ -124,6 +129,14 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       clip = { motion, duration: motionDuration(motion), loop };
       clipTime = 0;
     },
+    /**
+     * The RobotMotion of a PoseClip (a recorded or uploaded one), computed here, in slices so the
+     * page keeps answering: about 2 ms per frame, so a 12 s clip takes under a second.
+     * Same result as `npm run retarget`, which is instant for the clips already in physics/motions.
+     * @param options.onProgress  0 to 1, after each slice
+     * @returns Promise<{ motion, stats }> see retargetClip; null if the view was disposed meanwhile
+     */
+    retarget: (poseClip, options = {}) => retargetClipAsync(sim.mujoco, kinematicModel(), poseClip, { mirror: false, cancelled: () => disposed, ...options }),
     /** Where the clip is, in seconds; 0 with no clip. For syncing anything drawn beside the robot. */
     clipTime: () => clipTime,
     seek: (seconds) => (clipTime = Math.min(Math.max(seconds, 0), clip?.duration ?? 0)),
@@ -169,7 +182,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       if (!pose?.visible) return { tracked: false, residual: 0 };
       clip = null;
       tracker ??= createPoseTracker();
-      retargeter ??= createRetargeter(sim.mujoco, sim.model, { mirror });
+      retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
       const { qpos, tracked, residual } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t));
       if (tracked) sim.puppet(qpos);
       return { tracked, residual };
@@ -180,6 +193,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       sim.policy?.dispose();
       view.dispose();
       retargeter?.delete();
+      kinematic?.delete();
       sim.delete();
     },
   };
