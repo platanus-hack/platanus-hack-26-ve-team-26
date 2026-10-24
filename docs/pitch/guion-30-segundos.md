@@ -6,6 +6,8 @@
 
 Las láminas son [`deck/tridi-deck.html`](deck/tridi-deck.html) y su PDF. Cada una lleva su tiempo impreso en el pie.
 
+**Las láminas casi no tienen texto, a propósito.** Se ven dos o tres segundos cada una: lo que se lee en una ojeada es el titular y poco más, y lo que hay que decir está en este documento, no en la pantalla. La lámina de la demo es solo una señal (**2:30** y las tres palabras: Capture, Gym, Policy); la narración completa es la tabla de abajo. Las imágenes del G1 son capturas de la landing desplegada, no stock: el producto es la imagen.
+
 ## Los 30 segundos
 
 **Medido: 28 s de habla en la ventana de 30** (con [`tools/cronometro.py`](tools/cronometro.py), a 4,2 sílabas por segundo). No hay margen para improvisar: cada palabra de más empuja la demo.

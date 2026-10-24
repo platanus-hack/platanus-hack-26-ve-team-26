@@ -72,11 +72,46 @@ tr.on td{color:var(--signal);font-weight:500}
 .chart .cap{stroke:rgb(239 237 232/.3);stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
 .chart figcaption{display:flex;justify-content:space-between;margin-top:10px;
   font:400 13px/1 var(--mono);color:var(--dim)}
+
+/* ---- Lámina partida: palabras a un lado, el robot real al otro ---- */
+.split .inner{flex-direction:row;align-items:center;gap:56px;padding-right:0}
+.split .words{flex:1 1 46%;display:flex;flex-direction:column;gap:22px}
+.split .shot{flex:1 1 54%;margin:0;align-self:stretch;overflow:hidden}
+.split .shot img{width:100%;height:100%;object-fit:cover;object-position:52% 50%;display:block}
+.split.end .shot img{object-position:40% 40%}
+.split h1{font-size:76px}
+.split.end h2{font-size:58px;word-break:break-word}
+.split .meta{gap:18px}
+/* ---- Lámina partida en vertical: titular arriba, diagrama abajo ---- */
+.split-v .inner{gap:30px}
+.split-v .words{display:flex;flex-direction:column;gap:18px}
+.flow{width:100%;height:270px;display:block}
+.flow rect{fill:none;stroke:rgb(13 13 11/.18)}
+.flow .person,.flow .dots{fill:none;stroke:var(--ink);stroke-width:5;stroke-linecap:round}
+.flow .person circle{fill:var(--ink)}
+.flow .dots path{stroke:rgb(13 13 11/.25);stroke-width:3}
+.flow .dots circle{fill:var(--signal-ink);stroke:none}
+.flow .arrow{stroke:rgb(13 13 11/.3);stroke-width:2;marker-end:none}
+.flow .fail .person{stroke:var(--signal-ink)}
+.flow .fail .person circle{fill:var(--signal-ink)}
+.flow .fail rect{stroke:rgb(217 58 8/.35)}
+.flow text{font:500 13px var(--mono);fill:var(--muted);text-anchor:middle;text-transform:uppercase;letter-spacing:.1em}
+/* ---- La lámina de la demo ---- */
+.demo .inner{align-items:flex-start}
+.demo h1{font-size:150px;line-height:.86}
+.trio{margin:0;display:flex;gap:40px;font:500 20px/1 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--fg-2)}
+.split-v .punch{font-size:25px;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink-soft)}
+.split-v .punch em{font-weight:600}
+.road.big li{align-items:center}
+.road.big span{flex:0 0 200px;font-size:13px}
+.road.big b{font-size:40px;font-weight:500;letter-spacing:-.02em}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
-.stat-row.four .stat b{font-size:36px}
+.stat-row.four .stat b{font-size:52px}
+.stat-row.four .stat span{font-size:17px}
 .beats.light li{border-color:var(--fg)}
 .road{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.road.big{gap:26px}
 .road li{display:flex;gap:14px;align-items:baseline}
 .road span{flex:0 0 96px;font:500 12px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--signal)}
 .paper .road span{color:var(--signal-ink)}
@@ -103,94 +138,97 @@ code{font:400 .92em var(--mono)}
 }
 </style></head>
 <body>
-<section class="slide dark cover">
+<section class="slide dark split cover">
   <div class="inner">
-  <p class="kicker">Platanus Hack 26 · Caracas · Three Dimensions</p>
-  <h1>Robots que<br>aprenden<br>de un video</h1>
-  <p class="lede">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual,
-     practicando en física real hasta no caerse.</p>
-  <p class="meta"><span>Cesar Martinez</span><span>Juan Villa</span><span>Pastor Jimenez</span><span>Ale Hernández</span></p></div>
+  <div class="words">
+    <p class="kicker">Platanus Hack 26 · Three Dimensions</p>
+    <h1>Robots que<br>aprenden<br>de un video</h1>
+    <p class="meta"><span>Tridi</span><span>Cesar · Juan · Pastor · Ale</span></p>
+  </div>
+  <figure class="shot"><img src="img/g1-de-pie.jpg" alt="El Unitree G1 simulado, de pie"></figure></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:00 · 4 s</span><span class="pg">01</span></footer>
 </section>
 <section class="slide dark statement">
   <div class="inner">
-  <p class="kicker">El problema</p>
   <h2>La IA aprendió a hablar<br>leyendo internet.<br>
-      <em>La física no tiene<br>un internet de movimiento.</em></h2>
-  <p class="lede wide">Los robots ya tienen cuerpo. Les falta experiencia: hoy se la enseñan con
-     trajes de captura, en un estudio, sobre un piso perfecto que en la calle no existe.</p></div>
+      <em>La física no tiene<br>un internet de movimiento.</em></h2></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:04 · 12 s</span><span class="pg">02</span></footer>
 </section>
-<section class="slide paper key">
+<section class="slide paper split-v key">
   <div class="inner">
-  <p class="kicker">Por qué el video no alcanza</p>
-  <h2>Si copia el video,<br><em>se cae.</em></h2>
-  <p class="body">El robot tiene otras medidas y otro peso: lo que la persona hace en pantalla es
-     físicamente imposible para él. Pasarle el movimiento es solo geometría, y la geometría no
-     sabe de gravedad.</p>
-  <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p></div>
+  <div class="words">
+    <h2>Si copia el video,<br><em>se cae.</em></h2>
+    <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p>
+  </div>
+  <svg class="flow" viewBox="0 0 760 300" role="img"
+   aria-label="Un video se convierte en un esqueleto de 33 puntos, ese movimiento entra al robot, y sin física el robot se cae">
+  <g class="step">
+    <rect x="8" y="40" width="200" height="220" rx="4"/>
+    <g class="person" transform="translate(108 92)">
+      <circle cy="0" r="13"/><path d="M0 14v62M-34 36h68M0 76l-26 56M0 76l26 56"/>
+    </g>
+    <text x="108" y="286">Video</text>
+  </g>
+  <path class="arrow" d="M224 150h52"/>
+  <g class="step">
+    <rect x="288" y="40" width="200" height="220" rx="4"/>
+    <g class="dots" transform="translate(388 92)">
+      <path d="M0 14v62M-34 36h68M0 76l-26 56M0 76l26 56"/>
+      <circle cy="0" r="7"/><circle cy="14" r="5"/><circle cx="-34" cy="36" r="5"/>
+      <circle cx="34" cy="36" r="5"/><circle cy="76" r="5"/><circle cx="-26" cy="132" r="5"/>
+      <circle cx="26" cy="132" r="5"/>
+    </g>
+    <text x="388" y="286">Esqueleto · 33 puntos</text>
+  </g>
+  <path class="arrow" d="M504 150h52"/>
+  <g class="step fail">
+    <rect x="568" y="40" width="184" height="220" rx="4"/>
+    <g class="person" transform="translate(700 118) rotate(62) scale(0.78)">
+      <circle cy="0" r="13"/><path d="M0 14v62M-34 36h68M0 76l-26 56M0 76l26 56"/>
+    </g>
+    <text x="660" y="286">Robot, sin física</text>
+  </g>
+</svg></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:16 · 14 s</span><span class="pg">03</span></footer>
 </section>
 <section class="slide dark demo">
   <div class="inner">
-  <p class="kicker">Demo · 2 min 30</p>
-  <h2>Mejor se los<br>enseñamos</h2>
-  <ol class="beats light">
-    <li><b>Capture</b><span>Un video de celular se vuelve el esqueleto 3D de una persona, y ese movimiento entra al cuerpo del G1.</span></li>
-    <li><b>Gym</b><span>El mismo robot sin entrenar, a medias y entrenado: 40 millones de pasos de práctica, 73 minutos en una laptop.</span></li>
-    <li><b>Policy</b><span>La política corre en el navegador de ustedes. Empújenlo: 250 newtons sobre 33 kilos.</span></li>
-  </ol></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:30 · 2:30</span><span class="pg">04</span></footer>
+  <p class="kicker">Demo</p>
+  <h1>2:30</h1>
+  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:30</span><span class="pg">04</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
   <p class="kicker">Lo que acaban de ver, medido</p>
-  <h2>Los números</h2>
   <div class="stat-row four">
-    <div class="stat"><b>3,2 cm</b><span>error mediano al pasar el movimiento al G1</span></div>
-    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop, sin GPU</span></div>
-    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta de pie</span></div>
-    <div class="stat"><b>265 KB</b><span>la red completa que mueve 29 motores</span></div>
-  </div>
-  <table class="ladder">
-    <thead><tr><th>Práctica</th><th>Aguanta de pie</th><th>Empujones de 250 N</th></tr></thead>
-    <tbody>
-      <tr><td>Sin entrenar</td><td>1,1 s</td><td>0 de 4</td></tr>
-      <tr><td>10 millones de pasos</td><td>9,6 s</td><td>1,2 de 4</td></tr>
-      <tr class="on"><td>40 millones de pasos</td><td>20 s, los completos</td><td>4 de 4</td></tr>
-    </tbody>
-  </table>
-  <p class="foot-note">El empujón del botón va en dirección al azar: medido desde 60 direcciones
-     aguanta 56, así que lo tumba 1 de cada 15 veces.</p></div>
+    <div class="stat"><b>3,2 cm</b><span>error al pasar el movimiento al robot</span></div>
+    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop</span></div>
+    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta</span></div>
+    <div class="stat"><b>265 KB</b><span>la red que mueve 29 motores</span></div>
+  </div></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Al terminar la demo</span><span class="pg">05</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
-  <p class="kicker">Para quién, y qué es nuestro</p>
-  <h2>Equipos que están<br>construyendo humanoides</h2>
-  <div class="cols two">
-    <div class="col"><p class="product">La física es de MuJoCo</p>
-      <p>El estándar en robótica. Nadie escribe un motor de contacto en 36 horas. Lo nuestro es
-         todo lo que va encima: el camino del video al robot, el mundo donde aprende y el
-         entrenamiento. Y no es un LLM: las empresas le van a poner uno a sus robots para decidir
-         a dónde ir; alguien tiene que enseñarles a llegar sin caerse.</p></div>
-    <div class="col"><p class="product">Dónde estamos</p>
-      <ol class="road">
-        <li><span>Hoy</span><b>Pararse y aguantar empujones de 250 N</b></li>
-        <li><span>Entrenando</span><b>Caminar como la persona del video</b></li>
-        <li><span>Lo que viene</span><b>Practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador</b></li>
-      </ol></div>
-  </div>
-  <p class="foot-note">No tenemos clientes ni socios, y no vamos a insinuarlo. Hablar con el
-     primero es lo que hacemos el lunes.</p></div>
+  <p class="kicker">Para equipos de humanoides</p>
+  <h2>Dónde estamos</h2>
+  <ol class="road big">
+    <li><span>Hoy</span><b>Se para y aguanta empujones</b></li>
+    <li><span>Entrenando</span><b>Caminar como la persona del video</b></li>
+    <li><span>Lo que viene</span><b>Piedras, viento y piso resbaloso</b></li>
+  </ol>
+  <p class="foot-note">La física es de MuJoCo; nuestro es todo lo que va encima. Y no es un LLM.</p></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Preguntas</span><span class="pg">06</span></footer>
 </section>
-<section class="slide dark cover end">
+<section class="slide dark split end">
   <div class="inner">
-  <p class="kicker">Pruébenlo ahora</p>
-  <h1>Robots que<br>aprenden<br>de un video</h1>
-  <p class="lede">Abran la web, suban un video suyo y empujen al robot. Está desplegado y es abierto.</p>
-  <p class="meta"><span>tridi-alpha.vercel.app</span><span>github.com/platanus-hack/platanus-hack-26-ve-team-26</span></p></div>
+  <div class="words">
+    <p class="kicker">Pruébenlo ahora</p>
+    <h2>tridi-alpha<br>.vercel.app</h2>
+    <p class="meta"><span>Abierto en GitHub</span><span>platanus-hack/…-ve-team-26</span></p>
+  </div>
+  <figure class="shot"><img src="img/g1-perfil.jpg" alt="El Unitree G1 simulado, de perfil"></figure></div>
   <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Cierre</span><span class="pg">07</span></footer>
 </section>
 </body></html>
