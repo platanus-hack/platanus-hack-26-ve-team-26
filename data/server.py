@@ -8,7 +8,8 @@ retarget -> training (every checkpoint exported to ONNX) -> data (the dataset, t
 each as a subprocess, and serves the motion, the policies, the dataset and the delivery. The API is
 in docs/contrato.md ("API del servidor de video", "La entrega de un clip"). Only PoseClips and what
 training makes from them are kept; videos are deleted once processed. Jobs and trainings live in
-memory: a restart forgets them (their files stay on disk).
+memory: a restart forgets them (their files stay on disk). The phone-as-camera relay (POST /live,
+data/relay.py) is mounted here too: pose frames pass through memory and are never stored.
 """
 
 from __future__ import annotations
@@ -37,6 +38,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
+from . import relay
 from .extract import VIDEO_EXTS, _clip_id, write_clip
 from .lift import lift_subject
 from .scene import empty_scene, scene_of, write_scene
@@ -264,6 +266,7 @@ def sweep(now: float) -> None:
         if now - up.touched > UPLOAD_TTL_S:
             shutil.rmtree(up.dir, ignore_errors=True)
             uploads.pop(up.id, None)
+    relay.sweep(now)  # phone camera sessions without traffic
 
 
 def _enqueue(job: Job, only: int | None = None) -> None:
@@ -308,6 +311,7 @@ def _unpack(upload: Upload, job_dir: Path, assembled: Path) -> list[Video]:
 
 app = FastAPI(title="Tridi data server")
 app.add_middleware(CORSMiddleware, allow_origins=CORS_ORIGINS, allow_methods=["*"], allow_headers=["*"])
+app.include_router(relay.router)  # the phone as the live camera (docs/contrato.md)
 
 
 class NewUpload(BaseModel):
@@ -322,7 +326,7 @@ class Click(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "queue": len(pending), "train_queue": len(train_pending)}
+    return {"ok": True, "queue": len(pending), "train_queue": len(train_pending), "live": len(relay.sessions)}
 
 
 @app.post("/uploads", status_code=201)
