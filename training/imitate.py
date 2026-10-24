@@ -35,6 +35,11 @@ MIN_REMAINING_S = 1.0
 
 FEET = ("left_ankle_roll_link", "right_ankle_roll_link")
 
+# The retargeted pelvis path comes from video and jitters: its frame-to-frame speed jumps to 4 m/s
+# in a 1 m/s walk. Velocities taken from it would launch the robot at every reset, so the path is
+# smoothed over 0.3 s first (a step lasts ~0.5 s, so the gait survives).
+SMOOTH_S = 0.3
+
 MIMIC_OBS_DIM = 93 + NU + 3 + 1
 
 
@@ -56,8 +61,10 @@ class Motion:
             self.feet[i] = d.xpos[feet_ids]
         # Velocities by finite differences: pelvis in the world, joints in rad/s.
         dt = 1 / self.fps
+        window = max(1, int(round(SMOOTH_S * self.fps)))
+        self.qpos[:, :3] = smooth(self.qpos[:, :3], window)
         self.root_vel = np.gradient(self.qpos[:, :3], dt, axis=0)
-        self.joint_vel = np.gradient(self.qpos[:, 7:], dt, axis=0)
+        self.joint_vel = np.gradient(smooth(self.qpos[:, 7:], window), dt, axis=0)
 
     def sample(self, t: float):
         """Pose, pelvis velocity, joint velocities and feet at time t (linear between frames)."""
@@ -70,6 +77,16 @@ class Motion:
         return q, lerp(self.root_vel), lerp(self.joint_vel), lerp(self.feet)
 
 
+def smooth(x: np.ndarray, window: int) -> np.ndarray:
+    """Centered moving average along time, repeating the edges."""
+    if window < 2:
+        return x
+    pad = window // 2
+    padded = np.pad(x, ((pad, window - 1 - pad), (0, 0)), mode="edge")
+    kernel = np.ones(window) / window
+    return np.stack([np.convolve(padded[:, j], kernel, mode="valid") for j in range(x.shape[1])], axis=1)
+
+
 def load_motions(model: mujoco.MjModel, names: list[str]) -> list[Motion]:
     return [Motion(MOTIONS / f"{n}.json", model) for n in names]
 
@@ -79,6 +96,7 @@ class MimicEnv(G1Env):
         super().__init__(seed=seed, push=push)
         self.motions = load_motions(self.model, list(clips))
         self.feet_ids = [self.model.body(n).id for n in FEET]
+        self.floor = self.model.geom("floor").id
         self.motion = self.motions[0]
         self.t = 0.0
         self.ref_next = self.default
@@ -127,12 +145,28 @@ class MimicEnv(G1Env):
         d.qvel[:] = 0
         d.qvel[:3] = root_vel
         d.qvel[6:] = joint_vel
-        mujoco.mj_forward(self.model, d)
+        self._touch_ground()
         self.prev_ctrl = q[7:].copy()
         self.steps = 0
         self.push_left = 0
         self.next_push = self._draw_push_time()
         return self.observe()
+
+    def _touch_ground(self) -> None:
+        """Moves the pelvis up or down so the lowest foot rests on the floor. The reference was put on
+        the floor with the mesh model; the training model's foot capsules sit a few cm differently,
+        and a robot that starts in the air or inside the floor falls or bounces."""
+        d = self.data
+        for _ in range(40):
+            mujoco.mj_forward(self.model, d)
+            # Only contacts with the floor: the robot touching itself (a hand on a thigh) does not count.
+            dist = min((d.contact[i].dist for i in range(d.ncon) if self.floor in d.contact[i].geom), default=None)
+            if dist is None:
+                d.qpos[2] -= 0.005  # in the air: lower 5 mm
+            elif dist < -0.002:
+                d.qpos[2] -= dist  # sunk into the floor: lift by the penetration
+            else:
+                return
 
     def step(self, action: np.ndarray):
         ctrl = self.apply(action)
