@@ -20,11 +20,13 @@ Pulir Entrena en vivo para la demo: que "Empujar al robot" dibuje la flecha de l
 - `data/live` (`poseclip.js` `isSeen`): un cuadro cuenta si se ven hombros, codos y muñecas (antes los 12 puntos, piernas incluidas). El retargeting ya dejaba en la postura de pie lo que no se ve y `root.js` solo usa los pies que ve. Textos de En vivo, teléfono y entrenar cambiados a "hombros, brazos y manos".
 - `physics/src/clearance.js`: dos choques nuevos. Mano contra cabeza (esfera de 9 cm a 0,39 m sobre el torso, medida del STL `head_link`) y mano contra mano (9 cm entre centros: se tocan, no se cruzan; abren los dos hombros por igual). El hombro puede abrir hasta 60° (antes 30°): bajar la mano sobre la coronilla pide 55°.
 - `physics/scripts/check-touch.mjs` (en `npm run check`): aplauso y manos sobre la cabeza.
+- Shippeado a `main` (primer prompt).
+- **De espaldas, en vivo** (segundo prompt): `data/live/src/facing.js`. MediaPipe a veces lee la espalda como si fuera el frente: refleja el cuerpo en profundidad y cambia izquierda por derecha, y el robot giraba 180° y volvía, con los brazos cambiados. Offline (`lift.py`, `poseclip.js`) esos cuadros se descartan comparando con los vecinos; en vivo no hay cuadros futuros y descartar congela al robot, así que cada cuadro se compara con el rumbo del último segundo y, si va en contra, se corrige (izq↔der y profundidad de vuelta; si eso no lo arregla, solo izq↔der). Va antes del filtro One Euro, en `createLiveCapture`, así que sirve también para el teléfono. `scripts/check-facing.mjs` en `npm run check`.
 
 ## Qué funcionó
 
 - `npm run check` de `physics/` pasa entero; check-touch: aplauso 0,4 → 9,8 cm entre manos, mano en la cabeza 0,5 → 14,2 cm del centro. La caminata, la carrera y los jumping jacks siguen igual en check-smooth.
-- `data/live` `npm run check` pasa. `vite build` pasa.
+- `data/live` `npm run check` pasa (check-facing: los 4 cuadros espejados salen como la pose real, 0,0 cm; una vuelta real de 180° en 1,5 s no se toca). `vite build` pasa.
 - En el navegador: el cubo se ve en escritorio y teléfono; la flecha sale al empujar en En vivo y en Simulaciones; la landing sigue empujando con su flecha.
 
 ## Qué no funcionó
@@ -38,4 +40,4 @@ Pulir Entrena en vivo para la demo: que "Empujar al robot" dibuje la flecha de l
 
 ## Sigue
 
-- Probar con webcam real: aplauso, manos en la cabeza, y de espaldas (MediaPipe confunde izquierda y derecha de espaldas; no se tocó).
+- Probar con webcam real: aplauso, manos en la cabeza, y darse vuelta despacio. Límite que queda: si MediaPipe lee la espalda como frente de forma sostenida desde el primer segundo, el guardia no tiene un rumbo bueno contra el cual comparar; arrancar de frente y girar pasando por perfil.
