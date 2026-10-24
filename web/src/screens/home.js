@@ -544,13 +544,15 @@ export function mount(root, { api }) {
   // fast; on phones it takes the same step as the down arrow (one chapter, or one Gym stage).
   // A push button keeps the focus after a click (Chrome on the Mac): Enter there still advances
   // instead of pressing it again; the other buttons and links keep their own Enter.
+  const ENTER_GLIDE_S = 0.35; // still reads as a move to the next stop, but 1 s felt stuck
   on(window, 'keydown', (event) => {
     const enter = event.key === 'Enter';
     const own = enter ? 'input, textarea, select, button:not(.hero-push), a' : 'input, textarea, select, button, a';
-    if ((event.code !== 'Space' && !enter) || event.repeat || event.target.closest?.(own)) return;
+    // Held down, Enter repeats and runs down the stops; space keeps one stop per press.
+    if ((event.code !== 'Space' && !enter) || (event.repeat && !enter) || event.target.closest?.(own)) return;
     if (enter && narrow()) {
       event.preventDefault();
-      step(1);
+      if (!event.repeat) step(1); // step reads the chapter from scrollY, which lags a held key
       return;
     }
     if (!enter && scrollY < innerHeight * 0.6) {
@@ -562,7 +564,8 @@ export function mount(root, { api }) {
     const next = spaceStops().find((stop) => stop > from + STOP_PX);
     if (next === undefined) return;
     event.preventDefault();
-    if (lenis) lenis.scrollTo(next, { duration: 1 });
+    // Enter is for moving through a demo fast: a short glide (ENTER_GLIDE_S), not space's slow one.
+    if (lenis) lenis.scrollTo(next, { duration: enter ? ENTER_GLIDE_S : 1 });
     else window.scrollTo({ top: next });
   });
 
