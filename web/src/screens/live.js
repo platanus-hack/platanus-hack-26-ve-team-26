@@ -34,6 +34,12 @@ const PHONE_WEB = ['localhost', '127.0.0.1'].includes(location.hostname) ? 'http
 // A server on this machine is out of the phone's reach too.
 const LOCAL_API = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/;
 
+// The robot now goes where the person goes (physics/ root.js): the scene's camera catches up with
+// it in this many seconds (viewer followTau) instead of staying locked on the pelvis, so a walk
+// shows as the robot moving across the floor, not only as the floor sliding under it. The landing's
+// hero uses the same 0.5 s.
+const FOLLOW_S = 0.5;
+
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 export function mount(root, { dots, api }) {
@@ -70,7 +76,7 @@ export function mount(root, { dots, api }) {
           <button class="phone-toggle" type="button">Usar el teléfono como cámara</button>
           <button class="record-toggle" type="button" hidden>Parar y guardar</button>
         </div>
-        <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · de perfil el robot avanza; de frente se queda en el lugar</p>
+        <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · camina, salta: el robot va adonde vas</p>
         <div class="saved" hidden>
           <p class="saved-text"></p>
           <div class="row">
@@ -109,6 +115,7 @@ export function mount(root, { dots, api }) {
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
   const robot = mountRobotPane($('.robot-pane'), dots, { beforePush: () => stop() });
+  robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
 
   // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
   let recordTimer = 0;
@@ -306,6 +313,7 @@ export function mount(root, { dots, api }) {
     disposed = true;
     clearInterval(recordTimer);
     stop(); // a recording in progress is kept: it is in the gallery when the user comes back
+    if (robot.view) robot.view.viewer.followTau = 0; // the other screens follow the robot rigidly
     robot.dispose();
   };
 }
