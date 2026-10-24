@@ -87,14 +87,14 @@ S.append(slide(3, "dark statement", """
   <h2>Los robots<br>ya tienen cuerpo.<br><em>Les falta experiencia.</em></h2>
   <p class="es">Hoy se la enseñan con trajes de captura, en un estudio,
      sobre un piso que en la calle no existe.</p>""",
-  "0:16 · 10 s"))
+  "0:16 · 8 s"))
 
 S.append(slide(4, "paper split-v key", """
   <div class="words">
     <h2>Si copia el video,<br><em>se cae.</em></h2>
     <p class="punch">El video le dice <em>qué</em> hacer.<br>La física le enseña <em>cómo</em>.</p>
   </div>
-  """ + SKELETON, "0:26 · 14 s"))
+  """ + SKELETON, "0:24 · 14 s"))
 
 S.append(slide(5, "dark worldslide", """
   <p class="kicker">Nuestro motor</p>
@@ -106,7 +106,7 @@ S.append(slide(5, "dark worldslide", """
     <li><b>Pradera con viento</b><span>fuerza lateral constante</span></li>
   </ul>
   <p class="es">Un demo se hace en el vacío. Un robot, con fricción.</p>""",
-  "0:40 · 7 s"))
+  "0:38 · 7 s"))
 
 S.append(slide(6, "paper", """
   <p class="kicker">Tres piezas</p>
@@ -120,26 +120,29 @@ S.append(slide(6, "paper", """
     <div class="col"><p class="product">Policy</p>
       <p>Sale una red pequeña que mueve sus 29 motores, y corre en el navegador de
          ustedes.</p><p class="num">265 KB · cada 20 ms</p></div>
-  </div>""", "0:47 · 13 s"))
+  </div>""", "0:45 · 5 s"))
 
-S.append(slide(7, "dark demo", """
-  <p class="kicker">Demo</p>
-  <h1>2:00</h1>
-  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p>""",
-  "1:00"))
+S.append(slide(7, "paper", """
+  <p class="kicker">El negocio</p>
+  <h2>Vendemos movimiento,<br>no robots</h2>
+  <div class="cols">
+    <div class="col"><p class="product">Cliente ideal</p>
+      <p>El equipo que ya tiene el cuerpo y no tiene el movimiento: humanoides con hardware y sin
+         datos. Los gigantes recolectan en casa; abajo de ellos nadie puede montar un estudio.</p></div>
+    <div class="col"><p class="product">Primer cliente</p>
+      <p>Laboratorios y startups de humanoides que <b>ya pagan por datos</b> hoy, por hora. El
+         presupuesto existe; lo que no existe es el movimiento que necesitan.</p></div>
+    <div class="col"><p class="product">Qué compran</p>
+      <p>La entrega de un clip: la política entrenada, el movimiento corregido por la física y el
+         dataset en varios mundos. Ya existe: <code>deliveries/</code>.</p></div>
+  </div>
+  <div class="stat-row tam">
+    <div class="stat"><b>2,7 mil M</b><span>USD, datos de entrenamiento en 2026 — 10,9 mil M en 2031</span></div>
+    <div class="stat"><b>+100 M</b><span>USD al año que ya se gastan en datos reales de robótica</span></div>
+    <div class="stat"><b>≈ 0</b><span>nuestro costo por hora: no pagamos a nadie por grabar</span></div>
+  </div>""", "0:50 · 13 s"))
 
 S.append(slide(8, "paper", """
-  <p class="kicker">Lo que acaban de ver, medido</p>
-  <div class="stat-row four">
-    <div class="stat"><b>3,2 cm</b><span>error al pasar el movimiento al robot</span></div>
-    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop</span></div>
-    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta</span></div>
-    <div class="stat"><b>265 KB</b><span>la red que mueve 29 motores</span></div>
-  </div>
-  <p class="foot-note">Un solo archivo define cada mundo: fricción, viento, masas y fuerza de los
-     motores. El mismo que ve la web es el que entrena al robot.</p>""", "Al terminar la demo"))
-
-S.append(slide(9, "paper", """
   <p class="kicker">Para equipos de humanoides</p>
   <h2>Dónde estamos</h2>
   <ol class="road big">
@@ -150,6 +153,12 @@ S.append(slide(9, "paper", """
   <p class="foot-note">La física es de MuJoCo; nuestro es todo lo que va encima. Y no es un LLM:
      el LLM decide a dónde ir, nosotros enseñamos a llegar sin caerse.</p>""",
   "Preguntas"))
+
+S.append(slide(9, "dark demo", """
+  <p class="kicker">Demo</p>
+  <h1>2:00</h1>
+  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p>""",
+  "Penúltima · 2:00"))
 
 S.append(slide(10, "dark split end", """
   <div class="words">
@@ -277,6 +286,9 @@ tr.on td{color:var(--signal);font-weight:500}
 .split.end h2{font-size:58px;word-break:break-word}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
+.stat-row.tam{border-top:1px solid rgb(13 13 11/.14);padding-top:18px;gap:44px}
+.stat-row.tam .stat b{font-size:34px}
+.stat-row.tam .stat span{font-size:14px;max-width:30ch}
 .stat-row.four .stat b{font-size:52px}
 .stat-row.four .stat span{font-size:17px}
 .beats.light li{border-color:var(--fg)}

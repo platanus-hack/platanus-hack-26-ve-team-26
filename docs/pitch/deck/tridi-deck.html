@@ -119,6 +119,9 @@ tr.on td{color:var(--signal);font-weight:500}
 .split.end h2{font-size:58px;word-break:break-word}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
+.stat-row.tam{border-top:1px solid rgb(13 13 11/.14);padding-top:18px;gap:44px}
+.stat-row.tam .stat b{font-size:34px}
+.stat-row.tam .stat span{font-size:14px;max-width:30ch}
 .stat-row.four .stat b{font-size:52px}
 .stat-row.four .stat span{font-size:17px}
 .beats.light li{border-color:var(--fg)}
@@ -172,7 +175,7 @@ code{font:400 .92em var(--mono)}
   <h2>Los robots<br>ya tienen cuerpo.<br><em>Les falta experiencia.</em></h2>
   <p class="es">Hoy se la enseñan con trajes de captura, en un estudio,
      sobre un piso que en la calle no existe.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:16 · 10 s</span><span class="pg">03</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:16 · 8 s</span><span class="pg">03</span></footer>
 </section>
 <section class="slide paper split-v key">
   <div class="inner">
@@ -209,7 +212,7 @@ code{font:400 .92em var(--mono)}
     <text x="660" y="286">Robot, sin física</text>
   </g>
 </svg></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:26 · 14 s</span><span class="pg">04</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:24 · 14 s</span><span class="pg">04</span></footer>
 </section>
 <section class="slide dark worldslide">
   <div class="inner">
@@ -222,7 +225,7 @@ code{font:400 .92em var(--mono)}
     <li><b>Pradera con viento</b><span>fuerza lateral constante</span></li>
   </ul>
   <p class="es">Un demo se hace en el vacío. Un robot, con fricción.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:40 · 7 s</span><span class="pg">05</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:38 · 7 s</span><span class="pg">05</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
@@ -238,27 +241,29 @@ code{font:400 .92em var(--mono)}
       <p>Sale una red pequeña que mueve sus 29 motores, y corre en el navegador de
          ustedes.</p><p class="num">265 KB · cada 20 ms</p></div>
   </div></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:47 · 13 s</span><span class="pg">06</span></footer>
-</section>
-<section class="slide dark demo">
-  <div class="inner">
-  <p class="kicker">Demo</p>
-  <h1>2:00</h1>
-  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">1:00</span><span class="pg">07</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:45 · 5 s</span><span class="pg">06</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
-  <p class="kicker">Lo que acaban de ver, medido</p>
-  <div class="stat-row four">
-    <div class="stat"><b>3,2 cm</b><span>error al pasar el movimiento al robot</span></div>
-    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop</span></div>
-    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta</span></div>
-    <div class="stat"><b>265 KB</b><span>la red que mueve 29 motores</span></div>
+  <p class="kicker">El negocio</p>
+  <h2>Vendemos movimiento,<br>no robots</h2>
+  <div class="cols">
+    <div class="col"><p class="product">Cliente ideal</p>
+      <p>El equipo que ya tiene el cuerpo y no tiene el movimiento: humanoides con hardware y sin
+         datos. Los gigantes recolectan en casa; abajo de ellos nadie puede montar un estudio.</p></div>
+    <div class="col"><p class="product">Primer cliente</p>
+      <p>Laboratorios y startups de humanoides que <b>ya pagan por datos</b> hoy, por hora. El
+         presupuesto existe; lo que no existe es el movimiento que necesitan.</p></div>
+    <div class="col"><p class="product">Qué compran</p>
+      <p>La entrega de un clip: la política entrenada, el movimiento corregido por la física y el
+         dataset en varios mundos. Ya existe: <code>deliveries/</code>.</p></div>
   </div>
-  <p class="foot-note">Un solo archivo define cada mundo: fricción, viento, masas y fuerza de los
-     motores. El mismo que ve la web es el que entrena al robot.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Al terminar la demo</span><span class="pg">08</span></footer>
+  <div class="stat-row tam">
+    <div class="stat"><b>2,7 mil M</b><span>USD, datos de entrenamiento en 2026 — 10,9 mil M en 2031</span></div>
+    <div class="stat"><b>+100 M</b><span>USD al año que ya se gastan en datos reales de robótica</span></div>
+    <div class="stat"><b>≈ 0</b><span>nuestro costo por hora: no pagamos a nadie por grabar</span></div>
+  </div></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:50 · 13 s</span><span class="pg">07</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
@@ -271,7 +276,14 @@ code{font:400 .92em var(--mono)}
   </ol>
   <p class="foot-note">La física es de MuJoCo; nuestro es todo lo que va encima. Y no es un LLM:
      el LLM decide a dónde ir, nosotros enseñamos a llegar sin caerse.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Preguntas</span><span class="pg">09</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Preguntas</span><span class="pg">08</span></footer>
+</section>
+<section class="slide dark demo">
+  <div class="inner">
+  <p class="kicker">Demo</p>
+  <h1>2:00</h1>
+  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Penúltima · 2:00</span><span class="pg">09</span></footer>
 </section>
 <section class="slide dark split end">
   <div class="inner">
