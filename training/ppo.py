@@ -17,7 +17,7 @@ import numpy as np
 import torch
 from torch import nn
 
-from .env import NU, OBS_DIM
+from .env import NU, OBS_DIM, PUSH_N
 from .vec import VecEnv
 
 RUNS = Path(__file__).parent / "runs"
@@ -101,13 +101,15 @@ def save(model: ActorCritic, run_dir: Path, step: int) -> None:
     torch.save({"model": model.state_dict(), "step": step}, run_dir / f"step_{step}.pt")
 
 
-def train(total_steps: int, run: str, device: str) -> None:
+def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float]) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(0)
     model = ActorCritic()
+    if init:  # continue from an earlier run (its steps are not counted again)
+        model.load_state_dict(torch.load(init)["model"])
     opt = torch.optim.Adam(model.parameters(), lr=LR, eps=1e-5)
-    envs = VecEnv(NUM_ENVS, WORKERS)
+    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n)
     obs = envs.reset()
     pending = [c for c in CHECKPOINTS if c <= total_steps]
     save(model, run_dir, 0)
@@ -206,11 +208,14 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="python -m training.ppo", description=__doc__.split("\n")[0])
     p.add_argument("--steps", type=int, default=20_000_000)
     p.add_argument("--run", default="stand")
+    p.add_argument("--init", type=Path, help="checkpoint to continue from")
+    p.add_argument("--push-min", type=float, default=PUSH_N[0], help="weakest random push, N")
+    p.add_argument("--push-max", type=float, default=PUSH_N[1], help="strongest random push, N")
     # CPU by default: measured on an M2, 11.2k steps/s on CPU vs 10.1k on MPS. This network is so small
     # that moving each minibatch to the GPU costs more than the GPU saves. --device mps to compare.
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
-    train(args.steps, args.run, args.device)
+    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max))
 
 
 if __name__ == "__main__":

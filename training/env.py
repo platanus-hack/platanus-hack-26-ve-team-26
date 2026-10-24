@@ -45,8 +45,9 @@ FALL_UPRIGHT = 0.5
 EPISODE_STEPS = 1000
 
 # The push of physics/ (the pitch's "Empujar" button) is 250 N for 0.1 s on the torso. Training uses
-# up to 300 N, a bit more than the demo, so 250 N is inside what it learned and not its edge.
-PUSH_MAX_N = 300.0
+# up to 300 N, a bit more than the demo, so 250 N is inside what it learned and not its edge. A run
+# that continues a trained policy can raise the floor (--push-min) to spend its time on hard pushes.
+PUSH_N = (0.0, 300.0)
 PUSH_STEPS = 5  # 0.1 s at 50 Hz
 PUSH_EVERY_S = (2.0, 4.0)  # a new push every 2 to 4 s, at random
 
@@ -60,11 +61,12 @@ NU = 29
 
 
 class G1Env:
-    def __init__(self, seed: int = 0, push: bool = True):
+    def __init__(self, seed: int = 0, push: bool = True, push_n: tuple[float, float] = PUSH_N):
         self.model = mujoco.MjModel.from_xml_path(str(SCENE))
         self.data = mujoco.MjData(self.model)
         self.rng = np.random.default_rng(seed)
         self.push_enabled = push
+        self.push_n = push_n
         key = self.model.key("home")
         self.home_qpos = key.qpos.copy()
         self.default = key.ctrl.copy()  # joint targets of the standing pose
@@ -168,7 +170,7 @@ class G1Env:
         # Random pushes only when enabled; a push_now() push runs its 0.1 s either way.
         if self.push_enabled and self.push_left == 0 and self.steps >= self.next_push:
             angle = self.rng.uniform(0, 2 * np.pi)
-            self.push_force = self.rng.uniform(0, PUSH_MAX_N) * np.array([np.cos(angle), np.sin(angle), 0])
+            self.push_force = self.rng.uniform(*self.push_n) * np.array([np.cos(angle), np.sin(angle), 0])
             self.push_left = PUSH_STEPS
             self.next_push = self._draw_push_time()
         if self.push_left > 0:
