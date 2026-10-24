@@ -203,3 +203,16 @@ function matchHands(result, landmarks, aspect) {
   });
   return out;
 }
+
+/** The frame's points through the One Euro filter, in MediaPipe's own shape ({ x, y, z, visibility }). */
+function smoothed(filter, t, world, landmarks) {
+  const out = filter.filter(
+    t,
+    world.map((p) => [p.x, p.y, p.z]),
+    landmarks.map((p) => [p.x, p.y, p.z]),
+  );
+  return [
+    out.world.map(([x, y, z], i) => ({ ...world[i], x, y, z })),
+    out.image.map(([x, y, z], i) => ({ ...landmarks[i], x, y, z })),
+  ];
+}
