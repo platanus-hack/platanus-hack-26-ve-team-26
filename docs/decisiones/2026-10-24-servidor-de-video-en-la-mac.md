@@ -8,7 +8,7 @@
 
 ## Decisión
 
-1. **Corre en la Mac de Juan** con un túnel de Cloudflare (`data/serve.sh`), también durante la demo del domingo de 10:00 a 14:00. La web encuentra el servidor por `?api=`.
+1. **Corre en la Mac de Juan** con un túnel de Cloudflare (`data/serve.sh`), también durante la demo del domingo de 10:00 a 14:00. La web encuentra el servidor sola: `serve.sh` publica la URL del túnel en un gist y la web la lee de ahí (actualizado el 2026-10-24; antes había que abrir la web con `?api=`, que sigue sirviendo para desarrollo).
 2. **No se guardan videos, solo `PoseClip`**: los puntos son lo que sirve para entrenar. El video se borra al fallar o cancelar, y a los 10 minutos de terminar (el tiempo para elegir a otra persona). Una subida abandonada se borra a la hora.
 3. **Topes por subida: 60 MB y 30 s por video.** Nadie llena el disco en vivo.
 
