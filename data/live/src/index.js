@@ -26,6 +26,12 @@ const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_lan
 // this share of the image's height (~7 cm at 2 m from a laptop webcam). Not by its handedness
 // label: on a selfie camera it is reversed and sometimes jumps (docs/investigacion/2026-10-24-manos-y-dedos-en-vivo.md).
 const HAND_TO_WRIST = 0.08;
+// The hand model costs ~11 ms a frame, as much as the pose. While it finds a hand it runs every
+// frame; with none in the last HAND_RECENT_S (the person is far, or the hands are down) it only
+// looks every HAND_PROBE_EVERY frames, so a person stepping close is picked up within ~0.2 s at
+// 30 fps and one standing far pays a sixth of it.
+const HAND_RECENT_S = 1;
+const HAND_PROBE_EVERY = 6;
 
 // "full" keeps 30 fps on a laptop GPU and is clearly steadier than "lite" on legs; phones should
 // pass "lite" (half the work). "heavy" is for offline video only (data/lift.py).
@@ -50,8 +56,9 @@ export class CameraError extends Error {}
  *   (src/oneeuro.js) before onPose and the recording, so the robot copying the person does not shake
  *   with MediaPipe's per-frame noise. false gives MediaPipe's raw output.
  * @param options.hands       true: also run MediaPipe's hand model (7.8 MB more, ~11 ms a frame on
- *   an M2), so the robot's wrists follow the palm closely. Worth it with the person ~1-1.5 m from
- *   the camera: with the whole body in frame the hands are ~30 px and it rarely finds them.
+ *   an M2), so the robot's palms and fingers follow the person's. It finds hands with the person
+ *   ~1-1.5 m from the camera (whole body in frame, the hands are ~30 px and it rarely does), and
+ *   runs on its own: every frame while it sees a hand, now and then while it does not.
  * @param options.onProgress  ({ stage: 'model' | 'camera', done: boolean }) while loading
  * @param options.onPose      ({ landmarks, world, visible, t }) every processed frame: `landmarks`
  *   are 33 points normalized to the video (for drawSkeleton), `world` 33 points in meters
@@ -109,6 +116,8 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
   let lastVideoTime = -1;
   let frameId = 0;
   let running = true;
+  let handSeenAt = -Infinity; // when the hand model last found a hand (s)
+  let handFrame = 0;
   const times = []; // when each of the last frames was processed, for fps()
   const filter = new PoseFilter();
   const facing = createFacingGuard(); // MediaPipe's mirrored reads of a back, put right (facing.js)
@@ -141,7 +150,11 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
         const visible = isSeen((i) => vis[i]);
         const w = video.videoWidth;
         const h = video.videoHeight;
-        const handsSeen = handLandmarker ? matchHands(handLandmarker.detectForVideo(video, now), landmarks, w / h) : undefined;
+        let handsSeen;
+        if (handLandmarker && (now / 1000 - handSeenAt < HAND_RECENT_S || handFrame++ % HAND_PROBE_EVERY === 0)) {
+          handsSeen = matchHands(handLandmarker.detectForVideo(video, now), landmarks, w / h);
+          if (handsSeen.left || handsSeen.right) handSeenAt = now / 1000;
+        }
         onPose?.({ landmarks, world, visible, t: now / 1000, camera: cameraTranslation(world, landmarks, w, h), hands: handsSeen });
         samples?.push({
           t: (now - recordStart) / 1000,

@@ -63,6 +63,7 @@ export function mount(root, { api }) {
             <ol class="steps">
               <li>Deja que la página use tu cámara.</li>
               <li>Que se vean tus hombros, brazos y manos. Para que camine, aléjate hasta los pies.</li>
+              <li>Para que copie tus dedos, acércate a un metro de la cámara.</li>
               <li>Muévete despacio: Tridi copia lo que haces.</li>
             </ol>
           </div>
@@ -80,7 +81,6 @@ export function mount(root, { api }) {
           <button class="primary camera-toggle" type="button">Encender la cámara</button>
           <button class="phone-toggle" type="button">Usar el teléfono<span class="only-wide"> como cámara</span></button>
         </div>
-        <label class="hands-toggle" ${SMALL_SCREEN ? 'hidden' : ''}><input type="checkbox"> Seguir las palmas de cerca (a 1 o 1,5 m de la cámara)</label>
         <p class="live-status" aria-live="polite"></p>
         <p class="live-warning" hidden></p>
         <p class="phone-note" hidden></p>
@@ -174,9 +174,10 @@ export function mount(root, { api }) {
       drawSkeleton = capture.drawSkeleton;
       const session = await capture.createLiveCapture(video, {
         model: SMALL_SCREEN ? 'lite' : 'full',
-        // MediaPipe's hand model on top of the pose: steadier palms up close, ~11 ms more a frame,
-        // so laptops only (data/live createLiveCapture `hands`).
-        hands: !SMALL_SCREEN && handsBox.checked,
+        // MediaPipe's hand model on top of the pose: palms and fingers when the person is close
+        // (it runs on its own, data/live createLiveCapture `hands`). ~11 ms more a frame, so
+        // laptops only.
+        hands: !SMALL_SCREEN,
         onProgress: ({ stage, done }) =>
           say(stage === 'model' ? (done ? 'Listo. Ahora acepta el permiso de la cámara.' : 'Preparando la cámara…') : 'Esperando el permiso de la cámara…'),
         onPose,
@@ -263,11 +264,6 @@ export function mount(root, { api }) {
 
   button.onclick = () => (live && !isPhone() ? stop() : start());
   phoneButton.onclick = () => (isPhone() ? stopPhone() : startPhone());
-  // The hand model is chosen when the camera opens: changing it with the camera on reopens it.
-  const handsBox = $('.hands-toggle input');
-  handsBox.onchange = () => {
-    if (live && !isPhone()) start();
-  };
 
   return () => {
     disposed = true;
