@@ -1,36 +1,37 @@
-/* Tridi: a lab instrument. Warm paper and ink, one signal orange for what moves or can be
-   touched, a tight grotesk (Inter Tight) for words and a mono (Geist Mono) for numbers and
-   labels. The landing adds its own layout in landing/landing.css. */
+/* Tridi: dark like the landing (landing/landing.css) and the delivery (screens/delivery.css), so
+   every screen reads as one product: near-black, light text, one signal orange for what moves or
+   can be touched, a tight grotesk (Inter Tight) for words and a mono (Geist Mono) for numbers and
+   labels. --ink is the text color and --bg the page, as before, now light on dark. */
 
 :root {
   --paper: #eeece7;
   --scene: #111110; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
-  --ink: #0d0d0b;
+  --ink: #efede8;
   --ink-2: #171715;
-  --ink-soft: #3a3935;
-  --muted: #6e6b64;
-  --muted-light: #6e6b64;
+  --ink-soft: #b5b2aa;
+  --muted: #8f8c84;
+  --muted-light: #8f8c84;
   --muted-dark: #8f8c84;
-  --line: rgb(13 13 11 / 0.14);
+  --line: rgb(239 237 232 / 0.14);
   --line-dark: rgb(238 236 231 / 0.16);
   --signal: #ff4f1a;
-  --signal-ink: #d93a08; /* the signal as text on paper: same hue, enough contrast */
+  --signal-ink: #ff4f1a; /* the signal as text: on the dark page it reads as is */
   --display: 'Inter Tight Variable', system-ui, -apple-system, sans-serif;
   --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
 
   /* The app screens' names for the same palette. */
-  --bg: var(--paper);
-  --bg-deep: #e4e1da;
-  --surface: rgb(255 255 255 / 0.6);
+  --bg: #0a0a09;
+  --bg-deep: #111110;
+  --surface: rgb(239 237 232 / 0.04);
   --accent: var(--signal);
-  --accent-ink: var(--ink);
-  --accent-soft: #ffe3d8;
-  --error: #c2261a;
+  --accent-ink: #0a0a09; /* text on the orange */
+  --accent-soft: rgb(255 79 26 / 0.15);
+  --error: #ff6a5a;
   --radius: 4px;
-  --shadow: 0 24px 60px -32px rgb(13 13 11 / 0.35);
+  --shadow: 0 24px 60px -32px rgb(0 0 0 / 0.8);
   --title: var(--display);
   --text: var(--display);
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {
@@ -119,7 +120,7 @@ select {
   padding: 0 22px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #ffffff;
+  background: rgb(239 237 232 / 0.06);
   color: var(--ink);
   font: 600 17px/1 var(--text);
   cursor: pointer;
@@ -270,7 +271,7 @@ select:disabled {
 .pane {
   position: relative;
   min-height: 0;
-  border: 1px solid #ffffff;
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   overflow: hidden;
@@ -344,9 +345,9 @@ select:disabled {
   right: 14px;
   bottom: 14px;
   border-color: transparent;
-  background: var(--ink);
-  color: #ffffff;
-  box-shadow: 0 10px 24px -10px rgb(16 27 45 / 0.6);
+  background: var(--signal); /* as the landing's push button */
+  color: #0a0a09;
+  box-shadow: 0 10px 24px -10px rgb(0 0 0 / 0.7);
 }
 
 .push:disabled {
@@ -683,7 +684,7 @@ select:disabled {
   padding: 0 22px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #ffffff;
+  background: rgb(239 237 232 / 0.06);
   color: var(--ink);
   font-weight: 700;
   text-decoration: none;
@@ -793,8 +794,8 @@ select:disabled {
   margin: 0;
   padding: 8px 16px;
   border-radius: 12px;
-  background: #fff4e5;
-  color: #8a4b00;
+  background: rgb(255 170 60 / 0.12);
+  color: #ffcf8a;
 }
 
 /* Recording: a pulsing red dot and the time, while the camera records (screens/live.js). */
@@ -1014,9 +1015,9 @@ select:disabled {
   justify-items: center;
   gap: 4px;
   padding: 36px 20px;
-  border: 2px dashed #b8c7e0;
+  border: 2px dashed rgb(239 237 232 / 0.22);
   border-radius: 20px;
-  background: rgb(255 255 255 / 0.6);
+  background: rgb(239 237 232 / 0.03);
   text-align: center;
   cursor: pointer;
   transition: border-color 0.2s, background 0.2s;
@@ -1100,7 +1101,7 @@ select:disabled {
 
 .stages li.current::before {
   background: var(--accent);
-  color: #ffffff;
+  color: #0a0a09;
   animation: pulse 1.4s ease-in-out infinite;
 }
 
@@ -1285,4 +1286,28 @@ select:disabled {
     transition: none !important;
     animation: none !important;
   }
+}
+
+/* Native dropdown lists follow the dark page. */
+select option,
+select optgroup {
+  background: #111110;
+  color: #efede8;
+}
+
+/* Page headers as the landing's captions: uppercase titles, a quiet back link. */
+.page h1 {
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.back {
+  border: 1px solid var(--line);
+  background: transparent;
+}
+
+/* Upload: a good example (the walk, its skeleton over it) where the old dot robot was. */
+.example-pane {
+  min-height: min(56vh, 460px);
 }

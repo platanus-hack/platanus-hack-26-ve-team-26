@@ -2,7 +2,7 @@
 // stages, let the user pick another person on the first frame, and put the clip in the gallery.
 // The server API is data/live's client (docs/contrato.md); this screen only draws it.
 import { chooseSubject, fetchClip, firstFrameUrl, UploadError, uploadVideo, watchJob } from '../../../data/live/src/upload.js';
-import { watching } from '../dots/poses.js';
+import { createVideoOverlay } from '../video-overlay.js';
 import { addUserClip } from '../preloaded.js';
 
 export const title = 'Subir un video';
@@ -41,7 +41,7 @@ function videoSeconds(file) {
   });
 }
 
-export function mount(root, { dots, api }) {
+export function mount(root, { api }) {
   root.innerHTML = `
     <section class="page upload" data-step="checking">
       <header class="page-head">
@@ -49,7 +49,9 @@ export function mount(root, { dots, api }) {
         <h1>Sube un video</h1>
       </header>
       <div class="upload-grid">
-        <div class="intro-scene" aria-hidden="true"></div>
+        <section class="pane example-pane">
+          <p class="pane-label">Así se ve un buen video: de perfil y con el cuerpo entero</p>
+        </section>
         <div class="upload-panel">
           <div data-show="checking"><p class="lead">Conectando con Tridi…</p></div>
 
@@ -119,7 +121,17 @@ export function mount(root, { dots, api }) {
   const $ = (selector) => root.querySelector(selector);
   const page = $('.upload');
   const show = (step) => (page.dataset.step = step);
-  const view = dots.addView($('.intro-scene'), watching, $('.upload-panel'));
+  // The example: the walk the robot learned from, playing with its skeleton over it.
+  const example = createVideoOverlay($('.example-pane'));
+  example.show('clip_2026-10-23_caminar-perfil_01').catch(console.error);
+  let exampleTime = 0;
+  let exampleLast = performance.now();
+  let exampleFrame = requestAnimationFrame(function tick(now) {
+    exampleTime += (now - exampleLast) / 1000;
+    exampleLast = now;
+    example.sync(exampleTime, true, 1);
+    exampleFrame = requestAnimationFrame(tick);
+  });
   let gone = false;
   let abort = null;
 
@@ -295,6 +307,7 @@ export function mount(root, { dots, api }) {
   return () => {
     gone = true;
     abort?.abort(); // stops polling; the server keeps processing
-    dots.removeView(view);
+    cancelAnimationFrame(exampleFrame);
+    example.dispose();
   };
 }
