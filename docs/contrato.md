@@ -55,7 +55,9 @@ Lo produce el retargeting en `physics/`. Ángulos de cada articulación del robo
 }
 ```
 
-Cada fila de `qpos` sigue el orden de MuJoCo para el G1: posición de la pelvis en metros (`x, y, z`, con z hacia arriba), su orientación como cuaternión (`w, x, y, z`) y los ángulos de las 29 articulaciones en radianes, en el orden en que aparecen en `g1_mjx.xml` (de la pierna izquierda a la muñeca derecha).
+Se genera con `cd physics && npm run retarget -- ../data/clips/<clip>.json` y queda en [`physics/motions/<clip_id>.json`](../physics/motions). Los de los clips precargados están versionados ahí: son lo que imita `training/` y lo que la web reproduce junto a la persona.
+
+Cada fila de `qpos` sigue el orden de MuJoCo para el G1: posición de la pelvis en metros (`x, y, z`, con z hacia arriba), su orientación como cuaternión (`w, x, y, z`) y los ángulos de las 29 articulaciones en radianes, en el orden en que aparecen en `g1_mjx.xml` (de la pierna izquierda a la muñeca derecha). La pelvis sigue el recorrido de la persona (sus caderas, con z hacia arriba y el origen en la primera posición) **escalado por el largo de pierna del G1 sobre el de la persona** (unos ×0,83: las piernas del robot son más cortas, y sin escalar los pies patinarían), y mira hacia donde avanza; si la persona está quieta, hacia donde apuntan sus caderas. Los pies quedan sobre el piso (z de la pelvis ajustada).
 
 ## `Policy`: el modelo entrenado
 
