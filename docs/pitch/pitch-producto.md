@@ -57,6 +57,6 @@ Cada frase del pitch, contra el repo. Lo que dice "por hacer" no se presenta com
 | Lo empujamos y no se cae | Aprendido en la política de pie (250 N desde 4 direcciones); en imitación, por hacer | [`training/README.md`](../../training/README.md) |
 | Piedras, viento, piso resbaloso, peso y motores al azar | Por hacer | — |
 | Entrega la política | Hecho para la política de pie (ONNX corriendo en el navegador) | [`training/policies/`](../../training/policies) |
-| Entrega los datos corregidos por la física | Por hacer | — |
-| Cada video del usuario se entrena, en cola | Por hacer: el servidor termina en el `PoseClip` | [`docs/contrato.md`](../contrato.md) |
+| Entrega los datos corregidos por la física | El formato y la herramienta están (la política en los 4 mundos, `datasets/<clip_id>.zip`); falta una política que camine para que los datos valgan | [`training/rollout.py`](../../training/rollout.py) |
+| Cada video del usuario se entrena, en cola | La cola existe y encadena retargeting → entrenamiento → datos (probado con entrenamientos cortos); la web todavía no la usa (WEB-2) | [`data/README.md`](../../data/README.md) |
 | Esquivar obstáculos y robot real | Plan, prometido como lo que sigue | — |

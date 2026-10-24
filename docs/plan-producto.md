@@ -88,8 +88,8 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
   - Los empujones, recién cuando camine.
 - [x] **ENT-2. Cualquier clip.** `ppo.py --task mimic --motion <ruta>`: `MimicEnv` carga el `RobotMotion` de cualquier ruta, no solo de `physics/motions/`. `walk` queda como alias.
 - [ ] **ENT-3. Empujones y mundos en la imitación.** Prender los empujones de `MimicEnv` (hoy apagados) y sortear un mundo por episodio. *Necesita:* ENT-1 y SIM-3.
-- [ ] **ENT-4. Un ONNX por checkpoint.** Exportar cada checkpoint al guardarlo (no solo al final), con `task`, `motion` y `worlds` en `policy.json`, y medir `followed_s` con la evaluación: es lo que la web muestra mientras entrena. *Necesita:* el contrato.
-- [ ] **ENT-5. Los datos.** `training/rollout.py`: la política final en N episodios por mundo, guardada con el formato del contrato. *Necesita:* ENT-3.
+- [x] **ENT-4. Un ONNX por checkpoint.** Exportar cada checkpoint al guardarlo (no solo al final), con `task`, `motion` y `worlds` en `policy.json`, y medir `followed_s` con la evaluación: es lo que la web muestra mientras entrena. *Necesita:* el contrato.
+- [x] **ENT-5. Los datos.** `training/rollout.py`: la política final en N episodios por mundo, guardada con el formato del contrato. *Necesita:* ENT-3. Hecho sin esperar a ENT-3: ya corre la política en los 4 mundos aunque se haya entrenado solo en el plano.
 
 ### Simulador (`physics/`)
 
@@ -101,9 +101,9 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Servidor (`data/`)
 
-- [ ] **SRV-1. Clips de la cámara.** `POST /clips`, con la validación del contrato. *Necesita:* el contrato.
-- [ ] **SRV-2. La cola de entrenamiento.** Aparte de la de videos, de a un entrenamiento y con tope. Encadena `retarget → training → data` como subprocesos (`node physics/scripts/retarget-clip.mjs --out …`, `uv run … training.ppo`, `training.export`, `training.rollout`) y reporta el progreso de `GET /train/{train_id}`. *Necesita:* ENT-2, ENT-4 y SIM-4.
-- [ ] **SRV-3. Servir lo entrenado.** Los `GET` de políticas, movimientos y datos. *Necesita:* SRV-2.
+- [x] **SRV-1. Clips de la cámara.** `POST /clips`, con la validación del contrato. *Necesita:* el contrato.
+- [x] **SRV-2. La cola de entrenamiento.** Aparte de la de videos, de a un entrenamiento y con tope. Encadena `retarget → training → data` como subprocesos (`node physics/scripts/retarget-clip.mjs --out …`, `uv run … training.ppo`, `training.export`, `training.rollout`) y reporta el progreso de `GET /train/{train_id}`. *Necesita:* ENT-2, ENT-4 y SIM-4.
+- [x] **SRV-3. Servir lo entrenado.** Los `GET` de políticas, movimientos y datos. *Necesita:* SRV-2.
 
 ### Web (`web/`)
 
