@@ -200,6 +200,42 @@ La cola entrena **de a uno** y admite **3** en espera: con unos 30 min cada uno,
 | `GET /policies/{policy_id}.onnx` y `.json` | cada checkpoint exportado, apenas existe. El último es la política final |
 | `GET /datasets/{clip_id}.zip` | los datos para entrenar robots (abajo), al terminar la etapa `data` |
 
+### El teléfono como cámara *(propuesta de Juan, 2026-10-24)*
+
+Para filmar a alguien de pie sin mover la Mac. La Mac abre una sesión y muestra un QR; el teléfono lo escanea y abre la página de la cámara (`/?api=<servidor>#/camara/<session_id>`), que corre el mismo MediaPipe que la webcam (`createLiveCapture` de `data/live`, con el filtro One Euro) y manda las poses al servidor; la Mac las recibe y las trata **igual que las de su webcam**: el robot copia con `mimic` y Grabar arma el mismo `PoseClip` con `buildPoseClip`. El servidor solo pasa los cuadros de una mano a la otra, **en memoria**: no guarda ni video ni poses, y una sesión sin tráfico se olvida.
+
+| Método y ruta | Cuerpo | Respuesta |
+| --- | --- | --- |
+| `POST /live` | | `201 { "session_id": "k7m3qx2p", "ttl_s": 180 }`. `503` si ya hay 20 sesiones abiertas |
+| `POST /live/{session_id}/poses` | el lote de abajo | `{ "received": 3, "next": 58, "watched_s": 0.4 }`: cuántos cuadros entraron, el número del siguiente, y hace cuántos segundos la Mac pidió por última vez (`null` si nunca). `400` si el lote no sigue el esquema, `404` si la sesión no existe o expiró, `413` si pesa más de 64 KB |
+| `GET /live/{session_id}/poses?since=<n>&wait=<ms>` | | `{ "next": 61, "frames": [...], "width": 1280, "height": 720, "sent_s": 0.1 }`: los cuadros con número ≥ `since` (y a partir de él, `next` es el `since` de la próxima llamada), el tamaño de la imagen del teléfono y hace cuántos segundos mandó el último lote (`null` si nunca). Si no hay cuadros nuevos, la respuesta espera hasta `wait` ms (0 por defecto, 2000 como máximo) a que lleguen: *long polling*. `404` si la sesión no existe |
+| `DELETE /live/{session_id}` | | `204`: termina la sesión. El otro lado recibe `404` en su siguiente petición y lo dice |
+
+El lote del teléfono, cada ~100 ms (a 30 cuadros por segundo son 3 cuadros, ~5 KB):
+
+```jsonc
+{
+  "width": 1280, "height": 720,         // píxeles de la imagen del teléfono: fijan el ángulo de visión del clip
+  "frames": [
+    { "t": 1234.567,                    // s, el reloj del teléfono (performance.now() / 1000), siempre creciente
+      "world": [[x, y, z], ...],        // 33, metros, ejes de MediaPipe (centrado en las caderas, y hacia abajo), ya suavizados
+      "image": [[x, y, v], ...] },      // 33, x e y entre 0 y 1 sobre la imagen, v la visibilidad
+    { "t": 1234.6 }                     // un cuadro sin cuerpo: sin world ni image, para que cuente en valid_ratio
+  ]
+}
+```
+
+Los números y su porqué:
+
+- **`session_id`:** 8 caracteres de un alfabeto de 31 (sin `0`, `o`, `1`, `l`, `i`, que se confunden): ~40 bits, imposible de adivinar en los minutos que vive una sesión, y corto para el QR.
+- **180 s sin peticiones** de ninguno de los dos lados y la sesión se olvida. Mientras la Mac muestra el QR pregunta cada segundo, así que una sesión en uso nunca expira; una abandonada (pestaña cerrada sin `DELETE`) se va en 3 minutos.
+- **Se guardan los últimos 150 cuadros** (5 s a 30 cuadros por segundo, ~250 KB) por sesión: cubre un corte del túnel de unos segundos sin perder cuadros de una grabación; más atrás que eso el robot copiaría el pasado. Un `since` más viejo que el cuadro más viejo guardado devuelve desde ese.
+- **Lotes de 100 ms:** mandar cada cuadro solo serían 30 peticiones por segundo por el túnel; lotes de 500 ms sumarían medio segundo de retraso. 64 KB por lote es un segundo entero de cuadros: suficiente, y nadie llena la memoria del servidor desde internet.
+- **`wait` hasta 2000 ms:** la Mac pide con `wait=1000` y vuelve a pedir en cuanto le contestan; con el teléfono mandando, cada respuesta sale en cuanto llega un lote; sin teléfono, es una petición por segundo. El tope de 2 s suelta pronto la conexión de una Mac que se fue.
+- **20 sesiones a la vez:** es un portátil en una demo; el tope evita que un visitante abra sesiones hasta llenar la memoria.
+- **Latencia esperable:** 150 a 300 ms de la persona al robot (la espera del lote, dos pasos por el túnel y el sondeo). Vale para que el robot copie; no para un juego de reflejos.
+- **La Mac declara al teléfono perdido a los 5 s** sin cuadros (`sent_s`): un corte del túnel dura 1 o 2 s; un teléfono que bloqueó la pantalla no vuelve. Entonces guarda lo grabado y vuelve a la webcam.
+
 ## Datos para entrenar robots *(2026-10-24)*
 
 Lo produce `training/` (etapa `data`): la política final corrida en varios episodios por mundo, con la física. Es el movimiento de la persona corregido para que el robot lo pueda hacer, en condiciones distintas.
