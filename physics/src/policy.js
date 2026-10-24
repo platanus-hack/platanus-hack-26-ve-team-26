@@ -28,6 +28,12 @@ const mimicObsDim = (lookahead) => STAND_OBS + NU + 3 + 1 + lookahead.length * (
 const FALL_HEIGHT = 0.5;
 const FALL_UPRIGHT = 0.5;
 const FALL_PAUSE_S = 1;
+// A fallen robot is outside everything the policy saw (training ends the episode at the fall), so
+// its outputs there are noise: the trained g1-stand, knocked down, swung its joints at ~55 rad/s on
+// the floor. Once fallen, the network stops deciding and the motors hold the pose it landed in,
+// until a reset stands it up. It takes back over only if the robot is clearly up again, with some
+// margin over the fall line so it does not flicker at the edge.
+const RECOVER_HEIGHT = 0.6;
 
 /**
  * @param ort    the onnxruntime-web module (or onnxruntime-node)
@@ -106,6 +112,7 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
   // Clip time of an imitation policy: one decision is 20 ms of the clip (MimicEnv.t).
   const clipTime = (sim) => sim.steps * model.opt.timestep;
   let fellAt = null; // clip time of the fall, while an imitation policy lies on the floor
+  let down = false; // fallen: the network is not deciding (see RECOVER_HEIGHT)
 
   // Starts the clip over at its end, or a moment after a fall. True if it did (sim.reset() was called).
   function startOver(sim, t) {
@@ -136,6 +143,7 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
     // episode. Imitation: the robot is put in the clip's first pose with its velocities and holds
     // it (MimicEnv.reset_at(0)); sim.reset() runs mj_forward after this.
     reset(sim) {
+      down = false;
       if (!mimic) return void previous.set(standing);
       fellAt = null;
       const { data } = sim;
@@ -154,6 +162,18 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
       const { data } = sim;
       const t = clipTime(sim);
       if (mimic && startOver(sim, t)) return;
+      const { qpos } = data;
+      const upright = 1 - 2 * (qpos[4] * qpos[4] + qpos[5] * qpos[5]);
+      if (qpos[2] < FALL_HEIGHT || upright < FALL_UPRIGHT) {
+        if (!down) {
+          down = true;
+          // Hold where it landed: each motor's target is its joint's current angle.
+          for (let i = 0; i < NU; i++) data.ctrl[i] = qpos[7 + i];
+        }
+        return;
+      }
+      if (down && qpos[2] < RECOVER_HEIGHT) return;
+      down = false;
       const result = await session.run({ [input]: new ort.Tensor('float32', observe(data, t), [1, obsDim]) });
       const ctrl = result[output].data;
       data.ctrl.set(ctrl);

@@ -60,6 +60,30 @@ for (const [newtons, atLeast] of [[150, 4], [250, 4]]) {
   expect(held.length >= atLeast, `takes a ${newtons} N shove from ${held.length} of 4 sides, at least ${atLeast} (${held.join(', ') || 'none'})`);
 }
 
+console.log('knocked down, the trained policy lies still (it never saw the floor in training)');
+sim.policy = ids['g1-stand'];
+{
+  sim.reset();
+  // A shove far past what it can take (600 N from behind), then 2 s on the floor before measuring.
+  let fellAt = null;
+  let motion = 0;
+  let frames = 0;
+  for (let t = 0; t < 6; t += FRAME_S) {
+    if (t >= 1 && t < 1 + FRAME_S) sim.push(Math.PI, 600);
+    await sim.advance(FRAME_S);
+    if (fellAt === null && sim.bodyPosition('pelvis')[2] < FALL_HEIGHT) fellAt = t;
+    if (fellAt !== null && t > fellAt + 2) {
+      let squared = 0;
+      for (let i = 6; i < sim.model.nv; i++) squared += sim.data.qvel[i] ** 2;
+      motion += Math.sqrt(squared);
+      frames++;
+    }
+  }
+  const speed = frames ? motion / frames : 0;
+  // Still means joint speeds under 1 rad/s overall; without the fix it flailed at ~55 rad/s.
+  expect(fellAt !== null && speed < 1, `falls and lies still: joints at ${speed.toFixed(2)} rad/s on the floor`);
+}
+
 console.log('the untrained policy (g1-stand-step-0), to show the check can fail');
 sim.policy = ids['g1-stand-step-0'];
 {
