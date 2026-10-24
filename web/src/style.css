@@ -759,10 +759,10 @@ select:disabled {
   display: none;
 }
 
-/* In En vivo's bar (centered) the box is a left-aligned card under the saved clip's line. */
-.saved .train-box {
+/* After an upload the box is a card under "¡Listo!", where the training it started is followed. */
+.upload .train-box {
   width: min(560px, 100%);
-  margin: 4px auto 0;
+  margin: 0;
   padding: var(--s-5);
   border: 1px solid var(--line);
   border-radius: var(--r-2);

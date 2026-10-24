@@ -1,8 +1,8 @@
 // Entrena a Tridi en vivo (W4, WEB-1 in docs/plan-producto.md): the camera on one side with the
 // person's skeleton drawn over it, and the G1 copying them on the other (view.mimic from physics/,
 // createLiveCapture from data/live). Turning the camera on also starts recording; stopping saves the
-// PoseClip, and the box under it (training.js) sends it to the server and trains the robot with it,
-// then opens its delivery.
+// PoseClip and opens its simulation (Simulaciones: you and the robot side by side, the worlds, and
+// training it, training.js).
 //
 // Optional: a phone as the camera (docs/contrato.md, "El teléfono como cámara"). "Usar el teléfono
 // como cámara" opens a session on the video server and shows a QR; the phone opens #/camara and
@@ -12,7 +12,6 @@
 // server the button only says why; the webcam is untouched.
 import { addUserClip } from '../preloaded.js';
 import { mountRobotPane, robotPaneHTML } from '../robot-pane.js';
-import { mountTrainBox, trainBoxHTML } from '../training.js';
 
 export const title = 'En vivo';
 
@@ -96,8 +95,8 @@ export function mount(root, { api }) {
         <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · camina, salta: el robot va adonde vas</p>
         <div class="saved" hidden>
           <p class="saved-text"></p>
-          ${trainBoxHTML()}
           <div class="row">
+            <a class="button primary see-clip" href="#/simulaciones">Ver la simulación</a>
             <button class="again" type="button">Grabar otro</button>
           </div>
         </div>
@@ -133,7 +132,6 @@ export function mount(root, { api }) {
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
   const robot = mountRobotPane($('.robot-pane'));
-  const trainBox = mountTrainBox($('.train-box'), api);
   robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
 
   // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
@@ -144,7 +142,6 @@ export function mount(root, { api }) {
     live.startRecording();
     recordStart = performance.now();
     $('.saved').hidden = true;
-    trainBox.show(null);
     $('.recording').hidden = false;
     $('.record-toggle').hidden = false;
     clearInterval(recordTimer);
@@ -162,11 +159,12 @@ export function mount(root, { api }) {
     $('.record-toggle').hidden = true;
     const seconds = (performance.now() - recordStart) / 1000;
     // The result gets its own block: the live status line rewrites itself every second. A saved
-    // clip brings the next step with it: training the robot with it (the box, training.js).
+    // clip opens in its simulation, where it is trained.
     const result = (text, clip = null) => {
       $('.saved-text').textContent = text;
       $('.saved-text').classList.toggle('error', !clip);
-      trainBox.show(clip && { clip: clip.id, data: clip });
+      $('.see-clip').hidden = !clip;
+      if (clip) $('.see-clip').href = `#/simulaciones/${encodeURIComponent(clip.id)}`;
       $('.saved').hidden = false;
     };
     let clip;
@@ -348,8 +346,7 @@ export function mount(root, { api }) {
   return () => {
     disposed = true;
     clearInterval(recordTimer);
-    stop(); // a recording in progress is kept, and a training goes on (training.js)
-    trainBox.dispose();
+    stop(); // a recording in progress is kept: it is in the simulations when the user comes back
     if (robot.view) robot.view.viewer.followTau = 0; // the other screens follow the robot rigidly
     robot.dispose();
   };

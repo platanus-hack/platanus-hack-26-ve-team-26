@@ -1,9 +1,11 @@
 // Sube un video (W5 and W6): pick a file, upload it in chunks, follow the server through its
-// stages and let the user pick another person on the first frame.
+// stages and let the user pick another person on the first frame. When the movement is ready it
+// goes straight to training (training.js), and the screen follows it to its delivery.
 // The server API is data/live's client (docs/contrato.md); this screen only draws it.
 import { chooseSubject, fetchClip, firstFrameUrl, UploadError, uploadVideo, watchJob } from '../../../data/live/src/upload.js';
 import { createVideoOverlay } from '../video-overlay.js';
 import { addUserClip } from '../preloaded.js';
+import { cannotTrain, mountTrainBox, startTraining, trainBoxHTML } from '../training.js';
 
 export const title = 'Subir un video';
 
@@ -92,6 +94,7 @@ export function mount(root, { api }) {
           <div data-show="done">
             <h2>¡Listo!</h2>
             <p class="lead done-text"></p>
+            ${trainBoxHTML()}
             <div class="row">
               <button class="primary again" type="button">Subir otro video</button>
               <a class="button" href="#/">Volver al inicio</a>
@@ -120,6 +123,7 @@ export function mount(root, { api }) {
 
   const $ = (selector) => root.querySelector(selector);
   const page = $('.upload');
+  const trainBox = mountTrainBox($('.train-box'), api);
   const show = (step) => (page.dataset.step = step);
   // The example: the walk the robot learned from, playing with its skeleton over it.
   const example = createVideoOverlay($('.example-pane'));
@@ -225,6 +229,13 @@ export function mount(root, { api }) {
     if (gone) return;
     $('.done-text').textContent =
       session.clips.length > 1 ? `Tridi ya tiene ${session.clips.length} movimientos nuevos.` : 'Tridi ya tiene el movimiento de tu video.';
+    // Straight to training, no button to press. The first movement only: the server trains one at
+    // a time with 3 waiting (docs/contrato.md), and a .zip of several would fill its queue. A clip
+    // that cannot be trained (too little of the body seen) shows why instead; coming back to this
+    // screen does not start it twice (startTraining keeps one run per clip).
+    const item = { clip: session.clips[0].id, data: session.clips[0] };
+    trainBox.show(item);
+    if (!cannotTrain(item, api)) startTraining(item, api);
     show('done');
     // The chooser stays useful for 10 minutes after "done" (the server keeps the video that long).
     render(job);
@@ -312,5 +323,6 @@ export function mount(root, { api }) {
     abort?.abort(); // stops polling; the server keeps processing
     cancelAnimationFrame(exampleFrame);
     example.dispose();
+    trainBox.dispose(); // the training goes on (training.js); coming back shows it again
   };
 }
