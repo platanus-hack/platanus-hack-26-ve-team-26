@@ -6,6 +6,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 port=${1:-8000}
+web=${TRIDI_WEB_URL:-https://tridi-alpha.vercel.app}
 command -v cloudflared >/dev/null || { echo "serve: install cloudflared first: brew install cloudflared"; exit 1; }
 
 log=$(mktemp -t tridi-tunnel)
@@ -24,7 +25,11 @@ done
 if [ -z "${url:-}" ]; then
   echo "serve: the tunnel did not start; its log:"; cat "$log"; exit 1
 fi
+# The tunnel URL changes on every start; the web reads it from ?api= and remembers it.
+link="$web/?api=$url"
+command -v pbcopy >/dev/null && printf '%s' "$link" | pbcopy && copied=" (copied)" || copied=""
 echo
 echo "serve: video server public at $url (health: $url/health)"
-echo "serve: give this URL to the web; it changes every time this script starts."
+echo "serve: open the web with this link$copied:"
+echo "       $link"
 wait $server
