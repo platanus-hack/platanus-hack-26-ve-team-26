@@ -1,9 +1,11 @@
 // Public API of data/live for the web app: live camera -> MediaPipe pose every frame -> PoseClip.
 // The same PoseClip that data/extract.py makes from an uploaded video, with source "camera".
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { PoseFilter } from './oneeuro.js';
 import { BODY, MIN_VISIBILITY, buildPoseClip } from './poseclip.js';
 
 export { buildPoseClip } from './poseclip.js';
+export { PoseFilter } from './oneeuro.js';
 export { drawSkeleton } from './draw.js';
 export { checkApi, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, uploadVideo, watchJob } from './upload.js';
@@ -28,13 +30,16 @@ export class CameraError extends Error {}
  * @param options.model       'full' (default) or 'lite'
  * @param options.stream      a MediaStream to use instead of the camera (e.g. a video file's
  *   captureStream(), for tests and demos without a webcam)
+ * @param options.smooth      true (default): every point goes through a causal One Euro filter
+ *   (src/oneeuro.js) before onPose and the recording, so the robot copying the person does not shake
+ *   with MediaPipe's per-frame noise. false gives MediaPipe's raw output.
  * @param options.onProgress  ({ stage: 'model' | 'camera', done: boolean }) while loading
  * @param options.onPose      ({ landmarks, world, visible, t }) every processed frame: `landmarks`
  *   are 33 points normalized to the video (for drawSkeleton), `world` 33 points in meters
  *   (hip-centered, MediaPipe axes), `visible` false when no body or too occluded; null if no body.
  * @returns { startRecording, stopRecording, isRecording, fps, stop }
  */
-export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, onProgress, onPose } = {}) {
+export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, smooth = true, onProgress, onPose } = {}) {
   onProgress?.({ stage: 'model', done: false });
   const vision = await FilesetResolver.forVisionTasks(WASM_URL);
   const landmarker = await PoseLandmarker.createFromOptions(vision, {
@@ -68,6 +73,7 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, 
   let frameId = 0;
   let running = true;
   const times = []; // when each of the last frames was processed, for fps()
+  const filter = new PoseFilter();
 
   function frame() {
     if (!running) return;
@@ -78,12 +84,14 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, 
       times.push(now);
       while (times[0] < now - 1000) times.shift();
       const res = landmarker.detectForVideo(video, now);
-      const landmarks = res.landmarks[0];
-      const world = res.worldLandmarks[0];
+      let landmarks = res.landmarks[0];
+      let world = res.worldLandmarks[0];
       if (!landmarks || !world) {
+        filter.reset(); // the body was lost: the next one starts fresh, not from where this one left
         onPose?.(null);
         samples?.push({ t: (now - recordStart) / 1000, valid: false });
       } else {
+        if (smooth) [world, landmarks] = smoothed(filter, now / 1000, world, landmarks);
         const vis = landmarks.map((p) => p.visibility ?? 0);
         const visible = BODY.reduce((s, i) => s + vis[i], 0) / BODY.length >= MIN_VISIBILITY;
         onPose?.({ landmarks, world, visible, t: now / 1000 });
@@ -127,4 +135,17 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, 
       landmarker.close();
     },
   };
+}
+
+/** The frame's points through the One Euro filter, in MediaPipe's own shape ({ x, y, z, visibility }). */
+function smoothed(filter, t, world, landmarks) {
+  const out = filter.filter(
+    t,
+    world.map((p) => [p.x, p.y, p.z]),
+    landmarks.map((p) => [p.x, p.y, p.z]),
+  );
+  return [
+    out.world.map(([x, y, z], i) => ({ ...world[i], x, y, z })),
+    out.image.map(([x, y, z], i) => ({ ...landmarks[i], x, y, z })),
+  ];
 }

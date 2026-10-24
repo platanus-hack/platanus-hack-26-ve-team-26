@@ -23,9 +23,11 @@ const HFOV_DEG = 65;
 // A real turn around takes well over a second, a misread lasts a few frames.
 const FLIP_WINDOW_S = 1.0;
 
-// Centered moving average over 0.2 s on the hips' trajectory: removes the per-frame jitter of the
-// estimate without lagging the motion (a step lasts ~0.5 s).
-const SMOOTH_S = 0.2;
+// The hips' trajectory gets the same Savitzky-Golay filter as data/lift.py (0.6 s, quadratic), where
+// the reasoning is. The clip is built when the recording stops, so the whole trajectory is there.
+// The points themselves were already smoothed live by the One Euro filter (src/oneeuro.js).
+const ROOT_WINDOW_S = 0.6;
+const ROOT_ORDER = 2;
 
 // A camera fit far from its neighbors' median is a fit error (the body cut by the image edge), not
 // motion: same window and threshold as data/lift.py, where the reasoning is.
@@ -95,7 +97,7 @@ export function buildPoseClip(samples, { width, height, id = defaultId() }) {
   for (const axis of [0, 2]) {
     if (range(camera, axis) > range(feet, axis)) root.forEach((p, k) => (p[axis] = camera[k][axis]));
   }
-  const smooth = smoothRows(root, Math.max(1, Math.round(SMOOTH_S * CLIP_FPS)));
+  const smooth = savgol(root, Math.round(ROOT_WINDOW_S * CLIP_FPS) | 1, ROOT_ORDER);
 
   const pos = rel.map((joints, k) => joints.map((p) => p.map((v, i) => v + smooth[k][i])));
   // The contract's origin is the hips' center of the first frame.
@@ -233,17 +235,44 @@ function rootFromFeet(rel) {
   return root;
 }
 
-function smoothRows(rows, window) {
-  if (window < 2) return rows;
-  const pad = Math.floor(window / 2);
+/**
+ * Savitzky-Golay filter over rows of numbers, the same as data/smooth.py: each row is the value at its
+ * frame of the polynomial fitted to the window around it; at the edges, of the first or last window.
+ */
+export function savgol(rows, window, order) {
+  const n = rows.length;
+  window = Math.min(window, n % 2 ? n : n - 1);
+  if (window <= order) return rows.map((r) => [...r]);
+  const half = window >> 1;
+  // Least squares fit of a polynomial in t = -half..half: coefficients = (VᵀV)⁻¹ Vᵀ · window.
+  const V = Array.from({ length: window }, (_, i) => Array.from({ length: order + 1 }, (_, q) => (i - half) ** q));
+  const VtV = V[0].map((_, r) => V[0].map((_, c) => V.reduce((sum, row) => sum + row[r] * row[c], 0)));
+  const inv = invert(VtV);
+  const fit = inv.map((row) => V.map((v) => row.reduce((sum, x, c) => sum + x * v[c], 0))); // [order+1][window]
+  const coeffs = (start) => fit.map((w) => rows[0].map((_, ax) => w.reduce((sum, x, i) => sum + x * rows[start + i][ax], 0)));
+  const at = (cs, t) => cs[0].map((_, ax) => cs.reduce((sum, c, q) => sum + c[ax] * t ** q, 0));
+  const first = coeffs(0);
+  const last = coeffs(n - window);
   return rows.map((_, k) => {
-    const sum = [0, 0, 0];
-    for (let d = -pad; d < window - pad; d++) {
-      const r = rows[Math.min(rows.length - 1, Math.max(0, k + d))];
-      for (let a = 0; a < 3; a++) sum[a] += r[a];
-    }
-    return sum.map((v) => v / window);
+    if (k < half) return at(first, k - half);
+    if (k >= n - half) return at(last, k - (n - window) - half);
+    return at(coeffs(k - half), 0);
   });
+}
+
+/** Gauss-Jordan inverse of a small square matrix (the fit's normal equations). */
+function invert(m) {
+  const n = m.length;
+  const a = m.map((row, i) => [...row, ...Array.from({ length: n }, (_, j) => (i === j ? 1 : 0))]);
+  for (let c = 0; c < n; c++) {
+    let piv = c;
+    for (let r = c + 1; r < n; r++) if (Math.abs(a[r][c]) > Math.abs(a[piv][c])) piv = r;
+    [a[c], a[piv]] = [a[piv], a[c]];
+    const d = a[c][c];
+    a[c] = a[c].map((v) => v / d);
+    for (let r = 0; r < n; r++) if (r !== c) { const f = a[r][c]; a[r] = a[r].map((v, j) => v - f * a[c][j]); }
+  }
+  return a.map((row) => row.slice(n));
 }
 
 const lerp = (a, b, w) => a.map((v, i) => v + (b[i] - v) * w);
