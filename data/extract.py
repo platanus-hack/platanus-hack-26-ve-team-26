@@ -1,6 +1,6 @@
 """Video (or .zip of videos) -> PoseClip of one subject, as docs/contrato.md defines it.
 
-    uv run --project data python -m data.extract <video.mp4|videos.zip> [--click x,y] [--out data/clips]
+    uv run --project data python -m data.extract <video.mp4|videos.zip> [--click x,y] [--out data/clips] [--id clip_...]
 """
 
 from __future__ import annotations
@@ -55,21 +55,23 @@ def _clip_id(stem: str, out: Path) -> str:
     return f"{base}_{n:02d}"
 
 
-def extract(video: Path, source_file: str, out: Path, click: tuple[float, float] | None, progress: Progress) -> Path:
+def extract(video: Path, source_file: str, out: Path, click: tuple[float, float] | None, progress: Progress,
+            clip_id: str | None = None) -> Path:
     tracking = track_people(video, progress)
     subject = select_subject(tracking, click)
     lifted = lift_subject(video, tracking, subject, progress)
-    json_path, clip = write_clip(tracking, subject, lifted, source_file, out)
+    json_path, clip = write_clip(tracking, subject, lifted, source_file, out, clip_id)
     dropped = ", ".join(f"{k} {v}" for k, v in lifted.rejected.items() if v)
     progress.done(f"track #{subject.track_id} ({subject.selected_by}), valid {clip['quality']['valid_ratio']:.0%}"
                   + (f", dropped: {dropped}" if dropped else ""))
     return json_path
 
 
-def write_clip(tracking: Tracking, subject: Subject, lifted: Lifted, source_file: str, out: Path) -> tuple[Path, dict]:
+def write_clip(tracking: Tracking, subject: Subject, lifted: Lifted, source_file: str, out: Path,
+               clip_id: str | None = None) -> tuple[Path, dict]:
     """Saves the PoseClip as <id>.json and <id>.npz in out; returns the JSON path and the clip."""
     out.mkdir(parents=True, exist_ok=True)
-    clip_id = _clip_id(Path(source_file).stem, out)
+    clip_id = clip_id or _clip_id(Path(source_file).stem, out)
     fps = tracking.fps
     t = (lifted.frame_index - lifted.frame_index[0]) / fps
     joints = np.round(lifted.joints, 4)
@@ -115,6 +117,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("input", type=Path, help="a video or a .zip of videos")
     p.add_argument("--click", type=_parse_click, help="x,y in the first frame with people: follow the person there")
     p.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output folder (default: data/clips)")
+    p.add_argument("--id", help="clip id, to regenerate a preloaded clip in place (default: from the date and file name)")
     args = p.parse_args(argv)
 
     if not args.input.exists():
@@ -124,13 +127,15 @@ def main(argv: list[str] | None = None) -> int:
         start = time.time()
         progress = Progress(args.input.name)
         try:
-            path = extract(args.input, args.input.name, args.out, args.click, progress)
+            path = extract(args.input, args.input.name, args.out, args.click, progress, args.id)
         except RuntimeError as e:
             progress.done(f"failed: {e}")
             return 1
         progress.done(f"ok -> {path} ({time.time() - start:.0f} s)")
         return 0
 
+    if args.id:
+        p.error("--id names one clip; a .zip makes one clip per video")
     if args.click:
         p.error("--click picks a person in one video; it cannot apply to every video in a .zip")
     with zipfile.ZipFile(args.input) as zf, tempfile.TemporaryDirectory() as tmp:

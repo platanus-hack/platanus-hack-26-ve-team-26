@@ -12,6 +12,7 @@ import numpy as np
 from mediapipe.tasks.python import BaseOptions, vision
 
 from .models import mediapipe_path
+from .smooth import savgol, smooth_points
 from .track import Subject, Tracking
 
 # The crop is a square 1.4x the longer side of the box: MediaPipe's detector expects the whole
@@ -42,9 +43,13 @@ HFOV_DEG = 65.0
 # Window for the facing check: a real turn around takes well over a second, a misread lasts a few frames.
 FLIP_WINDOW_S = 1.0
 
-# The hips' trajectory is rebuilt from foot contacts, which jitters a few centimeters per frame.
-# A centered moving average over 0.2 s removes that without lagging the motion (a step lasts ~0.5 s).
-SMOOTH_S = 0.2
+# The hips' trajectory jitters where the stance foot changes (every ~0.5 s walking) and with the
+# camera fit's noise. A 0.6 s window spans one change of stance foot; a quadratic still follows the
+# speed changing within a stride. Swept with data/jitter.py against the old 0.2 s moving average
+# (numbers in data/README.md): the pelvis' horizontal acceleration drops ~5x and the planted foot
+# slides less, not more. A longer window (0.8 s) starts to let the planted foot slide.
+ROOT_WINDOW_S = 0.6
+ROOT_ORDER = 2
 
 # The camera fit can land meters off for a frame or two, typically when the subject enters the shot
 # cut by the image edge (the first frame of correr-perfil came out 5 m deep). Within half a second
@@ -126,32 +131,6 @@ def _fit_translation(world: np.ndarray, px: np.ndarray, w: np.ndarray, f: float,
     return t if t[2] > 0 else None  # the person must be in front of the camera
 
 
-def _mirror(coco: int) -> int:
-    """Same joint on the other side (COCO body joints alternate left, right from 5 to 16)."""
-    return coco + 1 if coco % 2 else coco - 1
-
-
-def _facing_flips(world: np.ndarray, valid: np.ndarray, fps: float) -> np.ndarray:
-    """Frames whose body faces the opposite way of the frames around them.
-
-    MediaPipe sometimes reads a person seen from behind as facing the camera for a few frames,
-    which swaps their limbs. Nobody turns around in a fraction of a second, so a frame facing
-    against the median of its neighbours (within FLIP_WINDOW_S) is such a misread.
-    """
-    across = (world[:, 11] - world[:, 12]) + (world[:, 23] - world[:, 24])
-    up = (world[:, 11] + world[:, 12]) / 2 - (world[:, 23] + world[:, 24]) / 2
-    facing = np.cross(up, across)
-    facing[:, 1] = 0  # only the heading on the ground matters
-    facing /= np.linalg.norm(facing, axis=1, keepdims=True) + 1e-9
-    half = max(1, int(round(FLIP_WINDOW_S * fps / 2)))
-    flips = np.zeros(len(world), dtype=bool)
-    for k in np.flatnonzero(valid):
-        near = np.flatnonzero(valid[max(0, k - half) : k + half + 1]) + max(0, k - half)
-        ref = np.median(facing[near], axis=0)
-        flips[k] = facing[k] @ ref < 0
-    return flips
-
-
 def _camera_outliers(cam: np.ndarray, valid: np.ndarray, fps: float) -> np.ndarray:
     """Frames whose camera-fit position is far from the median of its valid neighbors."""
     half = max(1, int(round(CAM_WINDOW_S * fps / 2)))
@@ -182,15 +161,6 @@ def _root_from_feet(rel: np.ndarray) -> np.ndarray:
         root[k, [0, 2]] = root[k - 1, [0, 2]] - step[[0, 2]]
     root[:, 1] = contact[0, stance[0], 1] - contact[np.arange(len(rel)), stance, 1]
     return root
-
-
-def _smooth(x: np.ndarray, window: int) -> np.ndarray:
-    if window < 2:
-        return x
-    pad = window // 2
-    padded = np.pad(x, ((pad, window - 1 - pad), (0, 0)), mode="edge")
-    kernel = np.ones(window) / window
-    return np.stack([np.convolve(padded[:, j], kernel, mode="valid") for j in range(x.shape[1])], axis=1)
 
 
 def _fill_gaps(x: np.ndarray, valid: np.ndarray) -> np.ndarray:
@@ -279,8 +249,16 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
             cam[k] = t
             valid[k] = True
     cap.release()
+    return assemble(world, cam, joints2d, boxes, valid, rejected, tr.fps, first)
 
-    flipped = valid & _facing_flips(world, valid, tr.fps)
+
+def assemble(world: np.ndarray, cam: np.ndarray, joints2d: np.ndarray, boxes: np.ndarray, valid: np.ndarray,
+             rejected: dict[str, int], fps: float, first: int) -> Lifted:
+    """MediaPipe's per-frame output -> the clip: drop misreads, trim, smooth and rebuild the trajectory.
+
+    Separate from the detection loop so the post-processing can be tuned on cached detections.
+    """
+    flipped = valid & _facing_flips(world, valid, fps)
     valid &= ~flipped
     rejected["flipped"] = int(flipped.sum())
 
@@ -294,10 +272,12 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     # Camera space (x right, y down, z away) -> contract space (x right, y up, z toward the camera):
     # a 180 degree turn about x, which keeps the axes right-handed.
     body_rel = _fill_gaps(world, valid) * np.array([1, -1, -1])
-    window = max(1, int(round(SMOOTH_S * tr.fps)))
+    # MediaPipe shakes every point a few cm per frame; filtered in time before anything is built on
+    # the feet (data/smooth.py says why Savitzky-Golay). The trajectory gets its own, longer window.
+    body_rel = smooth_points(body_rel, fps)
     feet = _root_from_feet(body_rel)
     # Bad camera fits are dropped only from the camera estimate: the pose of those frames is fine.
-    cam_ok = valid & ~_camera_outliers(cam, valid, tr.fps)
+    cam_ok = valid & ~_camera_outliers(cam, valid, fps)
     camera = _fill_gaps(cam, cam_ok)
     camera = (camera - camera[0]) * np.array([1, -1, -1])
     # Each estimate fails by seeing too little motion: the camera one when the camera pans to follow
@@ -307,7 +287,7 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     for axis in (0, 2):
         if np.ptp(camera[:, axis]) > np.ptp(feet[:, axis]):
             root[:, axis] = camera[:, axis]
-    root = _smooth(root, window)
+    root = savgol(root, int(round(ROOT_WINDOW_S * fps)) | 1, ROOT_ORDER)
     pos = body_rel + root[:, None, :]
     # Smoothing moves the first frame a little; the contract's origin is exactly its hips' center.
     pos -= (pos[0, 23] + pos[0, 24]) / 2
