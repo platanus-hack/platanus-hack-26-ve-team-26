@@ -34,6 +34,11 @@ MAX_DISAGREEMENT = 0.15
 # occluded or out of frame; their 3D is a guess.
 MIN_VISIBILITY = 0.5
 
+# A camera's focal length is unknown for uploaded videos. 65 degrees across the long side of the image
+# is the typical 1x phone camera (portrait or landscape); it only sets the scale of the camera-based
+# trajectory, and telephoto shots (stock footage) come out with too little travel.
+HFOV_DEG = 65.0
+
 # Window for the facing check: a real turn around takes well over a second, a misread lasts a few frames.
 FLIP_WINDOW_S = 1.0
 
@@ -67,6 +72,50 @@ def _square_crop(frame: np.ndarray, box: np.ndarray) -> tuple[np.ndarray, float,
     if sx1 > sx0 and sy1 > sy0:
         crop[sy0 - y0 : sy1 - y0, sx0 - x0 : sx1 - x0] = frame[sy0:sy1, sx0:sx1]
     return crop, x0, y0, s
+
+
+def _mirror(coco: int) -> int:
+    """Same joint on the other side (COCO body joints alternate left, right from 5 to 16)."""
+    return coco + 1 if coco % 2 else coco - 1
+
+
+def _facing_flips(world: np.ndarray, valid: np.ndarray, fps: float) -> np.ndarray:
+    """Frames whose body faces the opposite way of the frames around them.
+
+    MediaPipe sometimes reads a person seen from behind as facing the camera for a few frames,
+    which swaps their limbs. Nobody turns around in a fraction of a second, so a frame facing
+    against the median of its neighbours (within FLIP_WINDOW_S) is such a misread.
+    """
+    across = (world[:, 11] - world[:, 12]) + (world[:, 23] - world[:, 24])
+    up = (world[:, 11] + world[:, 12]) / 2 - (world[:, 23] + world[:, 24]) / 2
+    facing = np.cross(up, across)
+    facing[:, 1] = 0  # only the heading on the ground matters
+    facing /= np.linalg.norm(facing, axis=1, keepdims=True) + 1e-9
+    half = max(1, int(round(FLIP_WINDOW_S * fps / 2)))
+    flips = np.zeros(len(world), dtype=bool)
+    for k in np.flatnonzero(valid):
+        near = np.flatnonzero(valid[max(0, k - half) : k + half + 1]) + max(0, k - half)
+        ref = np.median(facing[near], axis=0)
+        flips[k] = facing[k] @ ref < 0
+    return flips
+
+
+def _fit_translation(world: np.ndarray, px: np.ndarray, w: np.ndarray, f: float, c: np.ndarray) -> np.ndarray | None:
+    """Camera-space translation t so that the hip-centered 3D pose, moved by t, projects onto the 2D joints.
+
+    MediaPipe world landmarks have no global position (their origin is the hips of every frame).
+    With a pinhole camera, u = f (X + tx) / (Z + tz) + cx is linear in t after multiplying out,
+    so t comes from a weighted least squares over the visible joints.
+    """
+    du, dv = px[:, 0] - c[0], px[:, 1] - c[1]
+    n = len(world)
+    a = np.zeros((2 * n, 3))
+    b = np.zeros(2 * n)
+    a[:n, 0], a[:n, 2], b[:n] = f, -du, du * world[:, 2] - f * world[:, 0]
+    a[n:, 1], a[n:, 2], b[n:] = f, -dv, dv * world[:, 2] - f * world[:, 1]
+    sw = np.sqrt(np.concatenate([w, w]))
+    t, *_ = np.linalg.lstsq(a * sw[:, None], b * sw, rcond=None)
+    return t if t[2] > 0 else None  # the person must be in front of the camera
 
 
 def _mirror(coco: int) -> int:
@@ -151,7 +200,10 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     boxes = np.zeros((n, 4))
     valid = np.zeros(n, dtype=bool)
     body = list(COCO_TO_MP.values())
-    rejected = {"no_box": 0, "no_pose": 0, "other_person": 0, "occluded": 0}
+    f = max(tr.width, tr.height) / (2 * np.tan(np.radians(HFOV_DEG) / 2))
+    c = np.array([tr.width / 2, tr.height / 2])
+    cam = np.zeros((n, 3))
+    rejected = {"no_box": 0, "no_pose": 0, "other_person": 0, "occluded": 0, "no_fit": 0}
 
     cap = cv2.VideoCapture(str(video))
     # Skip to the first frame by decoding: seeking by index is not frame-exact on every codec.
@@ -202,6 +254,11 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
             if vis[body].mean() < MIN_VISIBILITY:
                 rejected["occluded"] += 1
                 continue
+            t = _fit_translation(world[k][body], px[body], vis[body], f, c)
+            if t is None:
+                rejected["no_fit"] += 1
+                continue
+            cam[k] = t
             valid[k] = True
     cap.release()
 
@@ -215,12 +272,24 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     # Trim to the first and last good frame: the clip starts when the subject is really there.
     lo, hi = np.flatnonzero(valid)[[0, -1]]
     sl = slice(lo, hi + 1)
-    world, joints2d, boxes, valid = world[sl], joints2d[sl], boxes[sl], valid[sl]
+    world, cam, joints2d, boxes, valid = world[sl], cam[sl], joints2d[sl], boxes[sl], valid[sl]
     # Camera space (x right, y down, z away) -> contract space (x right, y up, z toward the camera):
     # a 180 degree turn about x, which keeps the axes right-handed.
     body_rel = _fill_gaps(world, valid) * np.array([1, -1, -1])
-    root = _smooth(_root_from_feet(body_rel), max(1, int(round(SMOOTH_S * tr.fps))))
+    window = max(1, int(round(SMOOTH_S * tr.fps)))
+    feet = _root_from_feet(body_rel)
+    camera = (_fill_gaps(cam, valid) - cam[0]) * np.array([1, -1, -1])
+    # Each estimate fails by seeing too little motion: the camera one when the camera pans to follow
+    # the person, the feet one along the depth axis (MediaPipe barely sees feet move toward the camera).
+    # So on each ground axis we keep the one that travelled further. Height always comes from the feet.
+    root = feet.copy()
+    for axis in (0, 2):
+        if np.ptp(camera[:, axis]) > np.ptp(feet[:, axis]):
+            root[:, axis] = camera[:, axis]
+    root = _smooth(root, window)
     pos = body_rel + root[:, None, :]
+    # Smoothing moves the first frame a little; the contract's origin is exactly its hips' center.
+    pos -= (pos[0, 23] + pos[0, 24]) / 2
 
     vis = joints2d[:, :, 2].copy()
     vis[~valid] = 0  # interpolated frames are flagged with zero visibility

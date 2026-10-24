@@ -61,7 +61,7 @@ def track_people(video: Path, progress: Callable[[str, int, int], None]) -> Trac
 
     cap = cv2.VideoCapture(str(video))
     if not cap.isOpened():
-        raise RuntimeError(f"cannot open video: {video}")
+        raise RuntimeError("cannot open the video")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -92,7 +92,7 @@ def track_people(video: Path, progress: Callable[[str, int, int], None]) -> Trac
         progress("tracking", i, total)
     cap.release()
     if i == 0:
-        raise RuntimeError(f"no frames could be read from {video.name}")
+        raise RuntimeError("no frames could be read (broken or unsupported video)")
     return Tracking(fps, width, height, i, tracks)
 
 
