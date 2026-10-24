@@ -1,0 +1,402 @@
+{
+ "left": {
+  "palm": {
+   "mesh": "left_hand_palm_link",
+   "pos": [
+    0.0415,
+    0.003,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "bodies": [
+   {
+    "name": "left_hand_thumb_0_link",
+    "parent": null,
+    "pos": [
+     0.067,
+     0.003,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_thumb_0_joint",
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "range": [
+     -1.0472,
+     1.0472
+    ],
+    "mesh": "left_hand_thumb_0_link"
+   },
+   {
+    "name": "left_hand_thumb_1_link",
+    "parent": "left_hand_thumb_0_link",
+    "pos": [
+     -0.0025,
+     -0.0193,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_thumb_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -0.724312,
+     1.0472
+    ],
+    "mesh": "left_hand_thumb_1_link"
+   },
+   {
+    "name": "left_hand_thumb_2_link",
+    "parent": "left_hand_thumb_1_link",
+    "pos": [
+     0.0,
+     -0.0458,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_thumb_2_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     0.0,
+     1.74533
+    ],
+    "mesh": "left_hand_thumb_2_link"
+   },
+   {
+    "name": "left_hand_middle_0_link",
+    "parent": null,
+    "pos": [
+     0.1192,
+     0.0046,
+     -0.0285
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_middle_0_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.5708,
+     0.0
+    ],
+    "mesh": "left_hand_middle_0_link"
+   },
+   {
+    "name": "left_hand_middle_1_link",
+    "parent": "left_hand_middle_0_link",
+    "pos": [
+     0.0458,
+     0.0,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_middle_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.74533,
+     0.0
+    ],
+    "mesh": "left_hand_middle_1_link"
+   },
+   {
+    "name": "left_hand_index_0_link",
+    "parent": null,
+    "pos": [
+     0.1192,
+     0.0046,
+     0.0285
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_index_0_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.5708,
+     0.0
+    ],
+    "mesh": "left_hand_index_0_link"
+   },
+   {
+    "name": "left_hand_index_1_link",
+    "parent": "left_hand_index_0_link",
+    "pos": [
+     0.0458,
+     0.0,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "left_hand_index_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.74533,
+     0.0
+    ],
+    "mesh": "left_hand_index_1_link"
+   }
+  ]
+ },
+ "right": {
+  "palm": {
+   "mesh": "right_hand_palm_link",
+   "pos": [
+    0.0415,
+    -0.003,
+    0.0
+   ],
+   "quat": [
+    1.0,
+    0.0,
+    0.0,
+    0.0
+   ]
+  },
+  "bodies": [
+   {
+    "name": "right_hand_thumb_0_link",
+    "parent": null,
+    "pos": [
+     0.067,
+     -0.003,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_thumb_0_joint",
+    "axis": [
+     0.0,
+     1.0,
+     0.0
+    ],
+    "range": [
+     -1.0472,
+     1.0472
+    ],
+    "mesh": "right_hand_thumb_0_link"
+   },
+   {
+    "name": "right_hand_thumb_1_link",
+    "parent": "right_hand_thumb_0_link",
+    "pos": [
+     -0.0025,
+     0.0193,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_thumb_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.0472,
+     0.724312
+    ],
+    "mesh": "right_hand_thumb_1_link"
+   },
+   {
+    "name": "right_hand_thumb_2_link",
+    "parent": "right_hand_thumb_1_link",
+    "pos": [
+     0.0,
+     0.0458,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_thumb_2_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     -1.74533,
+     0.0
+    ],
+    "mesh": "right_hand_thumb_2_link"
+   },
+   {
+    "name": "right_hand_middle_0_link",
+    "parent": null,
+    "pos": [
+     0.1192,
+     -0.0046,
+     -0.0285
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_middle_0_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     0.0,
+     1.5708
+    ],
+    "mesh": "right_hand_middle_0_link"
+   },
+   {
+    "name": "right_hand_middle_1_link",
+    "parent": "right_hand_middle_0_link",
+    "pos": [
+     0.0458,
+     0.0,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_middle_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     0.0,
+     1.74533
+    ],
+    "mesh": "right_hand_middle_1_link"
+   },
+   {
+    "name": "right_hand_index_0_link",
+    "parent": null,
+    "pos": [
+     0.1192,
+     -0.0046,
+     0.0285
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_index_0_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     0.0,
+     1.5708
+    ],
+    "mesh": "right_hand_index_0_link"
+   },
+   {
+    "name": "right_hand_index_1_link",
+    "parent": "right_hand_index_0_link",
+    "pos": [
+     0.0458,
+     0.0,
+     0.0
+    ],
+    "quat": [
+     1,
+     0,
+     0,
+     0
+    ],
+    "joint": "right_hand_index_1_joint",
+    "axis": [
+     0.0,
+     0.0,
+     1.0
+    ],
+    "range": [
+     0.0,
+     1.74533
+    ],
+    "mesh": "right_hand_index_1_link"
+   }
+  ]
+ }
+}

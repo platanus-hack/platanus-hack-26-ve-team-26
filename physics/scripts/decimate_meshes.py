@@ -7,7 +7,9 @@ flat shading shows. The physics does not change where the policies run: scene_mj
 and the web's once a policy is loaded) uses these meshes only to be seen (density 0, no contacts),
 and every body's mass and inertia are written in the XML.
 
-    python -I physics/scripts/decimate_meshes.py   (needs numpy, numpy-stl, fast-simplification)
+    python -I physics/scripts/decimate_meshes.py [folder]   (needs numpy, numpy-stl, fast-simplification)
+
+The folder defaults to the G1's assets; the Dex3 hands' (models/dex3/assets) go the same way.
 """
 
 import sys
@@ -46,7 +48,8 @@ def decimate(path: Path) -> tuple[int, int]:
 
 if __name__ == "__main__":
     before = after = 0
-    for path in sorted(p for p in ASSETS.glob("*.STL") if p.name not in KEEP_WHOLE):
+    folder = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ASSETS
+    for path in sorted(p for p in folder.glob("*.STL") if p.name not in KEEP_WHOLE):
         size = path.stat().st_size
         a, b = decimate(path)
         before += size

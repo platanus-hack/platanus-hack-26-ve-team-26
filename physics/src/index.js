@@ -1,5 +1,6 @@
 // Public API of physics/ for the web app: give it a canvas and it loads MuJoCo and the G1,
 // simulates in real time and draws every frame until dispose().
+import { Vector3 } from 'three';
 import { loadG1 } from './load.js';
 import { LOOP_BLEND_S, motionDuration, retargetClipAsync, sampleLoopStart, sampleMotion, smoothForDisplay } from './motion.js';
 import { createPolicy } from './policy.js';
@@ -8,10 +9,18 @@ import { createRetargeter } from './retarget.js';
 import { createRootTracker } from './root.js';
 import { createLeveler } from './level.js';
 import { createClearance } from './clearance.js';
-import { createRobotPoseFilter } from './filters.js';
+import { createRobotPoseFilter, OneEuroFilter } from './filters.js';
+import { createFingerSolver } from './fingers.js';
 import { RobotView } from './viewer.js';
 import { placeXml, SCENE_ORDER } from './scenes.js';
 import { middleValues, sceneFile as worldScene, windForce, windSpeed, WORLD_ORDER } from './worlds.js';
+
+// The fingers' smoothing: faster than the body's (ROBOT_POSE_FILTER, 1.5 Hz) because fingers open
+// and close in a fraction of a second, and they are only drawn (no feet to keep planted).
+const FINGER_FILTER = { minCutoff: 3, beta: 0.5 };
+// The hand model misses a hand for a frame or two now and then (motion blur): the fingers hold
+// that long before opening.
+const FINGERS_HOLD_S = 0.4;
 
 // physics/worlds/*.json, in display order.
 const WORLD_FILES = import.meta.glob('../worlds/*.json', { eager: true, import: 'default' });
@@ -108,6 +117,13 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   // (a model with them takes ~3 s to build in a browser, and would freeze the first camera frame).
   // It does not depend on which model the simulation shows, and its joints are laid out exactly
   // like the policy's model, so the result serves both.
+  // The Dex3 hands drawn while copying a person (dex3.js, ~3 MB of meshes on the first mimic) and
+  // their fingers from the person's (fingers.js), each joint smoothed like the body's.
+  let dex3 = null;
+  let dex3Loading = null;
+  let fingerSolver = null;
+  const fingerFilters = new Map();
+  const lastHandAt = { left: -Infinity, right: -Infinity };
   let kinematic = null;
   const KINEMATICS = 'g1_kinematics.xml';
   const kinematicModel = () => (kinematic ??= sim.createModel(KINEMATICS, [KINEMATICS]));
@@ -165,11 +181,47 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   function reset() {
     if (clip) return void (clipTime = 0);
     sim.reset();
+    dex3?.show(false);
+    fingerSolver?.reset();
+    fingerFilters.clear();
     retargeter?.delete();
     rootTracker?.delete();
     leveler?.delete();
     clearance?.model.delete();
     tracker = retargeter = smoother = rootTracker = leveler = clearance = null;
+  }
+
+  // The person's fingers onto the drawn Dex3 hands. A hand the camera stopped seeing for
+  // FINGERS_HOLD_S opens back through its filters, instead of staying frozen in a fist.
+  function copyFingers(pose) {
+    if (!dex3) {
+      dex3Loading ??= import('./dex3.js').then(async ({ createDex3Hands, hands }) => {
+        fingerSolver = createFingerSolver(hands);
+        dex3 = await createDex3Hands(view, sim);
+        view.onFrame = () => dex3.update();
+        dex3.show(!!tracker); // still copying when the meshes arrived
+      });
+      return;
+    }
+    dex3.show(true);
+    for (const robotSide of ['left', 'right']) {
+      const person = pose.hands?.[mirror ? (robotSide === 'left' ? 'right' : 'left') : robotSide];
+      if (person) {
+        lastHandAt[robotSide] = pose.t;
+        // Robot axes, as pose.js and retarget.js put the body's points (mirrored like them).
+        const points = person.map((p) => new Vector3(-p.z, mirror ? -p.x : p.x, -p.y));
+        const angles = fingerSolver.solve(robotSide, points);
+        for (const [joint, value] of angles) {
+          if (!fingerFilters.has(joint)) fingerFilters.set(joint, new OneEuroFilter(FINGER_FILTER));
+          angles.set(joint, fingerFilters.get(joint).filter(value, pose.t));
+        }
+        dex3.setFingers(robotSide, angles);
+      } else if (pose.t - lastHandAt[robotSide] > FINGERS_HOLD_S) {
+        const angles = new Map();
+        for (const [joint, f] of fingerFilters) if (joint.startsWith(robotSide)) angles.set(joint, f.filter(0, pose.t));
+        dex3.setFingers(robotSide, angles);
+      }
+    }
   }
 
   return {
@@ -343,6 +395,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       // foot would slide by whatever the filter holds back.
       // Leveled before the path: root.js puts the leveled feet back on the floor.
       if (tracked) sim.puppet(rootTracker.update(clearance.clear(leveler.level(smoother.filter(qpos, pose.t), pose.t), pose.t), pose));
+      if (tracked) copyFingers(pose);
       const fixes = [...(mirroredArm ? ['mirrored arm'] : []), ...clearance.clear.opened()];
       return { tracked, residual, airborne: rootTracker.airborne(), fixes };
     },

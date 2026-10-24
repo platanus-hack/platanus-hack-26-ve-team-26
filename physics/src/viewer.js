@@ -197,6 +197,7 @@ export class RobotView {
       );
       object.quaternion.setFromRotationMatrix(this.matrix);
     }
+    this.onFrame?.(); // what the page draws on top of the robot (the Dex3 hands in mimic), after its pose
     this.follow();
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
