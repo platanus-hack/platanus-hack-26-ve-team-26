@@ -539,7 +539,9 @@ export function mount(root, { api }) {
   $$('.hero-push').forEach((button) => on(button, 'click', pushHero));
   // Space moves the film forward: in the hero it pushes the robot; past it, it goes to the next
   // stop (each of the Gym's checkpoints, then each chapter), and after the last one the browser
-  // scrolls as usual. From Lenis's target, not scrollY, so presses during a glide chain.
+  // scrolls as usual. From where the glide under way ends, not scrollY, so presses during a glide
+  // chain: Lenis 1.3 moves targetScroll along with a programmatic glide (it is the current
+  // position, not the stop), so reading it mid-glide sent each press back to the same stop.
   // Enter always goes to the next stop, the hero included, so a demo can move through the film
   // fast; on phones it takes the same step as the down arrow (one chapter, or one Gym stage).
   // A push button keeps the focus after a click (Chrome on the Mac): Enter there still advances
@@ -560,7 +562,7 @@ export function mount(root, { api }) {
       pushHero();
       return;
     }
-    const from = lenis ? lenis.targetScroll : scrollY;
+    const from = lenis ? (lenis.animate.isRunning ? lenis.animate.to : lenis.targetScroll) : scrollY;
     const next = spaceStops().find((stop) => stop > from + STOP_PX);
     if (next === undefined) return;
     event.preventDefault();
