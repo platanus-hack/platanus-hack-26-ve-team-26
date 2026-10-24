@@ -248,8 +248,9 @@ console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis pat
   expect(same(sampleMotion(motion, 100, out), rows[rows.length - 1]), 'past the end holds the last frame');
   expect(same(sampleMotion(motion, 10 / motion.fps, out), rows[10]), 'an exact frame time gives that frame');
   sampleMotion(motion, 10.5 / motion.fps, out);
-  const halfway = rows[10].map((v, i) => (v + rows[11][i]) / 2);
-  expect([0, 1, 2, ...Array.from({ length: 29 }, (_, k) => 7 + k)].every((i) => Math.abs(out[i] - halfway[i]) < 1e-9), 'between two frames, joints and position are blended');
+  // Catmull-Rom halfway between frames 10 and 11: (-p9 + 9 p10 + 9 p11 - p12) / 16.
+  const halfway = rows[10].map((v, i) => (-rows[9][i] + 9 * v + 9 * rows[11][i] - rows[12][i]) / 16);
+  expect([0, 1, 2, ...Array.from({ length: 29 }, (_, k) => 7 + k)].every((i) => Math.abs(out[i] - halfway[i]) < 1e-9), 'between two frames, joints and position follow a curve through the frames around');
   expect(Math.abs(Math.hypot(out[3], out[4], out[5], out[6]) - 1) < 1e-9, 'the blended pelvis orientation stays a unit quaternion');
 }
 

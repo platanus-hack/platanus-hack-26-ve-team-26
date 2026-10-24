@@ -164,6 +164,9 @@ const DISPLAY_HEIGHT_SMOOTH_S = 0.2;
 // run went from 8.8 m to 0.5 m of travel), and in jumping jacks the feet spreading would swing the
 // pelvis sideways.
 const PLANT_SMOOTH_S = 0.2;
+// A sole within 1 cm of the floor carries weight, above 2 cm it swings (root.js, where measured).
+const CONTACT_LOW_M = 0.01;
+const CONTACT_HIGH_M = 0.02;
 const ANKLES = ['left_ankle_roll_link', 'right_ankle_roll_link'];
 
 const displayed = new WeakMap(); // RobotMotion -> { plain, planted }: its smoothed copies, computed once
@@ -179,25 +182,43 @@ function movingAverage(values, window) {
   });
 }
 
-// Rewrites the pelvis x and y of `qpos` (rows of the G1's 36 values) so that the lower foot stays
-// where it is on the floor from one frame to the next (see PLANT_SMOOTH_S).
+// Rewrites the pelvis x and y of `qpos` (rows of the G1's 36 values) so that the foot on the floor
+// stays where it is from one frame to the next (see PLANT_SMOOTH_S). Each foot carries a share of
+// the weight by its height (root.js, the live camera's version, where the thresholds are measured):
+// the share passes from foot to foot smoothly, two feet down anchor their average, and with both
+// feet up (a run's flight) the pelvis keeps the retargeted path's own step.
 function plantFeet(mujoco, model, qpos, fps) {
   const data = new mujoco.MjData(model);
   const feet = ANKLES.map((name) => idOf(mujoco, model, 'BODY', name));
-  // Each foot against the pelvis, in world axes, and its height.
+  const soles = feet.map((body) => {
+    const ids = [];
+    for (let g = 0; g < model.ngeom; g++) {
+      if (model.geom_bodyid[g] === body && model.geom_type[g] === mujoco.mjtGeom.mjGEOM_SPHERE.value) ids.push(g);
+    }
+    return ids;
+  });
+  // Each foot against the pelvis, in world axes, and its lowest sole's height above the floor.
   const rel = qpos.map((q) => {
     data.qpos.set(q);
     mujoco.mj_kinematics(model, data);
-    return feet.map((b) => [data.xpos[3 * b] - q[0], data.xpos[3 * b + 1] - q[1], data.xpos[3 * b + 2]]);
+    return feet.map((b, f) => [
+      data.xpos[3 * b] - q[0],
+      data.xpos[3 * b + 1] - q[1],
+      Math.min(...soles[f].map((g) => data.geom_xpos[3 * g + 2] - model.geom_size[3 * g])),
+    ]);
   });
   data.delete();
   const path = [[qpos[0][0], qpos[0][1]]];
   for (let i = 1; i < qpos.length; i++) {
-    // The lower foot at this frame, followed from the previous one: the same foot on both sides of
-    // the step, so a change of stance foot does not jump.
-    const s = rel[i][0][2] < rel[i][1][2] ? 0 : 1;
+    const weights = rel[i].map(([, , h]) => Math.min(1, Math.max(0, (CONTACT_HIGH_M - h) / (CONTACT_HIGH_M - CONTACT_LOW_M))));
+    const total = weights[0] + weights[1];
+    const contact = Math.min(1, total);
     const [x, y] = path[i - 1];
-    path.push([x - (rel[i][s][0] - rel[i - 1][s][0]), y - (rel[i][s][1] - rel[i - 1][s][1])]);
+    const step = [0, 1].map((a) => {
+      const feetStep = total > 0 ? rel[i].reduce((sum, foot, f) => sum + (weights[f] / total) * (foot[a] - rel[i - 1][f][a]), 0) : 0;
+      return -contact * feetStep + (1 - contact) * (qpos[i][a] - qpos[i - 1][a]);
+    });
+    path.push([x + step[0], y + step[1]]);
   }
   const window = Math.max(1, Math.round(PLANT_SMOOTH_S * fps));
   const xs = movingAverage(path.map((p) => p[0]), window);
@@ -213,22 +234,42 @@ function plantFeet(mujoco, model, qpos, fps) {
  * on the floor; reference.js) at each frame, with the pelvis height smoothed for the eye. Same frames
  * and fps, so it plays in step with the person's skeleton.
  * @param model  a model of the G1 with its feet (g1_kinematics.xml is enough)
- * @param options.plantFeet  for a clip that walks: the pelvis path re-made so the foot on the floor
- *   does not slide (plantFeet above). Not for runs or jumps.
+ * @param options.plantFeet  the pelvis path re-made so the foot on the floor does not slide
+ *   (plantFeet above): true, false, or 'auto' (planted unless the feet do not explain the travel,
+ *   as in a run seen from the side: feetExplainTravel).
  */
 export function smoothForDisplay(mujoco, model, motion, { plantFeet: planted = false } = {}) {
-  const key = planted ? 'planted' : 'plain';
+  const key = planted === 'auto' ? 'auto' : planted ? 'planted' : 'plain';
   const cached = displayed.get(motion) ?? {};
   if (cached[key]) return cached[key];
-  const reference = createReference(mujoco, model, motion);
-  const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
-  const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
-  const height = movingAverage(qpos.map((row) => row[2]), window);
-  qpos.forEach((row, i) => (row[2] = height[i]));
-  if (planted) plantFeet(mujoco, model, qpos, motion.fps);
-  const smoothed = { ...motion, qpos };
-  displayed.set(motion, { ...cached, [key]: smoothed });
+  let smoothed;
+  if (planted === 'auto') {
+    const plain = smoothForDisplay(mujoco, model, motion);
+    const feet = smoothForDisplay(mujoco, model, motion, { plantFeet: true });
+    smoothed = feetExplainTravel(plain.qpos, feet.qpos) ? feet : plain;
+  } else {
+    const reference = createReference(mujoco, model, motion);
+    const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
+    const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
+    const height = movingAverage(qpos.map((row) => row[2]), window);
+    qpos.forEach((row, i) => (row[2] = height[i]));
+    if (planted) plantFeet(mujoco, model, qpos, motion.fps);
+    smoothed = { ...motion, qpos };
+  }
+  displayed.set(motion, { ...displayed.get(motion), [key]: smoothed });
   return smoothed;
+}
+
+// plantFeet: 'auto' keeps the planted path unless the clip travels and its feet do not explain it.
+// The run of data/clips covers 8.8 m but its retargeted legs only 0.9 m (seen from the side, the
+// legs swing mostly along the depth axis): planted, it would run in place. The walk covers 7.5 m
+// and its feet 9.6, and jumping jacks stay within 0.3 m either way (planted, the pelvis sways 6 cm
+// instead of 34), so both are planted.
+const AUTO_TRAVEL_M = 1;
+const AUTO_MIN_SHARE = 0.5;
+function feetExplainTravel(plain, planted) {
+  const travel = (q) => Math.hypot(q.at(-1)[0] - q[0][0], q.at(-1)[1] - q[0][1]);
+  return travel(plain) < AUTO_TRAVEL_M || travel(planted) >= AUTO_MIN_SHARE * travel(plain);
 }
 
 // A clip that loops jumps from its last pose to its first: in the run (3.8 s) a joint jumped 67
@@ -260,19 +301,34 @@ export const motionDuration = (motion) => (motion.qpos.length - 1) / motion.fps;
 
 /**
  * The pose at time `t` (s), written into `out` (a Float64Array of the robot's nq). A clip is 24 to
- * 30 frames per second and the screen 60, so the frames on both sides are blended: joints and
- * the pelvis position linearly, the pelvis orientation by normalized linear interpolation, which
- * is exact enough here because consecutive frames differ by a few degrees of heading.
+ * 30 frames per second and the screen 60, so the frames around `t` are blended with a Catmull-Rom
+ * curve through the two on each side: joints and the pelvis position, and the pelvis orientation's
+ * four numbers, normalized after (exact enough here, consecutive frames differ by a few degrees).
+ * A straight line between two frames changed the speed at every frame of the clip, a small jerk
+ * 30 times a second that showed as stepping, most in slow motion.
  * `t` outside the clip is held at its first or last frame.
  */
 export function sampleMotion(motion, t, out) {
   const rows = motion.qpos;
-  const x = Math.min(Math.max(t * motion.fps, 0), rows.length - 1);
+  const last = rows.length - 1;
+  const x = Math.min(Math.max(t * motion.fps, 0), last);
   const i = Math.floor(x);
-  const a = rows[i];
-  const b = rows[Math.min(i + 1, rows.length - 1)];
+  const p0 = rows[Math.max(i - 1, 0)];
+  const p1 = rows[i];
+  const p2 = rows[Math.min(i + 1, last)];
+  const p3 = rows[Math.min(i + 2, last)];
   const k = x - i;
-  for (let j = 0; j < a.length; j++) out[j] = a[j] + (b[j] - a[j]) * k;
+  const k2 = k * k;
+  const k3 = k2 * k;
+  for (let j = 0; j < p1.length; j++) {
+    // The orientation's neighbors on p1's side of the quaternion double cover.
+    const sign = (p) => (j >= 3 && j < 7 && p[3] * p1[3] + p[4] * p1[4] + p[5] * p1[5] + p[6] * p1[6] < 0 ? -1 : 1);
+    const a = sign(p0) * p0[j];
+    const b = p1[j];
+    const c = sign(p2) * p2[j];
+    const d = sign(p3) * p3[j];
+    out[j] = 0.5 * (2 * b + (c - a) * k + (2 * a - 5 * b + 4 * c - d) * k2 + (3 * b - a - 3 * c + d) * k3);
+  }
   const norm = Math.hypot(out[3], out[4], out[5], out[6]);
   for (let j = 3; j < 7; j++) out[j] /= norm;
   return out;
