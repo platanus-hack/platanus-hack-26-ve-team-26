@@ -31,6 +31,13 @@ Que un clip (de la cámara o de un video) se entrene solo en el servidor y entre
 - **Choque con Pastor:** mientras trabajaba, Pastor shipeó ENT-2 (`--task mimic --motion`, el checkpoint guarda `task` y `motion`) y SIM-4 (`--out`), y yo había hecho lo mismo en `ppo.py`, `vec.py` y el retargeting. El rebase chocó en 4 archivos: descarté mi versión de `--motion` y de `--out` (la suya es más completa) y rehice ENT-4 encima de la suya. Mi rama vieja quedó como `backup/juan-pipeline-pre-rebase` (local).
 - Límite: la política no camina (ENT-1 sigue en Pastor), así que hoy los datos tienen episodios de menos de 1 s. La cadena se probó con entrenamientos cortísimos, no con 20 M pasos.
 
+- **Respaldo de jumping jacks:** `clip_2026-10-24_jumping-jacks-nasm_01` (YouTube `uLVt6u15L98`, NASM, segundos 0 a 5,2), en `data/clips/` y `physics/motions/`. Extracción con `data.extract` (el mismo código que el servidor): 100% válido, verificado con `data.overlay`. Retargeting: 98% al alcance, la pelvis se mueve 0,3 m en total. `diagnose_reference`: pies sin hundirse ni en el aire, ningún ángulo fuera de rango; con la pelvis sostenida, 0,115 rad de error en las piernas (como la caminata, 0,123) y `right_hip_roll` hasta 200 ms detrás; los pies tocan el piso cuando la referencia lo pide solo el 31% del tiempo. Ojo: el clip limpio nunca tiene los dos pies en el aire, y los jumping jacks sí tienen vuelo. Lo decide Pastor (`imitate.Motion`).
+
+## Qué no funcionó (video)
+
+- Los videos libres (Coverr) son en cámara lenta. YouTube bloqueó la descarga desde la red del evento ("Sign in to confirm you're not a bot", 429), incluso con yt-dlp actualizado. Desde esta app no se pueden leer las cookies de Chrome (macOS lo impide); se bajó desde Terminal.app con `--cookies-from-browser chrome` (perfil `Default`).
+- Del video de NASM solo sirven 5,2 s: después la cámara hace zoom.
+
 ## Decisiones
 
 - Los checkpoints extra de `--every` se nombran por el umbral (como los de siempre), no por el paso exacto.
@@ -39,6 +46,6 @@ Que un clip (de la cámara o de un video) se entrene solo en el servidor y entre
 
 ## Sigue
 
-- Respaldo de las 12:00: clip de jumping jacks en el lugar → `data/clips/` → `npm run retarget` → pasarle el `clip_id` a Pastor. Los videos libres que hay (Coverr, "jumping jacks") son en cámara lenta: el tiempo del clip sería falso y el robot aprendería otro ritmo. Hay que grabarlo: 10 a 20 s, cuerpo entero, cámara fija, de frente sirve (no se desplaza).
+- Pastor: revisar y entrenar `clip_2026-10-24_jumping-jacks-nasm_01` (respaldo de ENT-1).
 - César: WEB-2/WEB-3 ya pueden usar `POST /clips`, `POST /clips/{id}/train`, `GET /train/{id}` y las descargas.
 - Pastor: `ppo.py` ahora exporta cada checkpoint por defecto (en la carpeta del run); `--no-export` lo apaga si molesta en sus pruebas. `export.py` mide `followed_s` (suma ~1 s por checkpoint).
