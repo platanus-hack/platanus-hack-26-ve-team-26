@@ -19,6 +19,8 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
 - Plan técnico en [`../plan-producto.md`](../plan-producto.md): el flujo completo en 7 pasos, dónde corre cada parte, los cambios de contrato propuestos (`POST /clips`, cola de entrenamiento, políticas, datos y mundos), lo que falta construir por área (ENT, SIM, SRV, WEB, DOC) con sus dependencias, y el orden por horario hasta el cierre. Puntero en mi sección de [`../estado.md`](../estado.md).
 - La primera versión del plan asignaba tareas por persona; a pedido de Pastor se rehízo como plan general, por área y sin dueños. Shipeado en `8078d4c`.
 - ENT-1, primer paso: `uv` instalado en la Mac de Pastor (M5, 10 núcleos) y `training/diagnose_reference.py`, que revisa una referencia de imitación sin política en 2 s: pies contra el piso, objetivos de los pies de la recompensa, rangos de los motores, y la referencia jugada por los motores con la pelvis sostenida (error, retraso por motor, contacto de los pies).
+- Observación de imitación con la referencia a 0,1 y 0,25 s (`f17e1e8`): por cada instante, los ángulos y la posición de la pelvis de la referencia respecto de la del robot. `obs_dim` pasa de 126 a 190 (al final, así el export no cambia de lógica) y `policy.json` lleva `lookahead_s`. Entrenamiento `walk-lookahead` de 10 M pasos lanzado en la M5.
+- Cambio de contrato propuesto (`261cbd5`, commit aparte): `POST /clips` con sus topes, la cola de entrenamiento (`/train`), los resultados, `--out` del retargeting, los campos nuevos de `policy.json` y la observación de 190, el formato de los datos y los mundos. Marcado "propuesta 2026-10-24".
 - Arreglo en `imitate.Motion` (la limpieza de la referencia): articulaciones suavizadas 0,1 s, pelvis suavizada solo en el plano del piso, altura de la pelvis puesta cuadro a cuadro para que la esfera más baja de los pies del modelo de entrenamiento toque el piso, y objetivos de los pies sacados de esa pose final.
 
 ## Qué se encontró (para quien siga)
@@ -78,6 +80,8 @@ Propuestas por Pastor, pendientes del equipo. Cuando se acepten, van a [`../deci
 - Las precargadas salen del mismo flujo que un video de usuario (no se hacen a mano).
 - El plan no reparte tareas: lo reparte el equipo.
 - La limpieza de la referencia vive en `imitate.Motion`, porque depende del modelo de entrenamiento (las esferas de sus pies). El navegador (SIM-1) tiene que repetir exactamente esa limpieza.
+- Contrato propuesto: el servidor pone sus propios ids a los clips de la cámara (los ids nombran archivos), entrena de a uno con 3 en espera (~30 min cada uno: el último espera hora y media), no entrena dos veces el mismo clip, y exige `valid_ratio` de 0,8 para entrenar (por debajo, el cuerpo falta en más de 1 cuadro de cada 5). Tope de 5 MB por clip: uno de 30 s a 30 cuadros por segundo pesa ~0,9 MB.
+- La posición de la pelvis de la referencia respecto de la del robot es fácil en simulación; un robot real necesitaría odometría para saberla. Queda anotado para cuando se trabaje el paso a un robot real.
 
 ## Sigue
 
