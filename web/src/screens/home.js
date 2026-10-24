@@ -220,12 +220,12 @@ export function mount(root) {
             <span class="try-sub only-narrow">Muévete y el robot te copia</span>
             <span class="try-go">Abrir la cámara →</span>
           </a>
-          <div class="try unavailable" aria-disabled="true">
+          <a class="try" href="#/subir" data-warm="subir">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="26" rx="3"/><path d="M24 31V17M18 22l6-6 6 6"/><path d="M14 40h20"/></svg>
             <b><span class="only-wide">Sube un video de una persona</span><span class="only-narrow">Subir un video</span></b>
-            <span class="try-sub only-narrow">Próximamente</span>
-            <span class="try-go">Próximamente</span>
-          </div>
+            <span class="try-sub only-narrow">De perfil y con el cuerpo entero</span>
+            <span class="try-go">Elegir un video →</span>
+          </a>
           <a class="try" href="#/entrega" data-warm="entrega">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="16" width="32" height="24" rx="2"/><path d="M8 24h32M24 6v14M18 14l6 6 6-6"/></svg>
             <b><span class="only-wide">La política y los datos que entregamos</span><span class="only-narrow">La entrega</span></b>

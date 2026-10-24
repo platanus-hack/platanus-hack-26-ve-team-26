@@ -1,5 +1,5 @@
 // Sube un video (W5 and W6): pick a file, upload it in chunks, follow the server through its
-// stages, let the user pick another person on the first frame, and put the clip in the gallery.
+// stages and let the user pick another person on the first frame.
 // The server API is data/live's client (docs/contrato.md); this screen only draws it.
 import { chooseSubject, fetchClip, firstFrameUrl, UploadError, uploadVideo, watchJob } from '../../../data/live/src/upload.js';
 import { createVideoOverlay } from '../video-overlay.js';
@@ -86,15 +86,15 @@ export function mount(root, { api }) {
               <p><strong>¿Es esta la persona?</strong> Si no, toca a la que quieres.</p>
               <div class="frame"><img alt="Primer cuadro del video con las personas encontradas" /><svg></svg></div>
             </div>
-            <p class="note">Puedes <a href="#/simulaciones">ver otras simulaciones</a> mientras tanto: tu video sigue aquí.</p>
+            <p class="note">Puedes <a href="#/en-vivo">probar la cámara en vivo</a> mientras tanto: tu video sigue aquí.</p>
           </div>
 
           <div data-show="done">
             <h2>¡Listo!</h2>
             <p class="lead done-text"></p>
             <div class="row">
-              <a class="button primary see-clip" href="#/simulaciones">Verlo en simulaciones</a>
-              <button class="again" type="button">Subir otro video</button>
+              <button class="primary again" type="button">Subir otro video</button>
+              <a class="button" href="#/">Volver al inicio</a>
             </div>
           </div>
 
@@ -106,11 +106,11 @@ export function mount(root, { api }) {
 
           <div data-show="off">
             <h2>Subir videos no está disponible ahora</h2>
-            <p class="lead"><span class="only-wide">El equipo que mira los videos está apagado. Mientras tanto, puedes usar la cámara o ver lo que Tridi ya aprendió.</span><span class="only-narrow">El servidor de videos está apagado. Prueba la cámara o el laboratorio.</span></p>
+            <p class="lead"><span class="only-wide">El equipo que mira los videos está apagado. Mientras tanto, puedes usar la cámara o ver lo que Tridi ya entrega.</span><span class="only-narrow">El servidor de videos está apagado. Prueba la cámara o la entrega.</span></p>
             <div class="row">
               <button class="primary retry" type="button">Reintentar</button>
               <a class="button" href="#/en-vivo">Usar la cámara</a>
-              <a class="button" href="#/simulaciones">Ver simulaciones</a>
+              <a class="button" href="#/entrega">Ver la entrega</a>
             </div>
             <p class="note server-url"></p>
           </div>
@@ -225,7 +225,6 @@ export function mount(root, { api }) {
     if (gone) return;
     $('.done-text').textContent =
       session.clips.length > 1 ? `Tridi ya tiene ${session.clips.length} movimientos nuevos.` : 'Tridi ya tiene el movimiento de tu video.';
-    $('.see-clip').href = `#/simulaciones/${encodeURIComponent(session.clips[0].id)}`;
     show('done');
     // The chooser stays useful for 10 minutes after "done" (the server keeps the video that long).
     render(job);
