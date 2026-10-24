@@ -39,6 +39,6 @@ Que un clip (de la cámara o de un video) se entrene solo en el servidor y entre
 
 ## Sigue
 
-- Respaldo de las 12:00: clip de jumping jacks en el lugar → `data/clips/` → `npm run retarget` → pasarle el `clip_id` a Pastor.
+- Respaldo de las 12:00: clip de jumping jacks en el lugar → `data/clips/` → `npm run retarget` → pasarle el `clip_id` a Pastor. Los videos libres que hay (Coverr, "jumping jacks") son en cámara lenta: el tiempo del clip sería falso y el robot aprendería otro ritmo. Hay que grabarlo: 10 a 20 s, cuerpo entero, cámara fija, de frente sirve (no se desplaza).
 - César: WEB-2/WEB-3 ya pueden usar `POST /clips`, `POST /clips/{id}/train`, `GET /train/{id}` y las descargas.
 - Pastor: `ppo.py` ahora exporta cada checkpoint por defecto (en la carpeta del run); `--no-export` lo apaga si molesta en sus pruebas. `export.py` mide `followed_s` (suma ~1 s por checkpoint).
