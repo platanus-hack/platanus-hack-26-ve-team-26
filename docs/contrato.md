@@ -236,6 +236,62 @@ Lo produce `training/` (etapa `data`): la política final corrida en varios epis
   | `pose_error` | `[N]` | error medio de los ángulos contra la referencia, en rad |
   | `pelvis_error` | `[N]` | distancia de la pelvis a la de la referencia, en m |
 
+## La entrega de un clip *(propuesta de Juan, 2026-10-24)*
+
+Lo que el cliente se lleva cuando termina el entrenamiento de un video, reunido en una carpeta para mostrarlo en un panel y descargarlo. Lo arma `training/deliver.py` a partir de la política final y del dataset (`training/rollout.py`), en la etapa `data` de la cola de entrenamiento y para las precargadas. Todas las rutas son **relativas a `delivery.json`**: la misma carpeta sirve como archivos estáticos (las precargadas, en `data/deliveries/<clip_id>/`, van en el deploy y no dependen del servidor) o desde el servidor.
+
+`delivery.json`:
+
+```jsonc
+{
+  "clip_id": "clip_2026-10-23_caminar-perfil_01",
+  "title": "Caminar",                         // lo que dice el panel
+  "created_at": "2026-10-24T12:00:00+00:00",
+  "duration_s": 11.85,                        // lo que dura el clip
+  "policy": {                                 // la política que se entrega (la final)
+    "id": "g1-walk", "task": "mimic", "steps": 20000768,
+    "followed_s": 3.54,                       // cuánto del clip sigue desde el principio, en el mundo plano y sin empujones
+    "trained_worlds": ["plano"],
+    "onnx": "policy.onnx", "json": "policy.json"
+  },
+  "checkpoints": [{ "steps": 3000000, "followed_s": 1.2 }],  // la escalera, si quedaron los checkpoints; si no, []
+  "worlds": [                                 // un resumen por mundo, en el orden de la prueba
+    { "id": "piedras", "title": "Piedras", "episodes": 8, "completed": 0,
+      "seconds": { "mean": 3.1, "min": 2.2, "max": 4.4 },
+      "params": { "friction": [0.8, 1.2], "wind_mps": [0, 0], "mass_scale": [0.95, 1.05], "motor_scale": [0.9, 1.1], "push_n": [0, 300] } }  // el rango sorteado
+  ],
+  "episodes": [                               // uno por episodio, en el orden de rollouts.npz
+    { "world": "piedras", "params": { "friction": 0.93, "wind_mps": 0, "mass_scale": 1.02, "motor_scale": 0.97, "push_n": 210 },
+      "fell": true, "seconds": 3.1,
+      "pose_error": 0.21,                     // rad, media del episodio
+      "pelvis_error": 0.48,                   // m, máximo del episodio
+      "foot_force_peak": 1350 }               // N, la mayor fuerza vertical de un pie contra el piso
+  ],
+  "replay": "replay.json",                    // para verlo: abajo
+  "files": [                                  // lo que se descarga, con su peso
+    { "name": "policy.onnx", "bytes": 271360, "what": "La política: 190 números de entrada, 29 objetivos de motor" }
+  ]
+}
+```
+
+`replay.json`, para ver cada episodio sin bajar el dataset: el mismo `rollouts.npz` a 25 Hz (la mitad), redondeado a 0,1 mm y 0,001 rad.
+
+```jsonc
+{
+  "hz": 25,
+  "episodes": [
+    { "qpos": [[...36]],                      // la pose, como en RobotMotion: se reproduce con view.playClip
+      "foot_force": [[310.2, 0.0]],           // N, fuerza vertical de cada pie (izquierdo, derecho)
+      "pose_error": [0.12],                   // rad
+      "pelvis_error": [0.03] }                // m
+  ]
+}
+```
+
+`files` lista lo que hay en la carpeta para descargar: `policy.onnx`, `policy.json`, `dataset.zip` (el de "Datos para entrenar robots"), `motion.json` (el `RobotMotion`), `poseclip.json` (el `PoseClip`) y `scene.json` (la escena del video, si hay).
+
+Servidor: `GET /deliveries/{clip_id}/delivery.json` y cada archivo de la carpeta en `GET /deliveries/{clip_id}/{nombre}` (solo esos nombres). La web abre el panel en `#/entrega/<clip_id>`: primero busca la entrega estática y, si no está, la pide al servidor.
+
 ## Mundos *(2026-10-24)*
 
 Las condiciones en que el robot practica. Un archivo por mundo en `physics/worlds/<id>.json`, el mismo para el entrenamiento y la web: así lo que se ve es lo que se entrenó. El entrenamiento sortea cada valor dentro de su rango en cada episodio; la web muestra el valor del medio.
