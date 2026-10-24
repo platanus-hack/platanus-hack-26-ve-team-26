@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: en curso
+estado: cerrada
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
@@ -40,6 +40,8 @@ Juan: que la caminata se vea más natural, y que en vivo el robot vaya adonde va
 - Los clips grabados todavía no guardan el salto: la altura de la pelvis del `RobotMotion` sale de apoyar el pie más bajo, y cambiarlo cambia la referencia que imitan las políticas ya entrenadas (jumping jacks tiene saltitos).
 
 ## Sigue
+
+- Shippeado a `main` con `scripts/ship.sh` sin probar con webcam real.
 
 - Probar con una webcam y un iPhone reales: el campo de visión supuesto (65°) y una cámara inclinada pueden pedir ajustar los umbrales del salto.
 - Llevar el salto al `PoseClip` grabado y al `RobotMotion`, coordinado con Pastor (cambia la referencia de entrenamiento).
