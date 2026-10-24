@@ -75,7 +75,11 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 
 - Juan pidió un prompt para que Ale estudie los 24 repos públicos de Caracas (`platanus-hack-26-ve-team-N`), con foco en Three-Dimensional, y lo guarde en `platanus-ideas`.
 - Para que la investigación llegue a todos sin hacer `pull` a mano, `scripts/sync-main.sh` ahora también hace fast-forward de `../platanus-ideas` en cada prompt (solo si está en `main` y sin cambios locales). Probado: trae el commit nuevo y lo anuncia; sin novedades no dice nada.
-- Error en la prueba: un `reset --hard` en `platanus-ideas` deshizo un borrado sin commitear de `campo/` que había en la Mac de Juan. No se perdió nada (todo está en git), pero el borrado hay que repetirlo si era a propósito.
+- Error en la prueba: un `reset --hard` en `platanus-ideas` deshizo un borrado sin commitear de `campo/` que había en la Mac de Juan. No se perdió nada (todo está en git); Juan confirmó que el borrado no era a propósito, así que `campo/` queda como está.
+
+## Mensajes al Discord del equipo
+
+- `scripts/discord.py`: publica en el canal privado del equipo por un webhook y etiqueta solo a las personas nombradas (`scripts/discord.py pastor cesar < mensaje.txt`). El webhook y los ids de Discord viven en `~/.config/tridi/`, fuera del repo, porque el repo es público. Probado en seco: divide los mensajes de más de 2.000 caracteres y no deja pasar `@everyone`.
 
 ## Sigue
 
