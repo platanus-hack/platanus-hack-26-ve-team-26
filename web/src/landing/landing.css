@@ -720,55 +720,132 @@ html.is-landing.lenis body {
   color: var(--fg-2);
 }
 
-.roadmap {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1.5fr;
-  gap: 1px;
-  margin-top: clamp(56px, 8vw, 110px) !important;
-  background: var(--line);
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  overflow: hidden;
+/* Where we are: a progress line with three milestones. Done is filled, "now" pulses, next is
+   hollow; the line fills up to "now" as it scrolls in (home.js). Vertical on phones. */
+.progress-track {
+  --dot: 14px;
+  position: relative;
+  margin-top: 56px;
 }
 
-.roadmap li {
+.track-line {
+  position: absolute;
+  left: calc(var(--dot) / 2);
+  right: calc(var(--dot) / 2);
+  top: calc(var(--dot) / 2 - 1px);
+  height: 2px;
+  background: var(--line-dark);
+}
+
+.track-fill {
+  position: absolute;
+  inset: 0;
+  width: calc(50% + var(--dot) / 2); /* up to the middle milestone, "Entrenando" */
+  background: var(--signal);
+  transform-origin: left center;
+}
+
+.milestones {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 28px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.milestones li {
+  position: relative;
   display: grid;
   align-content: start;
-  gap: 12px;
-  padding: 22px;
-  background: var(--bg);
+  gap: 10px;
 }
 
-.roadmap span {
+/* The middle milestone sits centered on the line, the last one at its end. */
+.milestones li:nth-child(2) {
+  justify-items: center;
+  text-align: center;
+}
+
+.milestones li:nth-child(3) {
+  justify-items: end;
+  text-align: right;
+}
+
+.dot {
+  width: var(--dot);
+  height: var(--dot);
+  margin-bottom: 14px;
+  border: 2px solid var(--fg-2);
+  border-radius: 50%;
+  background: var(--scene);
+}
+
+.done .dot {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.now .dot {
+  border-color: var(--signal);
+  animation: milestone 1.6s ease-out infinite;
+}
+
+@keyframes milestone {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 79 26 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 14px rgb(255 79 26 / 0);
+  }
+}
+
+.when {
   font: 500 11px/1 var(--mono);
   text-transform: uppercase;
   color: var(--dim);
 }
 
-.roadmap b {
+.done .when,
+.now .when {
+  color: var(--signal);
+}
+
+.milestones b {
+  max-width: 22ch;
   font: 500 clamp(18px, 1.6vw, 24px)/1.15 var(--display);
   letter-spacing: -0.02em;
 }
 
-.roadmap .done span {
-  color: var(--signal);
-}
-
-.roadmap .now span::before {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  margin-right: 8px;
-  border-radius: 50%;
-  background: var(--fg);
-  vertical-align: 1px;
-  animation: blink 1.6s steps(2) infinite;
-}
-
-.roadmap li:last-child b {
+.next b {
   color: var(--fg-2);
 }
+
+.proof {
+  font: 500 11px/1.4 var(--mono);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.next .chips {
+  justify-content: flex-end;
+}
+
+.chips em {
+  padding: 4px 10px;
+  border: 1px solid var(--line-dark);
+  border-radius: 999px;
+  font: 500 12px/1.2 var(--display);
+  font-style: normal;
+  color: var(--fg-2);
+}
+
 
 .tries {
   display: grid;
@@ -962,15 +1039,54 @@ html.is-landing.lenis body {
     padding: 10px 0;
   }
 
-  .roadmap,
   .tries {
     grid-template-columns: 1fr;
+  }
+
+  /* The progress line stands up on phones: milestones down the left. */
+  .track-line {
+    left: calc(var(--dot) / 2 - 1px);
+    right: auto;
+    top: calc(var(--dot) / 2);
+    bottom: 0;
+    width: 2px;
+    height: auto;
+  }
+
+  .track-fill {
+    width: auto;
+    height: 55%;
+    transform-origin: center top;
+  }
+
+  .milestones {
+    grid-template-columns: 1fr;
+    gap: 28px;
+  }
+
+  .milestones li,
+  .milestones li:nth-child(2),
+  .milestones li:nth-child(3) {
+    justify-items: start;
+    padding-left: calc(var(--dot) + 18px);
+    text-align: left;
+  }
+
+  .dot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 0;
+  }
+
+  .next .chips {
+    justify-content: flex-start;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .live-dot,
-  .roadmap .now span::before,
+  .now .dot,
   .scroll-cue span {
     animation: none;
   }

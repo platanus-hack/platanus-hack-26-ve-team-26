@@ -12,6 +12,9 @@ import curve from '../landing/training-curve.json';
 import { dressStreet } from '../landing/street.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
+// The walk being trained (training/): its step count feeds the roadmap, so the page follows the
+// training without anyone editing it. Optional: the build works without the file.
+const walkPolicy = Object.values(import.meta.glob('../../../training/policies/g1-walk.json', { eager: true, import: 'default' }))[0] ?? null;
 import { fetchClip, preloaded } from '../preloaded.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import { prefetch } from '../router.js';
@@ -168,11 +171,30 @@ export function mount(root, { api }) {
         <p class="lede">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
         <h2 class="manifesto">Los robots ya tienen cuerpo. Les falta experiencia.</h2>
         <p class="closing-text">Enseñarle un movimiento nuevo a un humanoide hoy exige trajes de captura, un estudio y mucho tiempo. Con Tridi, cualquier video de una persona se vuelve práctica para tu robot.</p>
-        <ol class="roadmap" aria-label="Dónde estamos">
-          <li class="done"><span>Hoy</span><b>Pararse y recuperarse de empujones de ${PUSH_N} N</b></li>
-          <li class="now"><span>Entrenando</span><b>Caminar como la persona del video</b></li>
-          <li><span>Lo que viene</span><b>Practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador, y aprender cualquier movimiento de cualquier video</b></li>
-        </ol>
+        <div class="progress-track" aria-label="Dónde estamos">
+          <div class="track-line" aria-hidden="true"><i class="track-fill"></i></div>
+          <ol class="milestones">
+            <li class="done">
+              <i class="dot" aria-hidden="true"></i>
+              <span class="when">Hoy</span>
+              <b>Pararse y recuperarse de empujones</b>
+              <span class="proof">4 de 4 empujones de ${PUSH_N} N</span>
+            </li>
+            <li class="now">
+              <i class="dot" aria-hidden="true"></i>
+              <span class="when">Entrenando</span>
+              <b>Caminar como la persona del video</b>
+              <span class="proof">${walkPolicy ? `${steps(walkPolicy.steps / 1e6)} M pasos de práctica · ` : ''}todavía no camina solo</span>
+            </li>
+            <li class="next">
+              <i class="dot" aria-hidden="true"></i>
+              <span class="when">Lo que viene</span>
+              <b>Cualquier movimiento, en cualquier terreno</b>
+              <span class="chips"><em>Piedras</em><em>Viento</em><em>Piso resbaloso</em></span>
+              <span class="proof">Los terrenos ya existen en el simulador</span>
+            </li>
+          </ol>
+        </div>
         <nav class="tries" aria-label="Probar Tridi">
           <a class="try" href="#/en-vivo" data-warm="en-vivo"><span>Cámara</span><b>Muévete y el robot te copia</b></a>
           <a class="try" href="#/subir" data-warm="subir" data-route="subir"><span>Video</span><b>Sube un video: solo guardamos el movimiento</b></a>
@@ -539,7 +561,9 @@ export function mount(root, { api }) {
     const words = $('.manifesto');
     words.innerHTML = words.textContent.split(' ').map((w) => `<span class="w"><span>${w}</span></span>`).join(' ');
     gsap.from('.manifesto .w > span', { yPercent: 110, stagger: 0.04, ease: 'power3.out', scrollTrigger: { trigger: '.manifesto', start: 'top 85%', end: 'top 45%', scrub: true } });
-    gsap.from('.lede, .closing-text, .roadmap li, .try', { opacity: 0, y: 40, stagger: 0.06, scrollTrigger: { trigger: '.closing-text', start: 'top 90%', end: 'top 40%', scrub: true } });
+    gsap.from('.lede, .closing-text, .milestones li, .try', { opacity: 0, y: 40, stagger: 0.06, scrollTrigger: { trigger: '.closing-text', start: 'top 90%', end: 'top 40%', scrub: true } });
+    // The progress line fills up to "Entrenando" (the middle milestone) as it scrolls in.
+    gsap.fromTo('.track-fill', { scale: 0 }, { scale: 1, ease: 'none', scrollTrigger: { trigger: '.progress-track', start: 'top 85%', end: 'top 45%', scrub: true } });
   }, root);
 
   // The skeleton of Capture is built when the chapter comes near.
