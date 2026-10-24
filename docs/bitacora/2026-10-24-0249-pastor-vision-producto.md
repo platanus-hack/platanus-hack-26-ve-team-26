@@ -55,6 +55,14 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
   | `walk-v2` (Juan, M2) | | | | **0,9 s** | | |
 
   Desde el inicio del clip (`evaluate_walk.py`): sigue 0,7 s sin entrenar, 1,3 s a los 3 M y 1,0 s a los 10 M, de 11,8 s.
+- Entrenamiento `walk-lookahead` (10 M pasos, referencia limpia y observación de 190, 15,5 min en la M5). Episodio medio / recompensa por paso:
+
+  | Pasos | 1 M | 3 M | 5 M | 7 M | 10 M |
+  | --- | --- | --- | --- | --- | --- |
+  | `walk-clean` | 0,66 s / 0,56 | 0,75 s / 0,56 | 0,93 s / 0,52 | 1,02 s / 0,49 | 1,03 s / 0,47 |
+  | `walk-lookahead` | 0,65 s / 0,57 | 0,75 s / 0,58 | 0,89 s / 0,58 | 0,91 s / 0,56 | **1,23 s / 0,52** |
+
+  Desde el inicio del clip sigue 1,4 s (contra 1,0 s de `walk-clean`). De 40 episodios a los 10 M: 27 se cortan por alejarse del recorrido y 13 por caída. Al cortarse, la referencia va 0,5 m adelante en su dirección de avance (mediana): el robot se queda atrás.
 
 ## Qué no funcionó
 
@@ -90,8 +98,10 @@ El detalle está en [`../plan-producto.md`](../plan-producto.md). En corto:
 - El equipo: revisar el pitch y el plan, y repartir las tareas.
 - Primero, el cambio de contrato, en un commit aparte.
 - Lo crítico: que la imitación aprenda la caminata (ENT-1), con punto de control el sábado a las 12:00.
+- **Mirar adelante ayuda poco:** sigue mejor la pose y aguanta algo más, pero el robot sigue sin avanzar con la referencia. Se queda (shipeado en `9d2bab0`) porque no empeora nada y la red ve dónde está el recorrido.
 - ENT-1, próximas pruebas, de la más directa a la de respaldo:
-  1. Sumar a la observación la referencia más adelante (0,1 y 0,25 s), para que la red se anticipe al retraso de 60 a 100 ms de los motores y dé el paso a tiempo. Cambia `obs_dim`, así que hay que decidirlo antes de SIM-1.
+  1. Premiar que la pelvis avance a la velocidad de la referencia. Hoy la recompensa premia la posición de la pelvis (0,2 × exp(−10 d²): a 0,5 m de distancia ya casi no da nada y no empuja a alcanzarla) y la velocidad de las articulaciones, pero no la velocidad de la pelvis.
   2. Un movimiento en el lugar (jumping jacks, brazos, baile sin desplazarse): no tiene recorrido del que alejarse, que es justo donde falla hoy. Se puede grabar con la página de `data/live` (tiene botón Grabar), pasar por `npm run retarget` y revisar con `diagnose_reference.py`.
-  3. Más pasos (30 M o más) en las dos Macs, si la curva sigue subiendo con 1 o 2.
+  3. Reproducir la referencia más lenta al principio (por ejemplo a la mitad de velocidad) y acelerarla a medida que aprende, para que los primeros pasos sean más fáciles.
+  4. Más pasos (30 M o más) en las dos Macs, si la curva sigue subiendo con 1, 2 o 3.
 - El cambio en `imitate.Motion` afecta a cualquier entrenamiento de imitación nuevo: avisar a quien esté entrenando antes de shipearlo.

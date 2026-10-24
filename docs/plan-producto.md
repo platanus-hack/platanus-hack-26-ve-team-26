@@ -79,9 +79,10 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 - [~] **ENT-1. Que la imitación aprenda la caminata.** Lo más importante: sin esto no hay producto. En este orden:
   - [x] Reproducir la referencia con la pelvis sostenida (sin red y sin que pueda caerse) y medir si los motores siguen los ángulos y si los pies apoyan sin hundirse ni flotar: `training/diagnose_reference.py`. Sin sostenerla, caerse es lo esperado (sin red tampoco se sostiene de pie), así que la fila "sin política" de `evaluate_walk.py` no dice si la referencia sirve. Encontró dos errores, ya arreglados en `imitate.Motion`: suavizar la altura de la pelvis dejaba pies hundidos o en el aire, y los objetivos de los pies no coincidían con la pose. Queda uno: caderas y tobillos van 60 a 100 ms detrás de la referencia, y la observación la muestra solo 20 ms adelante.
   - [x] Entrenar con la referencia limpia y comparar con `walk-v2`: igual (0,93 s contra 0,9 s a los 5 M pasos). La red aprende a no caerse, pero los episodios se cortan porque se aleja del recorrido: no da los pasos para avanzar con la referencia.
-  - Sumar a la observación la referencia más adelante (por ejemplo a 0,1 y 0,25 s) para que la red pueda anticiparse al retraso de los motores. Cambia `obs_dim`: conviene decidirlo antes de SIM-1.
+  - [x] Sumar a la observación la referencia a 0,1 y 0,25 s (`obs_dim` 190) para que la red pueda anticiparse al retraso de los motores. Ayuda poco: 1,23 s contra 1,03 s a los 10 M pasos, y el robot sigue quedándose atrás (la referencia va 0,5 m adelante cuando se corta).
+  - Premiar que la pelvis avance a la velocidad de la referencia: hoy la recompensa no lo pide, y la de posición casi no da nada a 0,5 m.
   - Probar un movimiento en el lugar (jumping jacks, brazos), que no tiene recorrido del que alejarse.
-  - Mirar cada término de la recompensa en `progress.csv`, para saber cuál no sube.
+  - Reproducir la referencia más lenta al principio y acelerarla a medida que aprende.
   - Probar con 2 a 3 s de un ciclo de paso en vez del clip entero.
   - Los empujones, recién cuando camine.
 - [ ] **ENT-2. Cualquier clip.** `ppo.py --task mimic --motion <ruta>`: `MimicEnv` carga el `RobotMotion` de cualquier ruta, no solo de `physics/motions/`. `walk` queda como alias.
