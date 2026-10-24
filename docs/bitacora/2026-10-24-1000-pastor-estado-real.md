@@ -113,3 +113,17 @@ Pedido de Pastor: los mundos de Simulaciones con el nivel de la landing, primero
 ### Qué funcionó
 
 - En local, `#/entrega/clip_2026-10-23_caminar-perfil_01`: plano en la calle, piedras en el campo rocoso, resbaloso en el vestíbulo mojado y viento en la pradera, con corrientes solo en los episodios de viento; 60 cuadros por segundo; al salir a Simulaciones queda un solo entorno, el de esa pantalla. `vite build` pasa.
+
+## Parte 6: física al elegir un mundo en Simulaciones
+
+Pedido del equipo: que en Simulaciones la física se aplique al elegir Condiciones › Mundo (antes el robot seguía repitiendo el video como títere y el mundo no lo afectaba; en la entrega sí se veía porque son episodios grabados con física).
+
+- **`web/src/stage.js`** (carpeta de César, W12.6): `showRobot()` reemplaza los "volver a repetir el clip" de cambiar de mundo, lugar, nivel y clip. Fuera del plano: imitación con física si el clip la tiene (Caminar → `g1-walk`), si no `g1-stand` con el robot físico. En el plano, repetir el video como antes; si fue el mundo el que puso la imitación, vuelve el nivel de antes. Un nivel elegido a mano se respeta.
+
+### Qué funcionó
+
+- En local, con la ventana visible: Caminar en viento imita con física (el viento lo tumba y la política lo reinicia); Correr en piedras se equilibra solo, de pie a 0,78 m; volver al plano repite el video con la política de pie; "Empezar de nuevo" en piedras reinicia de pie. `vite build` pasa.
+
+### Qué no funcionó
+
+- Una medición dio "títere apagado" en el plano: la ventana del navegador de prueba estaba oculta y no dibujaba cuadros (0 en 1,5 s), así que nada avanzaba. Con la ventana visible, todo bien.
