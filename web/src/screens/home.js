@@ -105,7 +105,7 @@ export function mount(root, { api }) {
         <a href="#gym">Gym</a>
         <a href="#policy">Policy</a>
       </nav>
-      <a class="btn btn-signal btn-small" href="#probar">Probar en vivo</a>
+      <a class="btn btn-signal btn-small" href="#probar">Probar<span class="only-wide"> en vivo</span></a>
     </header>
 
     <section class="chapter hero" id="inicio" data-shot="hero" data-mode="stand">
@@ -127,7 +127,6 @@ export function mount(root, { api }) {
       <div class="hud">
         <p class="state" data-state="stand"><i></i><span>Física real · de pie con su política</span></p>
         <p class="tally"><span data-hud="pushes">0</span> empujones · <span data-hud="falls">0</span> caídas</p>
-        <button class="btn btn-signal hero-push hud-push" type="button" disabled>Empújalo</button>
       </div>
       <div class="scroll-cue" aria-hidden="true"><span></span></div>
     </section>
@@ -146,7 +145,7 @@ export function mount(root, { api }) {
         </div>
         <div class="caption capture-caption">
           <p class="product">Tridi Capture</p>
-          <h2>De un video de celular al cuerpo del robot</h2>
+          <h2><span class="only-wide">De un video de celular al cuerpo del robot</span><span class="only-narrow">Del video al robot</span></h2>
           <p>El esqueleto 3D de la persona, pasado a las 29 articulaciones del robot. Aquí lo copia sin física.</p>
         </div>
       </div>
@@ -187,12 +186,12 @@ export function mount(root, { api }) {
       <div class="sticky">
         <div class="caption policy-caption panel">
           <p class="product">Tridi Policy</p>
-          <h2>Lo que entregamos cabe en un correo</h2>
+          <h2><span class="only-wide">Lo que entregamos cabe en un correo</span><span class="only-narrow">Cabe en un correo</span></h2>
           <ul class="specs">
-            <li><b>265 KB</b><span>la red completa que mueve al robot</span></li>
-            <li><b>29</b><span>motores que controla a la vez</span></li>
-            <li><b>20 ms</b><span>entre una decisión y la siguiente</span></li>
-            <li><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></li>
+            <li><b>265 KB</b><span><span class="only-wide">la red completa que mueve al robot</span><span class="only-narrow">la red</span></span></li>
+            <li><b>29</b><span><span class="only-wide">motores que controla a la vez</span><span class="only-narrow">motores</span></span></li>
+            <li><b>20 ms</b><span><span class="only-wide">entre una decisión y la siguiente</span><span class="only-narrow">por decisión</span></span></li>
+            <li><b>&lt; 1 ms</b><span><span class="only-wide">lo que tarda en decidir</span><span class="only-narrow">en decidir</span></span></li>
           </ul>
           <p class="policy-note">La política corre aquí, en tu navegador. Con ella van los datos del movimiento, probados en cuatro mundos.</p>
         </div>
@@ -207,22 +206,22 @@ export function mount(root, { api }) {
         <nav class="tries" aria-label="Probar Tridi">
           <a class="try" href="#/en-vivo" data-warm="en-vivo">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="28" height="20" rx="3"/><path d="M34 21l9-5v16l-9-5z"/><circle cx="20" cy="24" r="5"/></svg>
-            <b>Muévete y el robot te copia</b>
+            <b><span class="only-wide">Muévete y el robot te copia</span><span class="only-narrow">Cámara en vivo</span></b>
             <span class="try-go">Abrir la cámara →</span>
           </a>
           <a class="try" href="#/subir" data-warm="subir" data-route="subir">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="26" rx="3"/><path d="M24 31V17M18 22l6-6 6 6"/><path d="M14 40h20"/></svg>
-            <b>Sube un video de una persona</b>
+            <b><span class="only-wide">Sube un video de una persona</span><span class="only-narrow">Subir un video</span></b>
             <span class="try-go">Subir un video →</span>
           </a>
           <a class="try" href="#/simulaciones" data-warm="simulaciones">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="15" cy="11" r="4"/><path d="M15 15v12M9 20h12M15 27l-4 10M15 27l4 10"/><rect x="28" y="7" width="10" height="8" rx="2"/><path d="M33 15v12M27 19h12M33 27l-3 10M33 27l3 10"/></svg>
-            <b>Persona y robot, lado a lado</b>
+            <b><span class="only-wide">Persona y robot, lado a lado</span><span class="only-narrow">Laboratorio</span></b>
             <span class="try-go">Ver el laboratorio →</span>
           </a>
           <a class="try" href="#/entrega" data-warm="entrega">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="16" width="32" height="24" rx="2"/><path d="M8 24h32M24 6v14M18 14l6 6 6-6"/></svg>
-            <b>La política y los datos que entregamos</b>
+            <b><span class="only-wide">La política y los datos que entregamos</span><span class="only-narrow">La entrega</span></b>
             <span class="try-go">Ver la entrega →</span>
           </a>
         </nav>
@@ -232,19 +231,19 @@ export function mount(root, { api }) {
             <li class="done">
               <i class="dot" aria-hidden="true"></i>
               <span class="when">Hoy</span>
-              <b>Pararse y aguantar empujones</b>
+              <b><span class="only-wide">Pararse y aguantar empujones</span><span class="only-narrow">De pie, aguanta empujones</span></b>
               <span class="proof">${GYM_STAGES.at(-1).pushes} empujones de ${PUSH_N} N</span>
             </li>
             <li class="now">
               <i class="dot" aria-hidden="true"></i>
               <span class="when">Entrenando</span>
-              <b>Caminar como la persona del video</b>
+              <b><span class="only-wide">Caminar como la persona del video</span><span class="only-narrow">Caminar</span></b>
               <span class="proof">${walkPolicy ? `${steps(walkPolicy.steps / 1e6)} M pasos · ` : ''}todavía no camina solo</span>
             </li>
             <li class="next">
               <i class="dot" aria-hidden="true"></i>
               <span class="when">Lo que viene</span>
-              <b>Cualquier movimiento, en cualquier terreno</b>
+              <b><span class="only-wide">Cualquier movimiento, en cualquier terreno</span><span class="only-narrow">Cualquier terreno</span></b>
             </li>
           </ol>
         </div>

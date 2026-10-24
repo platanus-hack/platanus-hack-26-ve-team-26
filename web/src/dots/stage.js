@@ -7,7 +7,8 @@ import { DotRobot } from './robot.js';
 // Phones get fewer dots: the same look at a third of the vertex work.
 const SMALL_SCREEN = matchMedia('(max-width: 720px), (pointer: coarse)').matches;
 const ROBOT_DOTS = SMALL_SCREEN ? 1500 : 2600;
-const FIELD_DOTS = SMALL_SCREEN ? 250 : 600;
+// A quiet backdrop, not a show: few dots, so the screen's own content leads.
+const FIELD_DOTS = SMALL_SCREEN ? 90 : 220;
 // Dot size as a share of the card's height, so dots look the same on any screen.
 const DOT_SIZE = 0.03;
 // Without hover (phones, tablets), the cards take turns showing their face, this long each.
@@ -15,10 +16,12 @@ const TOUCH_TURN_S = 2.5;
 // Below this width/height ratio a view zooms out; measured on a 390 px phone card.
 const NARROW_ASPECT = 0.95;
 
-// Background dots near the cursor move aside and turn blue, within this radius (in screen
-// heights) and up to this push (in world units): the page feels alive without distracting.
-const CURSOR_RADIUS = 0.22;
-const CURSOR_PUSH = 0.6;
+// Background dots near the cursor move aside a little, within this radius (in screen heights)
+// and up to this push (in world units): barely there, so it never pulls the eye from the content.
+const CURSOR_RADIUS = 0.18;
+const CURSOR_PUSH = 0.2;
+// The field's brightness, 0 to 1: dim enough to read as depth, not as stars.
+const FIELD_ALPHA = 0.55;
 
 function dotField() {
   const positions = new Float32Array(FIELD_DOTS * 3);
@@ -35,8 +38,8 @@ function dotField() {
     uAspect: { value: 1 },
     uTime: { value: 0 },
     uPixel: { value: 1 },
-    uBase: { value: new THREE.Color('#b9c8de') },
-    uAccent: { value: new THREE.Color('#4c7cf3') },
+    uBase: { value: new THREE.Color('#a9ada4') }, // --ink-soft in style.css
+    uAccent: { value: new THREE.Color('#a9ada4') }, // no color change near the cursor
   };
   const material = new THREE.ShaderMaterial({
     uniforms,
@@ -60,7 +63,7 @@ function dotField() {
         mv.xy += normalize(away + 1e-5) * near * ${CURSOR_PUSH} * (-mv.z / 6.0);
         vNear = near;
         gl_Position = projectionMatrix * mv;
-        gl_PointSize = uPixel * (1.0 + 1.5 * near) * 0.06 * 300.0 / -mv.z;
+        gl_PointSize = uPixel * 0.045 * 300.0 / -mv.z;
       }
     `,
     fragmentShader: /* glsl */ `
@@ -70,7 +73,7 @@ function dotField() {
       void main() {
         float d = length(gl_PointCoord - 0.5);
         if (d > 0.5) discard;
-        gl_FragColor = vec4(mix(uBase, uAccent, vNear), smoothstep(0.5, 0.2, d) * (0.75 + 0.25 * vNear));
+        gl_FragColor = vec4(mix(uBase, uAccent, vNear), smoothstep(0.5, 0.2, d) * ${FIELD_ALPHA});
         #include <colorspace_fragment>
       }
     `,
@@ -91,16 +94,12 @@ export class DotStage {
     this.field.scene.add(this.field.points);
     this.field.camera.position.z = 6;
     this.pointer = { x: 0, y: 0, clientX: -1, clientY: -1 };
-    const root = document.documentElement.style;
     this.onPointer = (event) => {
       this.pointer.x = event.clientX / window.innerWidth - 0.5;
       this.pointer.y = event.clientY / window.innerHeight - 0.5;
       this.pointer.clientX = event.clientX;
       this.pointer.clientY = event.clientY;
       this.field.points.material.uniforms.uPointer.value.set(2 * this.pointer.x, -2 * this.pointer.y);
-      // The soft light behind the page follows the cursor too (style.css, body::before).
-      root.setProperty('--mx', `${event.clientX}px`);
-      root.setProperty('--my', `${event.clientY}px`);
     };
     window.addEventListener('pointermove', this.onPointer);
 

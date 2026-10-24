@@ -144,14 +144,14 @@ body {
   pointer-events: none;
 }
 
-/* A soft cool light that follows the cursor over the whole page (dots/stage.js sets --mx, --my). */
+/* One still, faint glow from the top behind the app screens: depth without motion. */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(200 255 46 / 0.05), transparent 60%);
+  background: radial-gradient(1000px 520px at 50% -12%, rgb(200 255 46 / 0.07), transparent 70%);
 }
 
 #app {

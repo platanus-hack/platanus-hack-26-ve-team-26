@@ -540,11 +540,6 @@ html.is-landing.lenis body {
   color: var(--fg-2);
 }
 
-/* On phones the words sit low, so the push button also lives in the HUD. */
-.hud-push {
-  display: none;
-}
-
 .scroll-cue {
   position: absolute;
   left: 50%;
@@ -1185,7 +1180,12 @@ html.is-landing.lenis body {
   color: var(--signal);
 }
 
-/* ---- Phones and small tablets: the robot stays centered, the words go low ---- */
+/* Short phone versions of some titles (home.js): hidden until the phone block below. */
+.only-narrow {
+  display: none;
+}
+
+/* ---- Small tablets: no room for the nav ---- */
 
 @media (max-width: 1000px) {
   .topnav {
@@ -1201,105 +1201,294 @@ html.is-landing.lenis body {
   }
 }
 
+/* ---- Phones: not the desktop page squeezed, its own smaller version ----
+   One idea per screen: a title of a few words, one number or one control, and the robot. The
+   long copy is wide-only (.only-wide); a few titles have a short phone version (.only-narrow).
+   The panels become small tiles, chips and rows instead of cards with paragraphs. */
+
 @media (max-width: 860px) {
-  .film-hud {
-    display: none; /* the phone's screen is all robot and words already */
+  .only-wide {
+    display: none !important;
+  }
+
+  .only-narrow {
+    display: inline;
+  }
+
+  .landing {
+    font-size: 15px;
+  }
+
+  /* The loading readout moves up, under the top bar: low, it sat on the hero's title. */
+  .boot {
+    top: 72px;
+    right: var(--gutter);
+    bottom: auto;
+    left: var(--gutter);
+    width: auto;
+  }
+
+  .film-hud,
+  .scroll-cue,
+  .hero-live,
+  .hud {
+    display: none; /* the phone's screen is robot and title already */
+  }
+
+  .topbar {
+    inset: var(--s-2) var(--s-3) auto;
+    padding: 6px 6px 6px var(--s-3);
+  }
+
+  .topbar .logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .wordmark {
+    font-size: 21px;
+  }
+
+  .topbar .btn-small {
+    min-height: 34px;
+    padding: 0 var(--s-3);
   }
 
   .hero-caption,
   .capture-caption,
   .gym-caption,
   .policy-caption {
-    left: var(--gutter);
+    top: auto;
     right: var(--gutter);
+    bottom: var(--s-5);
+    left: var(--gutter);
+    width: auto;
+    transform: none;
+  }
+
+  .caption h2 {
+    font-size: 30px;
+  }
+
+  .product {
+    margin-bottom: var(--s-2) !important;
+    font-size: 11px;
+  }
+
+  /* Hero: the title and the push, nothing else. */
+  .hero-caption {
+    bottom: var(--s-6);
+  }
+
+  .hero-caption .eyebrow,
+  .hero-lede,
+  .hero-steps,
+  .hero-caption .btn-ghost {
+    display: none;
+  }
+
+  .hero-caption h1 {
+    font-size: 44px;
+  }
+
+  .cta-row {
+    margin-top: var(--s-5);
+  }
+
+  .cta-row .hero-push {
+    flex: 1;
+    min-height: 52px; /* a thumb-sized button */
+  }
+
+  .btn kbd {
+    display: none; /* no space bar on a phone */
+  }
+
+  /* Capture: the video and the skeleton side by side at the top, as two small tiles. */
+  .capture-media {
+    top: 68px;
+    right: var(--gutter);
+    bottom: auto;
+    left: var(--gutter);
+    display: grid;
+    grid-template-columns: 16fr 9fr;
+    gap: var(--s-2);
     width: auto;
   }
 
-
-  .hero-caption {
-    bottom: 120px;
-  }
-
-  /* Gym on a phone: only the stage on screen, low, under the robot. */
-  .gym-caption {
-    top: auto;
-    bottom: 24px;
-    transform: none;
-  }
-
-  .gym-caption h2,
-  .gym-hint {
-    display: none;
-  }
-
-  .panel {
-    padding: 16px 18px;
-  }
-
-  .steps-meter {
-    margin-top: 12px;
-    padding-top: 12px;
-  }
-
-  .hero-caption .cta-row .hero-push {
-    display: none; /* the HUD carries it, higher on the screen */
-  }
-
-  .hud {
-    top: 136px; /* under the "Simulación en vivo" pill */
-    bottom: auto;
-  }
-
-  .axis-stop {
-    padding: 9px 8px;
-  }
-
-
-  .hud-push {
-    display: inline-flex;
-  }
-
-  .scroll-cue {
-    display: none;
-  }
-
-  .capture-caption {
-    top: auto;
-    bottom: 32px;
-  }
-
-  .capture-media {
-    top: 80px;
-    bottom: auto;
-    width: 62vw;
+  .frame {
+    border-radius: var(--r-1);
   }
 
   .frame-skeleton {
-    right: -48%;
-    width: 44%;
+    position: static;
+    width: auto;
+    aspect-ratio: auto;
+    box-shadow: none;
   }
 
-  .gym-caption,
-  .policy-caption {
-    top: auto;
-    bottom: 28px;
-    transform: none;
+  .frame figcaption,
+  .capture-caption p:not(.product) {
+    display: none;
   }
 
+  /* Gym: the step count, the four checkpoints as chips and one line about the one on screen. */
+  .panel {
+    padding: var(--s-4);
+    border-radius: var(--r-1);
+  }
+
+  .gym-caption h2,
+  .gym-hint,
+  .axis-track,
+  .axis-label,
+  .stage-numbers {
+    display: none;
+  }
+
+  .steps-meter {
+    gap: var(--s-3);
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .steps-now b {
+    font-size: 48px;
+  }
+
+  .axis-stops {
+    gap: 2px;
+    padding: 2px;
+    border-radius: var(--r-1);
+  }
+
+  .axis-stop {
+    justify-items: center;
+    padding: var(--s-2) 0;
+    border-radius: var(--r-1);
+  }
+
+  .axis-verdict {
+    font-size: 13px;
+  }
+
+  .stage-detail {
+    padding: 0;
+    border: 0;
+    background: none;
+  }
+
+  .stage-text {
+    font-size: 14px;
+    color: var(--fg-2);
+  }
+
+  .gym-status {
+    margin-top: var(--s-3) !important;
+    font-size: 10px;
+  }
+
+  /* Policy: four numbers in a 2 x 2 grid of tiles. */
   .policy-note {
     display: none;
   }
 
+  .specs {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s-2);
+    margin-top: var(--s-4) !important;
+  }
+
   .specs li {
-    grid-template-columns: 100px 1fr;
-    padding: 10px 0;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--s-1);
+    padding: var(--s-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-1);
+  }
+
+  .specs b {
+    font-size: 26px;
+  }
+
+  .specs span {
+    font: 500 10px/1.3 var(--mono);
+    text-transform: uppercase;
+    color: var(--fg-2);
+  }
+
+  /* Closing: the manifesto, then the ways to try it as a plain list of rows. */
+  .closing {
+    padding-top: 22vh;
+  }
+
+  .manifesto {
+    font-size: 40px !important;
+  }
+
+  .closing-text {
+    display: none;
   }
 
   .tries {
     grid-template-columns: 1fr;
+    gap: 0;
+    margin-top: var(--s-6);
+    border-top: 1px solid var(--line);
   }
 
-  /* The progress line stands up on phones: milestones down the left. */
+  .try {
+    grid-template-columns: 28px 1fr auto;
+    grid-template-rows: auto;
+    align-items: center;
+    gap: var(--s-3);
+    min-height: 60px;
+    padding: var(--s-3) 0;
+    border: 0;
+    border-bottom: 1px solid var(--line);
+    border-radius: 0;
+    background: none;
+  }
+
+  .try:hover,
+  .try:focus-visible {
+    transform: none;
+    background: none;
+  }
+
+  .try-icon {
+    width: 28px;
+    height: 28px;
+    margin: 0;
+  }
+
+  .try b {
+    font-size: 17px;
+  }
+
+  .try-go {
+    margin: 0;
+    padding: 0;
+    border: 0;
+    font-size: 0; /* the words go; the arrow stays */
+  }
+
+  .try-go::after {
+    content: '→';
+    font-size: 20px;
+  }
+
+  .try.unavailable .try-go::after {
+    content: '!';
+  }
+
+  /* Where we are: three short lines down a vertical track. */
+  .progress-track {
+    margin-top: var(--s-7);
+  }
+
   .track-line {
     left: calc(var(--dot) / 2 - 1px);
     right: auto;
@@ -1317,15 +1506,24 @@ html.is-landing.lenis body {
 
   .milestones {
     grid-template-columns: 1fr;
-    gap: 28px;
+    gap: var(--s-5);
   }
 
   .milestones li,
   .milestones li:nth-child(2),
   .milestones li:nth-child(3) {
     justify-items: start;
-    padding-left: calc(var(--dot) + 18px);
+    gap: var(--s-1);
+    padding-left: calc(var(--dot) + var(--s-4));
     text-align: left;
+  }
+
+  .milestones b {
+    font-size: 17px;
+  }
+
+  .proof {
+    display: none;
   }
 
   .dot {
@@ -1333,6 +1531,19 @@ html.is-landing.lenis body {
     left: 0;
     top: 0;
     margin: 0;
+  }
+
+  .footer {
+    gap: var(--s-5);
+    margin-top: var(--s-8);
+  }
+
+  .footer > p {
+    display: none;
+  }
+
+  .wordmark.big {
+    font-size: 72px;
   }
 }
 

@@ -34,8 +34,14 @@ Que la barra espaciadora haga avanzar el landing, que "Probar en vivo" lleve a l
 - Lima en vez de naranja: corta sobre la calle cálida del film y es el color de "en vivo" en herramientas de robótica. Toca `web/` (área de César): avisarle.
 - `project-logo.png` (archivo de entrega) no se tocó: falta regenerarlo con el logo nuevo si el equipo lo aprueba.
 
+## Segunda vuelta: fondo más simple y móvil
+
+- Fondo de las pantallas de la app (`web/src/dots/stage.js`, `style.css`): 600 → 220 puntos, grises al 55 %, sin empuje ni cambio de color con el cursor; el brillo que seguía al cursor pasa a un degradado lima fijo y tenue arriba.
+- Landing en móvil (`landing.css`, bloque `max-width: 860px`, y `home.js`): no es el desktop apretado. Por pantalla, un título corto y una cosa: hero = título + "Empújalo"; Capture = video y esqueleto como dos tiles arriba + "Del video al robot"; Gym = número de pasos, chips de las 4 etapas y una frase; Policy = "Cabe en un correo" + 4 tiles 2x2; cierre = manifiesto + filas con ícono y flecha + hitos de una línea; footer sin párrafo. Títulos cortos con `.only-narrow`, copy largo con `.only-wide`.
+- Probado a 375x812: sin scroll horizontal, el botón del header ("Probar") aterriza en las filas. Desktop sin cambios (ningún `.only-narrow` visible). `vite build` pasa.
+
 ## Sigue
 
-- Versión mobile del landing con el mismo sistema.
+- Móvil de las otras pantallas (`live`, `upload`, `simulations`, `delivery`).
 - Exportar el logo nuevo a `project-logo.png` (1000x1000) si se aprueba.
 - Las otras pantallas (`upload`, `live`, `simulations`) heredan tokens pero no se revisaron una por una.
