@@ -1,27 +1,13 @@
 // Headless check of the physics, with the same WASM build the page uses:
 // the G1 stands still for 10 s on its own, and a push knocks it over.
 // Run: npm run check
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import loadMujoco from '@mujoco/mujoco';
-import { Simulation } from '../src/sim.js';
+import { loadG1Node } from './node-model.mjs';
 
-const MODEL_DIR = new URL('../models/unitree_g1/', import.meta.url).pathname;
 const FRAME_S = 1 / 60;
 // The "stand" keyframe puts the pelvis at 0.79 m. Below 0.70 m the knees or hips gave way;
 // below 0.40 m the robot is on the floor.
 const STANDING_MIN_Z = 0.7;
 const FALLEN_MAX_Z = 0.4;
-
-function readTree(dir) {
-  const files = {};
-  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    const path = join(entry.parentPath, entry.name);
-    files[relative(dir, path)] = new Uint8Array(readFileSync(path));
-  }
-  return files;
-}
 
 function run(sim, seconds) {
   let steps = 0;
@@ -29,8 +15,7 @@ function run(sim, seconds) {
   return steps;
 }
 
-const mujoco = await loadMujoco();
-const sim = new Simulation(mujoco, readTree(MODEL_DIR), 'scene.xml', 'stand');
+const { mujoco, sim } = await loadG1Node();
 const mass = sim.model.body_mass.reduce((a, b) => a + b, 0);
 console.log(`G1: nq=${sim.model.nq} nu=${sim.model.nu} mass=${mass.toFixed(1)} kg dt=${sim.model.opt.timestep * 1000} ms`);
 

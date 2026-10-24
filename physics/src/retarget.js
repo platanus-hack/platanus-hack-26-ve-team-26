@@ -202,11 +202,16 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
 
   /**
    * @param pose { points, visible } from createPoseTracker
+   * @param options.travelYaw  heading (rad, about the vertical) the person is travelling in, when
+   *   known. It replaces the heading read from the hips if both point the same way (within 90
+   *   degrees): seen from the side, the hip line runs along the depth axis, which is MediaPipe's
+   *   noisiest, while the direction of travel does not wobble. Walking backwards or sideways keeps
+   *   the hips' heading.
    * @returns qpos: Float64Array(nq), a copy; residual: the worst distance (m) between where a limb
    *   ended up and where the person put it (above ~0.08 the robot cannot do that move); tracked:
    *   false when the shoulders were not seen and the previous pose was kept.
    */
-  function solve({ points, visible: V }) {
+  function solve({ points, visible: V }, { travelYaw } = {}) {
     Q = data.qpos;
     XPOS = data.xpos;
     XQUAT = data.xquat;
@@ -224,7 +229,17 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     frame(hTorso, dir.subVectors(S[L.shoulder], S[R.shoulder]), torsoUp);
     const headingFrame = heading ?? hTorso;
     dir.set(1, 0, 0).applyQuaternion(headingFrame);
-    pelvisQ.setFromAxisAngle(UP, Math.atan2(dir.y, dir.x));
+    const bodyYaw = Math.atan2(dir.y, dir.x);
+    const yaw = travelYaw !== undefined && Math.cos(travelYaw - bodyYaw) > 0 ? travelYaw : bodyYaw;
+    pelvisQ.setFromAxisAngle(UP, yaw);
+    // If the heading came from the direction of travel, the person's frames must turn with it.
+    // Otherwise a hip line that is 15 degrees off the real heading turns every stride by 15
+    // degrees from the path of the pelvis, and the planted foot slides.
+    if (yaw !== bodyYaw) {
+      toLocal.setFromAxisAngle(UP, yaw - bodyYaw);
+      hHip.premultiply(toLocal);
+      hTorso.premultiply(toLocal);
+    }
     Q[0] = Q[1] = Q[2] = 0;
     Q[3] = pelvisQ.w;
     Q[4] = pelvisQ.x;
@@ -278,5 +293,8 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     return { qpos: Q.slice(), residual, tracked: true };
   }
 
-  return { solve, delete: () => data.delete() };
+  // Hip to ankle along the leg (m): lets a recorded path be scaled to this robot's stride.
+  const legLength = chains.filter((c) => c.foot).reduce((sum, c) => sum + c.upperLength + c.foreLength, 0) / 2;
+
+  return { solve, legLength, delete: () => data.delete() };
 }

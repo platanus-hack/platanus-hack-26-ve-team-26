@@ -1,29 +1,17 @@
 // Headless check of the camera retargeting: synthetic people in MediaPipe's own format go in,
 // G1 joint angles come out, and each answer is known in advance.
 // Run: npm run check
-import { readdirSync, readFileSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import loadMujoco from '@mujoco/mujoco';
-import { Simulation } from '../src/sim.js';
+import { readFileSync } from 'node:fs';
+import { loadG1Node } from './node-model.mjs';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
+import { retargetClip } from '../src/motion.js';
 
-const MODEL_DIR = new URL('../models/unitree_g1/', import.meta.url).pathname;
 // Above this a limb ended up farther than 8 cm from where the person put it (Sombra's REACH_TOLERANCE).
 const REACH_TOLERANCE = 0.08;
 // One solve must fit comfortably in a camera frame (33 ms at 30 fps), next to MediaPipe and drawing.
 const MAX_MS_PER_SOLVE = 12;
 const STAND_PELVIS_Z = 0.793; // "stand" keyframe, with the feet on the floor
-
-function readTree(dir) {
-  const files = {};
-  for (const entry of readdirSync(dir, { recursive: true, withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    const path = join(entry.parentPath, entry.name);
-    files[relative(dir, path)] = new Uint8Array(readFileSync(path));
-  }
-  return files;
-}
 
 // A person facing the camera, in "natural" axes: x to the image right (their left), y up, z toward
 // the camera, hips at the origin. Segment lengths of an adult of 1.75 m. `pose` overrides joints.
@@ -59,8 +47,7 @@ function person(overrides = {}, { yaw = 0, legsVisible = true } = {}) {
   return world;
 }
 
-const mujoco = await loadMujoco();
-const sim = new Simulation(mujoco, readTree(MODEL_DIR), 'scene.xml', 'stand');
+const { mujoco, sim } = await loadG1Node();
 
 // Each case runs for a few frames so the One Euro filter settles, like a camera would.
 function run(world, options) {
@@ -189,6 +176,55 @@ console.log("Juan's real walking clip (MediaPipe on a video of someone walking i
   expect(reached >= 0.95, `${(reached * 100).toFixed(0)}% of frames within ${REACH_TOLERANCE * 100} cm`);
   // A walking knee goes from straight to well bent (it reached 1.28 rad when this was written).
   expect(Math.max(...knee) - Math.min(...knee) > 1, `left knee swings ${(Math.max(...knee) - Math.min(...knee)).toFixed(2)} rad`);
+}
+
+console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis path and heading)");
+{
+  const clip = JSON.parse(readFileSync(new URL('../../data/clips/clip_2026-10-23_caminar-perfil_01.json', import.meta.url)));
+  const { motion, stats } = retargetClip(mujoco, sim.model, clip);
+  const rows = motion.qpos;
+  const median = (a) => [...a].sort((x, y) => x - y)[Math.floor(a.length / 2)];
+  expect(motion.robot === 'unitree_g1' && motion.clip_id === clip.id && motion.fps === clip.fps, 'contract fields: clip_id, robot, fps');
+  expect(rows.length === clip.frames.length && rows.every((r) => r.length === sim.model.nq && r.every(Number.isFinite)), `${rows.length} rows of ${sim.model.nq} finite numbers`);
+  expect(rows.every((r) => Math.abs(Math.hypot(r[3], r[4], r[5], r[6]) - 1) < 1e-3), 'pelvis quaternions have unit length');
+  // Every joint inside its limits (the solver clamps them).
+  const range = sim.model.jnt_range;
+  const jointsInRange = rows.every((r) => Array.from({ length: sim.model.njnt - 1 }, (_, k) => k + 1).every((jn) => {
+    const v = r[sim.model.jnt_qposadr[jn]];
+    return v >= range[2 * jn] - 1e-4 && v <= range[2 * jn + 1] + 1e-4;
+  }));
+  expect(jointsInRange, 'every joint within its limits');
+  const heading = rows.map((r) => (2 * Math.atan2(r[6], r[3]) * 180) / Math.PI);
+  const mid = median(heading);
+  expect(heading.every((h) => Math.abs(h - mid) < 15), `heading steady: ${Math.min(...heading).toFixed(0)} to ${Math.max(...heading).toFixed(0)} degrees`);
+  const end = rows[rows.length - 1];
+  const pathHeading = (Math.atan2(end[1], end[0]) * 180) / Math.PI;
+  expect(Math.abs(pathHeading - mid) < 10, `the pelvis walks where it faces (path ${pathHeading.toFixed(0)}, heading ${mid.toFixed(0)} degrees)`);
+  expect(stats.scale > 0.6 && stats.scale < 1, `path scaled x${stats.scale.toFixed(2)} (the G1's legs are shorter than a person's)`);
+  expect(rows.every((r) => r[2] > 0.55 && r[2] < 0.82), 'pelvis height stays between 0.55 and 0.82 m (feet on the floor)');
+
+  // Sliding: over about 0.3 s the slower foot is the planted one. The robot must not slide more
+  // than the person in the data does (its own depth noise is the limit, not the retargeting).
+  const K = 4;
+  const slideRatio = (feet, pelvis) => {
+    const slide = [];
+    const pel = [];
+    for (let i = K; i < feet.length - K; i++) {
+      const dt = clip.frames[i + K].t - clip.frames[i - K].t;
+      const speed = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]) / dt;
+      slide.push(Math.min(speed(feet[i + K][0], feet[i - K][0]), speed(feet[i + K][1], feet[i - K][1])));
+      pel.push(speed(pelvis[i + K], pelvis[i - K]));
+    }
+    return median(slide) / median(pel);
+  };
+  const J = clip.frames.map((f) => f.joints);
+  const human = slideRatio(J.map((j) => [[j[27][2], j[27][0]], [j[28][2], j[28][0]]]), J.map((j) => [(j[23][2] + j[24][2]) / 2, (j[23][0] + j[24][0]) / 2]));
+  const robotFeet = rows.map((q) => {
+    sim.puppet(q);
+    return ['left_ankle_roll_link', 'right_ankle_roll_link'].map((n) => sim.bodyPosition(n).slice(0, 2));
+  });
+  const robot = slideRatio(robotFeet, rows.map((q) => [q[0], q[1]]));
+  expect(robot <= human, `planted foot slides ${robot.toFixed(2)} of the pelvis speed (the person in the data: ${human.toFixed(2)})`);
 }
 
 console.log('speed');
