@@ -6,15 +6,24 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-MIRROR=git@github.com:Torpass/tridi.git
+# SSH first, then HTTPS: whoever cloned with HTTPS often has no SSH key registered on GitHub, and
+# their ships would leave the deploy behind. HTTPS authenticates with gh (already logged in for
+# ship.sh), so nobody has to set up anything.
+MIRRORS=(git@github.com:Torpass/tridi.git https://github.com/Torpass/tridi.git)
 
 git fetch --quiet origin main
-# The mirror is an exact copy of main and nobody commits there, so overwriting is safe.
-# ALLOW_MAIN_PUSH lets this push through .githooks/pre-push, which guards this repo's main.
-if ALLOW_MAIN_PUSH=1 git push --quiet "$MIRROR" +origin/main:refs/heads/main; then
-  echo "mirror: $MIRROR now matches main; Vercel deploys it in about a minute."
-else
-  echo "mirror: could not push to $MIRROR. Main is fine, but the deploy stays behind."
-  echo "mirror: accept your invitation to Torpass/tridi on GitHub, or ask Pastor to run scripts/mirror.sh."
-  exit 1
-fi
+for mirror in "${MIRRORS[@]}"; do
+  # The mirror is an exact copy of main and nobody commits there, so overwriting is safe.
+  # ALLOW_MAIN_PUSH lets this push through .githooks/pre-push, which guards this repo's main.
+  # GIT_SSH_COMMAND with BatchMode fails fast instead of prompting when the SSH key is missing.
+  if GIT_SSH_COMMAND="${GIT_SSH_COMMAND:-ssh} -o BatchMode=yes" ALLOW_MAIN_PUSH=1 \
+    git -c credential.helper= -c 'credential.helper=!gh auth git-credential' \
+    push --quiet "$mirror" +origin/main:refs/heads/main 2>/dev/null; then
+    echo "mirror: $mirror now matches main; Vercel deploys it in about a minute."
+    exit 0
+  fi
+done
+echo "mirror: could not push to Torpass/tridi by SSH or HTTPS. Main is fine, but the deploy stays behind."
+echo "mirror: check 'gh auth status' and that you accepted the invitation to Torpass/tridi,"
+echo "mirror: or ask someone with access to run scripts/mirror.sh."
+exit 1
