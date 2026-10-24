@@ -45,6 +45,8 @@ Juan reporta en En vivo: el robot no distingue palmas hacia adelante o hacia atr
 
 - **Error mío: se perdió grabar y entrenar.** Al sacar Simulaciones quité también la grabación de En vivo, y con ella el paso de entrenar que venía después: solo quedaban prender y apagar la cámara. Vuelve en `web/src/screens/live.js` (grabación como antes, también con el teléfono) y `web/src/training.js` (restaurado, ahora con la caja de entrenar adentro: `trainBoxHTML` y `mountTrainBox`). Probado en tridi-alpha con la cámara falsa: graba, "Parar y guardar" guarda 25 s con 100 % visible y aparece "Entrenar al robot" habilitado. No lo apreté: lanza un entrenamiento real de ~30 min en la Mac.
 
+- **Grabar lleva a la simulación; subir entrena solo** (pedido de Juan): Simulaciones vuelve (`simulations.js`, `gallery.js`, `stage.js`, `props.js` y la ruta), sin tarjeta en la portada; En vivo, tras "Parar y guardar", ofrece "Ver la simulación". La caja de entrenar vive en `training.js` y la usan Simulaciones y Subir; en Subir arranca sola al terminar. Probado en tridi-alpha con la cámara falsa: 15 s guardados → Simulaciones con el clip, la persona, el robot en la calle y "Entrenar al robot" habilitado. Subir con entrenamiento automático **sin probar**: lanzaría un entrenamiento real en la Mac.
+
 ## Decisiones
 
 - B3 (pesar más el codo) no se hizo: con geometría exacta los codos ya salían bien; la causa era profundidad y espejo.
