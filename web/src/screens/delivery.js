@@ -7,8 +7,10 @@
 // The robot shows the dataset's own poses (sim.puppet, no dynamics) instead of view.playClip:
 // playClip grounds and smooths a RobotMotion for display, which would stand a fallen robot back up.
 // A stones episode is shown on the stones floor, so its feet land where they did.
+import * as THREE from 'three';
 import { WORLDS } from 'tridi-physics';
 
+import { dressWorld } from '../looks/index.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import './delivery.css';
 
@@ -353,6 +355,7 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
   let view = null;
   let saved = null; // the camera offset the previous screen left, given back on unmount
   let worldBusy = null; // a world change in progress (the stones rebuild the model)
+  let look = null; // what the episode's world looks like (looks/), redone when the world changes
   let noteTimer = 0; // the HUD's "cargando…" during that change
   let gone = false;
 
@@ -846,6 +849,7 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
       if (view) view.sim.puppet(poseAt(s, Math.min(t, s.end)));
       updatePlayhead();
     }
+    look?.update(wall);
     frameId = requestAnimationFrame(frame);
   });
 
@@ -883,7 +887,10 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
   function syncWorld() {
     if (!view || gone || worldBusy) return;
     const want = episodes[sel].world;
-    if ((view.world()?.id ?? 'plano') === want) return;
+    if ((view.world()?.id ?? 'plano') === want) {
+      if (!look) dressLook(); // the robot was already in this world when the panel got it
+      return;
+    }
     const world = WORLDS.find((w) => w.id === want);
     if (!world) return; // a world this build does not know: the flat floor stands in
     // A rebuild shorter than 150 ms (the flat floor) says nothing, instead of flashing the note.
@@ -896,9 +903,20 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
         clearTimeout(noteTimer);
         worldBusy = null;
         if (gone) return;
+        dressLook();
         renderEpisode();
         syncWorld();
       });
+  }
+
+  // The world's look around the replay. The wind is the selected episode's own speed (its
+  // params.wind_mps), read every frame, so moving to another episode of the same world needs no
+  // redress. Its direction is not in the delivery (training/rollout.py draws one per episode and
+  // does not keep it), so it blows the way the app's wind does (MuJoCo +y, sim.applyWorld).
+  const REPLAY_WIND_DIR = new THREE.Vector2(0, -1);
+  function dressLook() {
+    look?.undo();
+    look = dressWorld(view, { wind: () => ({ dir: REPLAY_WIND_DIR, mps: episodes[sel].params?.wind_mps ?? 0 }) });
   }
 
   // ---- Keyboard: space plays and pauses, the arrows walk the matrix ----
@@ -973,6 +991,8 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
     resize.disconnect();
     cleanups.forEach((fn) => fn());
     stopProgress();
+    look?.undo();
+    look = null;
     if (view) {
       // Give the robot back as the app screens expect it: their camera, flat ground, standing.
       const { camera, controls } = view.viewer;
