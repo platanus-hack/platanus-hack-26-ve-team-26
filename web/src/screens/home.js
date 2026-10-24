@@ -480,8 +480,10 @@ export function mount(root, { api }) {
       await useLevel(FINAL_LEVEL);
       const motion = await walkMotion;
       // From the first frame, with the video: resuming where the video was paused made the robot
-      // jump along the walk (1.9 m) the moment it started.
-      video.currentTime = 0;
+      // jump along the walk (1.9 m) the moment it started. Coming back up from below, it starts
+      // at the end instead and walks backward to where the story began (updateWalk).
+      walk.t = walk.dir < 0 ? walkDuration() : 0;
+      video.currentTime = walk.t;
       // plantFeet: the retargeted path is shorter than the robot's stride, so without it the foot on
       // the floor slid backward (0,35 m/s) and the walk read as a moonwalk (physics/src/motion.js).
       if (token === modeToken && motion) view.playClip(motion, { plantFeet: true });
@@ -712,6 +714,43 @@ export function mount(root, { api }) {
   const video = $('.walk-video');
   let skeleton = null;
   const captureEl = $('.capture');
+  // The walk follows the scroll's direction: scrolling down it plays forward on the video's own
+  // clock; scrolling up, the video, the skeleton and the robot run backward together, so going
+  // back up the page rewinds the story (the robot walks back the way it came). Browsers cannot
+  // play a video backward (negative playbackRate), so in reverse the video is paused and seeked.
+  // dir keeps the last direction while the page stands still. DIR_PX ignores Lenis's sub-pixel
+  // settling, which would flip the direction at the end of every glide.
+  const DIR_PX = 0.5;
+  const walk = { t: 0, dir: 1, lastY: scrollY, lastNow: 0 };
+  const walkDuration = () => (Number.isFinite(video.duration) ? video.duration : 0);
+  function updateWalk(now) {
+    const dt = walk.lastNow ? Math.min(0.1, (now - walk.lastNow) / 1000) : 0; // 0.1: no leap after a hidden tab
+    walk.lastNow = now;
+    if (mode !== 'walk') {
+      if (!video.paused) video.pause();
+      return;
+    }
+    const duration = walkDuration();
+    if (walk.dir > 0 || !duration) {
+      if (video.paused) video.play().catch(() => {});
+      walk.t = video.currentTime;
+    } else {
+      if (!video.paused) video.pause();
+      walk.t = (((walk.t - dt) % duration) + duration) % duration; // loops backward, like the video loops forward
+      // One seek at a time: queuing one every frame made the video fall behind and stutter.
+      if (!video.seeking) video.currentTime = walk.t;
+    }
+    if (skeleton?.clip) {
+      skeleton.time = walk.t;
+      skeleton.render();
+    }
+    view.seek(walk.t);
+  }
+  function updateScrollDir() {
+    const delta = scrollY - walk.lastY;
+    walk.lastY = scrollY;
+    if (Math.abs(delta) > DIR_PX) walk.dir = Math.sign(delta);
+  }
 
   // ---- The wash: one fixed dark veil behind the words, on the side they are on ----
   // A veil per chapter ended in a hard line where the chapter ended; one veil for the whole page,
@@ -753,15 +792,9 @@ export function mount(root, { api }) {
       telemetry?.update(mode !== 'walk', { com: chapterAt(scrollY + innerHeight * 0.5).dataset.shot !== 'hero' });
       updateReadout(now);
       directCamera(view);
+      updateScrollDir();
       setMode(modeAt());
-      if (mode === 'walk') {
-        if (video.paused) video.play().catch(() => {});
-        if (skeleton?.clip) {
-          skeleton.time = video.currentTime;
-          skeleton.render();
-        }
-        view.seek(video.currentTime);
-      } else if (!video.paused) video.pause();
+      updateWalk(now);
       if (mode === 'gym') {
         showGymStage();
         runGym();
