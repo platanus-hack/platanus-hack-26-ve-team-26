@@ -103,14 +103,14 @@ html.is-landing.lenis body {
   z-index: 0;
   pointer-events: none;
   background:
-    /* The words sit over the robot and its floor: the veil keeps them on a dark ground. */
+    /* Darker since the landing's street is lit and full of shops: the words sit over a busy picture. */
     linear-gradient(90deg, rgb(8 9 11 / calc(0.78 * var(--wash-left))), rgb(8 9 11 / calc(0.42 * var(--wash-left))) 34%, transparent 56%),
     linear-gradient(270deg, rgb(8 9 11 / calc(0.78 * var(--wash-right))), rgb(8 9 11 / calc(0.42 * var(--wash-right))) 34%, transparent 56%),
     linear-gradient(transparent 30%, rgb(8 9 11 / calc(0.82 * var(--wash-floor))) 66%); /* phones: the hero's title starts at a third of the screen */
 }
 
 /* The film's frame: viewfinder corners and the simulation's own readout (home.js updateReadout),
-   so the film reads as a simulation. Under the shade, which covers it with the rest of the film
+   so the street reads as a simulation. Under the shade, which covers it with the rest of the film
    at the close. */
 .film-hud {
   position: fixed;
@@ -302,8 +302,9 @@ html.is-landing.lenis body {
   padding: var(--s-2) var(--s-2) var(--s-2) var(--s-3);
   border: 1px solid var(--line);
   border-radius: var(--r-2);
-  /* Detached from the edges and always on its own dark glass: the words and the button keep the
-     same ground over the robot as everywhere else. */
+  /* Detached from the edges and always on its own dark glass: over the hero the street behind it
+     is bright (shop windows, the sky), and the words and the button need the same ground there
+     as everywhere else. */
   background: rgb(8 9 11 / 0.62);
   backdrop-filter: blur(16px) saturate(1.2);
   box-shadow: 0 16px 40px -20px rgb(0 0 0 / 0.8);
@@ -654,7 +655,7 @@ html.is-landing.lenis body {
   height: 500svh; /* the panel sticks for four screens, one per stage (home.js gymStage, gymGate) */
 }
 
-/* Gym and Policy: their words sit on a dark card, over the robot and its floor. No
+/* Gym and Policy: their words sit on a dark card, since the street behind them is busy. No
    backdrop blur: one this size filters the whole film under it again every frame. */
 /* A lime edge on top marks a live readout, as on an instrument. */
 .panel {

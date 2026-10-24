@@ -1,6 +1,7 @@
 // A street floor drawn as a texture (no image files): concrete sidewalk slabs, a curb, asphalt with
 // a dashed line, and the far sidewalk, running along three.js z (the texture's v direction). The
-// sidewalk place of Simulaciones lies on it (props.js).
+// sidewalk place of Simulaciones lies on it (props.js); the landing builds its own street in 3D,
+// with a real curb and the city around it (city.js).
 import * as THREE from 'three';
 
 const PX_PER_M = 128; // 1 cm ≈ 1 px: seams and speckle stay crisp up close

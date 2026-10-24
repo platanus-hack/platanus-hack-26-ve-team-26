@@ -9,7 +9,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 import '../landing/landing.css';
 import { loader } from '../loader.js';
-import { dressLab } from '../landing/lab.js';
+import { dressCity } from '../landing/city.js';
 import { dressTelemetry } from '../landing/telemetry.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
@@ -63,7 +63,7 @@ const narrow = () => innerWidth < 860;
 // (MuJoCo +x), elevation lifts it, distance in meters, aim is the height it looks at, and shift
 // slides the robot across the frame (a share of the width, + to the right) to leave room for words.
 // follow is how many seconds the camera takes to catch up with the pelvis (physics/ viewer
-// followTau): a still frame instead of the floor sliding with every small step; the walk keeps a
+// followTau): a still frame instead of the street sliding with every small step; the walk keeps a
 // short one so the robot stays in frame. Resets and clip loops still cut (the viewer snaps them).
 // Capture looks from the robot's right (az -90): the walk is turned to head +x (faceForward), so
 // it is the side the phone filmed, the robot walks the same way as the video, and the far arm is
@@ -329,7 +329,7 @@ export function mount(root, { api }) {
   let saved = null; // the viewer's camera as the app screens expect it, put back on unmount
   let lights = []; // the landing's extra lights
   let key = null; // the one of them that rides with the camera
-  let undressLab = () => {}; // takes the landing's floor and haze out again
+  let undressCity = () => {}; // takes the street, the sky and the buildings out again
   let telemetry = null; // the physics drawn into the scene (landing/telemetry.js)
 
   // The camera eases toward the shot of the chapter on screen, blending between neighbours.
@@ -787,7 +787,7 @@ export function mount(root, { api }) {
   // A veil per chapter ended in a hard line where the chapter ended; one veil for the whole page,
   // eased toward each chapter's side, leaves no edge. On phones the words sit low: a floor instead.
   const washEl = $('.film-wash');
-  // The hero's title sits low on the left.
+  // The hero's title sits low on the left, over the café of the street (landing/city.js).
   const WASH = { hero: [0.85, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
   const wash = { left: 0, right: 0, floor: 0 };
   const washed = { left: '', right: '', floor: '' }; // what the veil has now: write only changes
@@ -857,8 +857,8 @@ export function mount(root, { api }) {
       view.viewer.resize();
       view.viewer.renderer.toneMappingExposure = 1.35;
       lights.forEach((light) => view.viewer.scene.add(light));
-      // The landing's floor and haze instead of the app's, while the landing has the robot.
-      undressLab = dressLab(view.viewer.scene);
+      // A city street at dusk around the robot instead of the grid, while the landing has it.
+      undressCity = dressCity(view.viewer.scene, view.viewer.renderer);
       marks = makeMarks(view.viewer.scene);
       telemetry = dressTelemetry(view);
       $('[data-sim="rates"]').textContent = `MuJoCo · física ${Math.round(1 / view.sim.model.opt.timestep)} Hz · política ${DECISIONS_PER_S} Hz`;
@@ -974,7 +974,7 @@ export function mount(root, { api }) {
       view.viewer.renderer.toneMappingExposure = saved.exposure;
       view.viewer.renderer.setPixelRatio(saved.pixelRatio);
       view.viewer.resize();
-      undressLab();
+      undressCity();
       telemetry?.dispose();
       if (marks) {
         marks.arrow.dispose();
