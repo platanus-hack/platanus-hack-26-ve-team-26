@@ -35,7 +35,7 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 - [x] **W8.3 Rutas y carga por etapas.** `#/`, `#/en-vivo`, `#/subir`, `#/simulaciones`. El menú solo carga three.js (144 KB comprimidos); cada pantalla es un pedazo aparte, y MuJoCo y el robot (30 MB) se precargan cuando el cursor llega a su tarjeta.
 - [x] **W8.4 Nunca colgado.** Mientras baja el G1, en su panel saluda un robot de puntos con una barra de progreso; si una pantalla tarda, aparece "Cargando…"; si no se puede descargar, una pantalla explica qué hacer.
 - [x] **W8.5 Tarjetas 3D y entorno vivo.** Las tarjetas son placas de vidrio con grosor que se inclinan con el cursor, y la cámara de su robot gira con ellas. Los puntos del fondo se apartan del cursor, una luz suave lo sigue y los robots lo miran.
-- [ ] **W8.6 Pantallas En vivo y Subir.** Hoy explican los pasos con su robot; falta conectarlas (M4 y M5).
+- [x] **W8.6 Pantallas En vivo y Subir.** Conectadas (M4, M5 y M6). Empujar flota sobre el robot y se ve sin scroll en 390×844, 1280×720 y 1366×768.
 
 ## M3. Visor de la simulación (junto con Pastor)
 
@@ -46,20 +46,20 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 
 ## M4. Captura en vivo
 
-- [ ] **W4.1 Cámara.** Pedir permiso, mostrar la vista previa y explicar qué hacer si el usuario lo rechaza.
-- [ ] **W4.2 Pose en vivo.** Esqueleto dibujado sobre el video y en 3D en el visor. El módulo de MediaPipe es de `data/` (Juan); la web lo llama y lo muestra.
-- [ ] **W4.3 Grabar.** Cuenta regresiva, grabar y parar. El resultado es un `PoseClip` con `source: "camera"`.
+- [x] **W4.1 Cámara.** `#/en-vivo` (`web/src/screens/live.js`): un botón grande enciende y apaga la cámara, la vista previa va en espejo, y si el permiso se niega se muestra el mensaje de `CameraError` tal cual. MediaPipe se baja recién al encender la cámara, con el modelo `lite` en celulares.
+- [x] **W4.2 Pose en vivo.** `drawSkeleton` sobre el video y `view.mimic(pose)` mueve al G1. Mensajes simples una vez por segundo (no te veo, te veo a medias, te veo) y un aviso si van menos de 20 cuadros por segundo. Empujar apaga la cámara y devuelve el robot a la física.
+- [ ] **W4.3 Grabar.** Pendiente: no se pidió para esta entrega. Cuenta regresiva, grabar y parar. El resultado es un `PoseClip` con `source: "camera"`.
 
 ## M5. Subir archivos
 
-- [ ] **W5.1 Drop zone.** Arrastrar un `.mp4` o un `.zip` de `.mp4`, con validación de tipo y tamaño antes de subir.
-- [ ] **W5.2 Subida por partes.** Barra de progreso por archivo, y que siga si falla una parte. Necesita el endpoint del servidor (ver preguntas abiertas).
-- [ ] **W5.3 Elegir sujeto.** Primer frame con una caja por persona; la elegida sola aparece marcada y un click elige otra (`selected_by: "user"`).
+- [x] **W5.1 Drop zone.** `#/subir` (`web/src/screens/upload.js`): elegir o arrastrar; antes de subir se revisan tipo, 60 MB y 30 s, con el motivo en palabras simples. Indicación: "Graba de perfil y con el cuerpo entero en cuadro".
+- [x] **W5.2 Subida por partes.** `uploadVideo` de `data/live` (reintenta cada parte), con barra y botón Cancelar. Al abrir la página se revisa el servidor (`resolveApiUrl` y `checkApi`, `web/src/api.js`): si no responde, "Subir" desaparece del menú y quedan cámara y galería.
+- [x] **W5.3 Elegir sujeto.** Con dos o más personas, su cuadro con una caja por persona; la elegida va marcada y un click llama a `chooseSubject` y sigue el trabajo de nuevo.
 
 ## M6. Progreso
 
-- [ ] **W6.1 Etapas.** Subiendo → detectando personas → pose 3D → retargeting → entrenamiento (en cola) → listo, cada una con su avance.
-- [ ] **W6.2 Resultado.** Cuando el clip está listo, aparece en la galería y se puede ver junto a la precargada.
+- [x] **W6.1 Etapas.** Subir → buscar personas (`tracking`) → calcular cómo se mueve (`pose3d`) → listo, con su avance y la posición en la cola. Si se sale de la pantalla, el trabajo sigue y al volver se retoma.
+- [x] **W6.2 Resultado.** El clip va primero en la galería ("Tu video") y "Verlo en simulaciones" abre `#/simulaciones/<id del clip>` con ese clip elegido. Se guarda en memoria: al recargar, la galería vuelve a las precargadas.
 
 ## M7. Pulido para la demo
 

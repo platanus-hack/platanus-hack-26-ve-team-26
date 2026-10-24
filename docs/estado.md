@@ -33,10 +33,10 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web rediseñada ([decisión](decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)): menú con tres opciones, cada una con un robot de puntos que forma su cara con hover, tarjetas 3D que se inclinan con el cursor y un fondo que reacciona a él. Rutas por hash y carga por etapas: el menú solo baja three.js, y MuJoCo y el G1 se precargan al acercarse a "Ver simulaciones". Simulaciones (galería, persona y G1 en paleta clara) funciona; En vivo y Subir solo explican los pasos.
+- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web con menú 3D ([decisión](decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)) y sus tres pantallas: **En vivo** (cámara con `data/live` y el G1 copiando con `view.mimic`), **Subir** (subida por partes, etapas, elegir persona y el clip en la galería) y **Simulaciones**. Si el servidor de video no responde, "Subir" se esconde. "Empujar" flota sobre el robot y se ve sin scroll.
 - **En curso:** —
-- **Bloqueado por:** nada. Pastor: la raíz de Vercel sigue en `physics/`.
-- **Sigue:** conectar En vivo (M4, con `tridi-live` y `view.mimic`) y Subir (M5 y M6, con la API del servidor de video).
+- **Bloqueado por:** probar Subir con el servidor real (se probó contra un servidor falso que sigue el contrato): Juan corre `data/serve.sh` y pasa el link con `?api=`.
+- **Sigue:** Pastor pasa la raíz de Vercel a `web/` (la web ya hace todo lo de la página de `physics/`). W4.3 (grabar desde la cámara a la galería) si hay tiempo.
 
 ---
 
