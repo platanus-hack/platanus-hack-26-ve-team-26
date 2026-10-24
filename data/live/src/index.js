@@ -53,6 +53,12 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
   onProgress?.({ stage: 'model', done: true });
 
   onProgress?.({ stage: 'camera', done: false });
+  // Browsers only expose the camera on secure pages (HTTPS, or localhost): the phone page opened
+  // over plain http on a LAN address has no navigator.mediaDevices at all.
+  if (!stream && !navigator.mediaDevices?.getUserMedia) {
+    landmarker.close();
+    throw new CameraError('El navegador no deja usar la cámara en esta dirección: hace falta abrir la página por HTTPS.');
+  }
   try {
     stream ??= await navigator.mediaDevices.getUserMedia({ video: { ...CAMERA, facingMode }, audio: false });
   } catch (e) {
