@@ -79,7 +79,7 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 
 ## Mensajes al Discord del equipo
 
-- `scripts/discord.py`: publica en el canal privado del equipo por un webhook y etiqueta solo a las personas nombradas (`scripts/discord.py pastor cesar < mensaje.txt`). El webhook y los ids de Discord viven en `~/.config/tridi/`, fuera del repo, porque el repo es público. Probado en seco: divide los mensajes de más de 2.000 caracteres y no deja pasar `@everyone`.
+- Se probó automatizarlos (`scripts/discord.py` con un webhook), pero en `#team-26-interno` no se pueden crear webhooks: el servidor es de Platanus. Juan decidió mandarlos a mano; el script se borró.
 
 ## Sigue
 
