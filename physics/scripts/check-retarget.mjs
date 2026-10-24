@@ -253,6 +253,35 @@ console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis pat
   expect(Math.abs(Math.hypot(out[3], out[4], out[5], out[6]) - 1) < 1e-9, 'the blended pelvis orientation stays a unit quaternion');
 }
 
+console.log('legs that do not cross, in every clip of data/clips (seen from the side, leg depth is noise)');
+{
+  // In the robot's own pelvis frame the left ankle must stay to the left of the right one; before
+  // the hip penalties and the inward limit of retarget.js the walk crossed them in 12% of frames.
+  // Hip twist: a person walking twists about 10 degrees; 25 at p95 leaves room for turns.
+  const MAX_TWIST_DEG = 25;
+  const data = new mujoco.MjData(sim.model);
+  const id = (type, name) => mujoco.mj_name2id(sim.model, mujoco.mjtObj[`mjOBJ_${type}`].value, name);
+  const [left, right, pelvis] = ['left_ankle_roll_link', 'right_ankle_roll_link', 'pelvis'].map((n) => id('BODY', n));
+  const twist = ['left_hip_yaw_joint', 'right_hip_yaw_joint'].map((n) => sim.model.jnt_qposadr[id('JOINT', n)]);
+  const clipsDir = new URL('../../data/clips/', import.meta.url);
+  for (const file of readdirSync(clipsDir).filter((f) => f.endsWith('.json'))) {
+    const { motion } = retargetClip(mujoco, sim.model, JSON.parse(readFileSync(new URL(file, clipsDir))));
+    let crossed = 0;
+    const twists = [];
+    for (const q of motion.qpos) {
+      data.qpos.set(q);
+      mujoco.mj_kinematics(sim.model, data);
+      const m = data.xmat.slice(9 * pelvis, 9 * pelvis + 9);
+      const d = [0, 1, 2].map((k) => data.xpos[3 * left + k] - data.xpos[3 * right + k]);
+      if (m[1] * d[0] + m[4] * d[1] + m[7] * d[2] < 0) crossed++; // along the pelvis' left axis
+      twists.push(...twist.map((a) => Math.abs((q[a] * 180) / Math.PI)));
+    }
+    const p95 = twists.sort((a, b) => a - b)[Math.floor(0.95 * (twists.length - 1))];
+    expect(crossed === 0 && p95 < MAX_TWIST_DEG, `${motion.clip_id}: feet crossed in ${crossed} of ${motion.qpos.length} frames, hip twist ${p95.toFixed(0)} degrees at p95 (under ${MAX_TWIST_DEG})`);
+  }
+  data.delete();
+}
+
 console.log('the RobotMotions saved in motions/ are up to date with the clips in data/clips');
 {
   const dir = new URL('../motions/', import.meta.url);

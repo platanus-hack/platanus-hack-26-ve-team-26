@@ -205,6 +205,21 @@ Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos c
 | Clip real de caminata (356 cuadros) | Los 356 seguidos, error mediano 3,2 cm y máximo 4,9 cm, rodilla entre 0 y 1,3 rad |
 | Alcance del brazo del G1 | 30 cm del hombro a la muñeca: es corto, el robot no llega a donde llega una persona |
 
+### Piernas que no se cruzan
+
+De perfil, el costado de cada pierna sale de la profundidad de MediaPipe, que es lo que peor mide, y la IK de la pierna solo fija rodilla y tobillo: con la pierna estirada el giro de la cadera queda libre. En la caminata eso giraba la cadera izquierda entre 27° y 71°, cerraba las dos piernas contra su tope y **cruzaba los pies en el 12 % de los cuadros**. `retarget.js` ahora:
+
+- penaliza más el giro de la cadera (`HIP_TWIST_PENALTY`) y cerrar la pierna hacia adentro (`HIP_INWARD_PENALTY`), no abrirla (los jumping jacks la abren);
+- no deja que un segmento de la pierna apunte más de 5° hacia la otra pierna, medido en el marco de las caderas (`MAX_LEG_INWARD`).
+
+| Clip de `data/clips/` | Pies cruzados (antes → ahora) | Giro de cadera p95 | Alcance (≤ 8 cm) |
+| --- | --- | --- | --- |
+| Caminata | 12 % → 0 % | 68° → 19° | 100 % |
+| Carrera | 7 % → 0 % | 48° → 9° | 97 % |
+| Jumping jacks | 0 % → 0 % (abre las piernas 24°, igual que antes) | 39° → 11° | 98 % |
+
+`check-retarget` lo exige para cada clip de `data/clips/`. Vale también para la cámara en vivo (es el mismo retargeting). Los `RobotMotion` de `motions/` se regeneraron: **las políticas de imitación entrenadas antes siguen la referencia vieja** y hay que reentrenarlas.
+
 ### Límites del retargeting
 
 - **No se probó con una cámara real todavía.** Se probó con poses sintéticas, con el clip real de Juan y con la página en un navegador (`view.mimic` con una pose inyectada), pero no con una webcam en vivo.

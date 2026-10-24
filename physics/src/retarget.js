@@ -23,6 +23,22 @@ const IK_MAX_STEP = 0.35; // rad per iteration, avoids sudden jumps
 // A twisted posture can reach the same point as a natural one: a small cost for moving away from
 // 0 (about 2 to 5 cm of error) breaks the tie in favor of the natural one.
 const JOINT_PENALTY = 0.0005;
+// The legs need more than that. Their IK only pins the knee and the ankle, so with the leg nearly
+// straight the hip's twist is free, and seen from the side the knees' left-right position comes from
+// MediaPipe's depth, its noisiest axis. With the small penalty alone, the walk of data/clips twisted
+// the left hip 27 to 71 degrees, closed both legs inward against their limits and crossed the feet in
+// 12% of the frames. A person walking twists the hip about 10 degrees. So the hip's twist, and
+// closing the leg inward past the stand pose, cost much more; opening it outward (jumping jacks) does not.
+const HIP_TWIST_PENALTY = 0.02;
+const HIP_INWARD_PENALTY = 0.05;
+// The penalties alone do not stop it: the data itself puts the knees and ankles inward, because
+// the left-right position of a leg seen from the side is depth. So each leg segment may point
+// inward (toward the other leg), measured in the hips' frame, by at most this much; outward is free.
+// sin(5 degrees): a person's thigh and shin lean in a few degrees while walking, never across.
+// Together (measured on the walk, run and jumping jacks of data/clips): feet crossed in 0% of the
+// frames (12% and 7% before), hip twist 9 to 19 degrees at p95 (48 to 68), jumping jacks still open
+// the legs 24 degrees, and the limbs still reach within 8 cm in 97 to 100% of the frames.
+const MAX_LEG_INWARD = Math.sin((5 * Math.PI) / 180);
 // The solution from rest replaces the one from the previous frame only if it costs under 70% of it.
 const RESEED_MARGIN = 0.7;
 
@@ -76,7 +92,10 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const bodyId = (name) => idOf(mujoco, model, 'BODY', name);
   const joint = (name) => {
     const id = idOf(mujoco, model, 'JOINT', name);
-    return { adr: model.jnt_qposadr[id], limited: model.jnt_limited[id], lo: model.jnt_range[2 * id], hi: model.jnt_range[2 * id + 1] };
+    // Inward for a hip roll: negative on the left leg, positive on the right (the G1's ranges).
+    const inward = name.endsWith('hip_roll_joint') ? (name.startsWith('left') ? -1 : 1) : 0;
+    return { adr: model.jnt_qposadr[id], limited: model.jnt_limited[id], lo: model.jnt_range[2 * id], hi: model.jnt_range[2 * id + 1],
+      twist: name.endsWith('hip_yaw_joint'), inward };
   };
 
   // Live views into the scratch MjData, refreshed at the start of every solve.
@@ -139,7 +158,13 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const basis = { fwd: new THREE.Vector3(), left: new THREE.Vector3(), up: new THREE.Vector3() };
   const mid = (i, j) => new THREE.Vector3().addVectors(S[i], S[j]).multiplyScalar(0.5);
 
-  const penalty = (joints) => joints.reduce((sum, j) => sum + JOINT_PENALTY * getJoint(j) ** 2, 0);
+  const penalty = (joints) => joints.reduce((sum, j) => {
+    const v = getJoint(j);
+    let cost = JOINT_PENALTY * v * v;
+    if (j.twist) cost += HIP_TWIST_PENALTY * v * v;
+    if (j.inward) cost += HIP_INWARD_PENALTY * Math.max(0, j.inward * v) ** 2;
+    return sum + cost;
+  }, 0);
 
   function limbCost(c) {
     fk();
@@ -269,9 +294,20 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
       const robotFrame = c.frame === 'torso' ? torsoCanonical : pelvisQ;
       // Directions of the upper and lower segment in the human body frame, then in the robot's.
       position(c.rootId, a);
-      dir.subVectors(S[i1], S[i0]).normalize().applyQuaternion(toRobot).applyQuaternion(robotFrame);
+      // A leg segment in the hips' frame (x forward, y left, z up) leans inward at most MAX_LEG_INWARD.
+      const inwardSign = c.side === 'left' ? -1 : 1;
+      const limitInward = (v) => {
+        if (c.frame !== 'hip' || inwardSign * v.y <= MAX_LEG_INWARD) return v;
+        v.y = inwardSign * MAX_LEG_INWARD;
+        const rest = Math.hypot(v.x, v.z);
+        const scale = rest > 1e-9 ? Math.sqrt(1 - MAX_LEG_INWARD ** 2) / rest : 0;
+        v.x *= scale;
+        v.z *= scale;
+        return v;
+      };
+      limitInward(dir.subVectors(S[i1], S[i0]).normalize().applyQuaternion(toRobot)).applyQuaternion(robotFrame);
       c.targetMid.copy(a).addScaledVector(dir, c.upperLength);
-      dir.subVectors(S[i2], S[i1]).normalize().applyQuaternion(toRobot).applyQuaternion(robotFrame);
+      limitInward(dir.subVectors(S[i2], S[i1]).normalize().applyQuaternion(toRobot)).applyQuaternion(robotFrame);
       c.targetTip.copy(c.targetMid).addScaledVector(dir, c.foreLength);
       solveJoints(c.joints, () => limbCost(c));
       fk();
