@@ -116,6 +116,8 @@ Pedido de Pastor: los mundos de Simulaciones con el nivel de la landing, primero
 
 ## Parte 6: física al elegir un mundo en Simulaciones
 
+> **Descartado al sincronizar con `main` (24/10, 18:00):** César resolvió lo mismo en `114b22e` y `9120f7a` con otro criterio (física por defecto con un interruptor "sin física", solo para clips con política de imitación), así que mi commit no se shipeó. Queda en la rama local `backup/pastor-fisica-antes-de-sync`.
+
 Pedido del equipo: que en Simulaciones la física se aplique al elegir Condiciones › Mundo (antes el robot seguía repitiendo el video como títere y el mundo no lo afectaba; en la entrega sí se veía porque son episodios grabados con física).
 
 - **`web/src/stage.js`** (carpeta de César, W12.6): `showRobot()` reemplaza los "volver a repetir el clip" de cambiar de mundo, lugar, nivel y clip. Fuera del plano: imitación con física si el clip la tiene (Caminar → `g1-walk`), si no `g1-stand` con el robot físico. En el plano, repetir el video como antes; si fue el mundo el que puso la imitación, vuelve el nivel de antes. Un nivel elegido a mano se respeta.
@@ -133,3 +135,9 @@ Pedido del equipo: que en Simulaciones la física se aplique al elegir Condicion
 - `cloudflared` ya estaba instalado (2026.10.3); Pastor prendió `data/serve.sh` en su terminal a las 14:43. Mi intento desde la app falló: el lanzador de la app no tiene permiso para leer en Documentos, y desde la terminal el puerto 8000 ya estaba ocupado por ese servidor (y su intento copió al portapapeles un enlace a un túnel que se cerró; se volvió a copiar el bueno).
 - Verificado: `/health` por el túnel (`{"ok":true,"queue":0,"train_queue":0}`), CORS para el deploy y la pantalla Subir habilitada con `?api=`.
 - Anotado en la [decisión del servidor](../decisiones/2026-10-24-servidor-de-video-en-la-mac.md): puede correr en la Mac de Pastor; uno a la vez; los clips quedan en la Mac que los recibe.
+
+## Parte 8: al día con main, y la pregunta del backend
+
+- Rama sincronizada con `main` (21 commits de Juan, César y Ale): se descartó mi commit de física (ver parte 6) y quedaron los de documentación.
+- `data/serve.sh` ahora publica la URL del túnel en un gist de Juan que la web lee sola; desde la Mac de Pastor no se puede escribir ese gist, así que ahí sigue haciendo falta `?api=`. Anotado en la decisión del servidor.
+- El servidor que corre en la Mac de Pastor desde las 14:43 es el código de esa hora: para tener lo último de `main` hay que reiniciar `data/serve.sh` (cambia la URL del túnel).

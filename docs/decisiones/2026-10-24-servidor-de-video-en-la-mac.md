@@ -28,7 +28,7 @@
 
 El servidor no depende de la Mac de Juan: corre en cualquier Mac con el repo, `uv`, Node y `cloudflared` (`brew install cloudflared`), con el mismo `data/serve.sh`. Desde el sábado 24 a las 14:43 corre en la Mac de Pastor (M5, que también entrena más rápido: 14.400 pasos/s contra 11.400 de la M2), para no competir con lo que Juan tiene corriendo en la suya. Probado: `/health` responde por el túnel, el deploy pasa el CORS y la pantalla Subir se habilita con el enlace `?api=`.
 
-- **Un servidor a la vez:** cada navegador recuerda el último `?api=` que abrió. Al cambiar de Mac hay que repartir el enlace nuevo, que `data/serve.sh` imprime y copia.
+- **Cómo lo encuentra la web:** el gist que lee la web es de Juan, y solo su cuenta de GitHub puede escribirlo. Desde la Mac de Pastor `data/serve.sh` no puede publicar ahí, así que la web encuentra ese servidor solo con el enlace `?api=` que imprime y copia (cada navegador lo recuerda), o si Juan copia esa URL al gist. Un servidor a la vez.
 - **Los clips quedan en la Mac que los recibió** (`data/server_data/`): lo subido a una no está en la otra.
 - **La demo del domingo:** cuál de las dos lo corre lo decide el equipo; la otra queda de respaldo con el mismo comando.
 - Si la URL del túnel se pierde, `cloudflared` la da en su puerto de métricas: `curl http://127.0.0.1:20241/quicktunnel`.
