@@ -1,15 +1,13 @@
-// The G1 from physics/ inside a pane, shared by the simulations and live screens. While its
-// 30 MB load, a dot robot waves in its place with a progress bar; "Empujar" floats over the pane
-// so it is always on screen without scrolling (the pitch's key moment).
-import { createSimView } from 'tridi-physics';
+// A pane showing the app's one G1 (robot-host.js), shared by the simulations and live screens.
+// While the robot is still loading, a dot robot waves in its place with a progress bar; "Empujar"
+// floats over the pane so it is always on screen without scrolling (the pitch's key moment).
 import { waiting } from './dots/poses.js';
-import { SCENE_THEME } from './skeleton.js';
+import { attachRobot, onRobotProgress, robotView } from './robot-host.js';
 
 /** Markup for a robot pane; mountRobotPane fills it in. */
 export function robotPaneHTML(label) {
   return `
     <section class="pane robot-pane">
-      <canvas class="robot-canvas"></canvas>
       <div class="robot-loading">
         <div class="track"><div class="robot-progress"></div></div>
         <p class="robot-status">Preparando el mundo de física…</p>
@@ -22,46 +20,46 @@ export function robotPaneHTML(label) {
 /**
  * @param pane  the .robot-pane element
  * @param dots  the page's DotStage, for the placeholder robot
- * @param options  extra createSimView options (e.g. mirror)
+ * @param options.beforePush  called before the shove (the live screen turns the camera off)
  * @returns {{ ready: Promise<object | null>, view: object | null, dispose(): void }}
  */
-export function mountRobotPane(pane, dots, options = {}) {
+export function mountRobotPane(pane, dots, { beforePush } = {}) {
   const $ = (selector) => pane.querySelector(selector);
-  let placeholder = dots.addView(pane, waiting);
-  let disposed = false;
-  const handle = { view: null, ready: null, dispose };
+  const robot = attachRobot(pane);
+  let placeholder = null;
+  const handle = { view: null, ready: robot.ready, dispose };
 
-  handle.ready = createSimView($('.robot-canvas'), {
-    ...options,
-    theme: SCENE_THEME,
-    onProgress: ({ done, total }) => ($('.robot-progress').style.width = `${(100 * done) / total}%`),
-  })
+  const stopProgress = onRobotProgress(({ done, total, compiling }) => {
+    $('.robot-progress').style.width = `${(100 * done) / total}%`;
+    if (compiling) $('.robot-status').textContent = 'Armando al robot…';
+  });
+  // Already loaded (any visit after the first): no placeholder and no fade, the robot is there.
+  if (robotView()) pane.classList.add('ready', 'instant');
+  else placeholder = dots.addView(pane, waiting);
+
+  robot.ready
     .then((view) => {
-      if (disposed) {
-        view.dispose(); // the user left while it loaded
-        return null;
-      }
+      if (!view) return;
       handle.view = view;
-      dots.removeView(placeholder);
+      if (placeholder) dots.removeView(placeholder);
       placeholder = null;
       pane.classList.add('ready');
       $('.push').disabled = false;
       $('.push').onclick = () => {
-        options.beforePush?.();
+        beforePush?.();
         view.push();
       };
-      return view;
     })
     .catch((error) => {
-      if (!disposed) $('.robot-status').textContent = 'No se pudo cargar el robot. Recarga la página para intentar de nuevo.';
+      $('.robot-status').textContent = 'No se pudo cargar el robot. Recarga la página para intentar de nuevo.';
       console.error(error);
-      return null;
     });
 
   function dispose() {
-    disposed = true;
-    handle.view?.dispose();
+    stopProgress();
+    robot.detach();
     if (placeholder) dots.removeView(placeholder);
+    placeholder = null;
   }
   return handle;
 }

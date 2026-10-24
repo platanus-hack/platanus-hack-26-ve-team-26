@@ -148,6 +148,55 @@ select:disabled {
   text-decoration: none;
 }
 
+/* Splash: shown while the robot loads (main.js); the menu starts as it fades away. */
+#splash {
+  position: fixed;
+  inset: 0;
+  z-index: 3;
+  display: grid;
+  grid-template-rows: auto 1fr auto auto;
+  justify-items: center;
+  gap: 14px;
+  padding: clamp(28px, 7vh, 72px) 16px clamp(28px, 8vh, 80px);
+  /* No background: its dot robot is drawn on the page canvas behind it. */
+  transition: opacity 0.4s ease;
+}
+
+#splash.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#splash h1 {
+  margin: 0;
+  font-size: clamp(56px, 10vw, 112px);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+}
+
+.splash-scene {
+  width: min(520px, 100%);
+  min-height: 0;
+}
+
+#splash .track {
+  width: min(320px, 80vw);
+}
+
+.splash-progress {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.2s;
+}
+
+.splash-status {
+  margin: 0;
+  color: var(--muted);
+}
+
 /* Home */
 
 .home {
@@ -472,6 +521,11 @@ select:disabled {
 
 .robot-pane.ready .robot-canvas {
   opacity: 1;
+}
+
+.robot-pane.instant .robot-canvas,
+.robot-pane.instant .robot-loading {
+  transition: none;
 }
 
 .robot-loading {

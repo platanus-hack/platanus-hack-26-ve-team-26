@@ -130,6 +130,7 @@ export class DotStage {
       camera,
       robot,
       hovered: false,
+      morph: null, // a fixed face amount (0 to 1) instead of hover, e.g. for the splash
       target,
       offset: camera.position.clone().sub(target), // camera position around its target, untilted
       tilt: new THREE.Vector2(), // set by the card from the cursor, -1..1 on each axis
@@ -188,7 +189,7 @@ export class DotStage {
     this.views.forEach((view) => {
       const rect = view.element.getBoundingClientRect();
       if (rect.bottom < 0 || rect.top > h || rect.width === 0) return; // off screen: skip
-      view.robot.morphTarget = (SMALL_SCREEN ? touchTurn === view : view.hovered) ? 1 : 0;
+      view.robot.morphTarget = view.morph ?? ((SMALL_SCREEN ? touchTurn === view : view.hovered) ? 1 : 0);
       view.variant.pose(view.robot.bones, t);
       this.lookAtPointer(view, rect);
       this.orbit(view, dt);

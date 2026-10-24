@@ -1,23 +1,10 @@
 // Ver simulaciones: the gallery of preloaded clips and the stage with the person and the robot.
-import physicsAssets from '../physics-assets.js';
 import { mountGallery } from '../gallery.js';
 import { FINAL_LEVEL, LEVELS } from '../policies.js';
 import { robotPaneHTML } from '../robot-pane.js';
 import { mountStage } from '../stage.js';
 
 export const title = 'Simulaciones';
-
-let warmed = false;
-/**
- * Downloads MuJoCo and the robot into the browser cache at low priority, so createSimView
- * finds them there. Called on intent (hovering the card), not on page load: a phone that only
- * opens the menu should not spend 30 MB.
- */
-export function prefetch() {
-  if (warmed) return;
-  warmed = true;
-  for (const url of physicsAssets) fetch(url, { priority: 'low' }).catch(() => {});
-}
 
 export function mount(root, { dots }, [clipId] = []) {
   root.innerHTML = `
@@ -65,7 +52,6 @@ export function mount(root, { dots }, [clipId] = []) {
         </aside>
       </div>
     </section>`;
-  prefetch();
   const stage = mountStage(root, dots);
   mountGallery(root, stage, clipId);
   return () => stage.dispose();
