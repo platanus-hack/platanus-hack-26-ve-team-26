@@ -20,36 +20,46 @@ import torch
 from torch import nn
 
 from .env import ACTION_SCALE, MJCF, NU, OBS_DIM, G1Env
-from .ppo import ActorCritic
+from .ppo import ActorCritic, obs_size
 
 OUT = Path(__file__).parent / "policies"
 
 
 class Deployed(nn.Module):
-    def __init__(self, model: ActorCritic, env: G1Env):
+    def __init__(self, model: ActorCritic, env: G1Env, walk: bool = False):
         super().__init__()
         self.model = model
+        self.walk = walk
         self.register_buffer("default", torch.as_tensor(env.default, dtype=torch.float32))
         self.register_buffer("low", torch.as_tensor(env.ctrl_low, dtype=torch.float32))
         self.register_buffer("high", torch.as_tensor(env.ctrl_high, dtype=torch.float32))
 
     def forward(self, obs: torch.Tensor) -> torch.Tensor:
         action = self.model.actor(self.model.norm(obs))  # the mean: no exploration noise in the demo
-        return torch.minimum(torch.maximum(self.default + ACTION_SCALE * action, self.low), self.high)
+        # Standing corrects the standing pose; walking corrects the reference pose it receives in
+        # obs[93:122] (as an offset from the standing pose, see imitate.MimicEnv.observe).
+        base = self.default + obs[:, 93:122] if self.walk else self.default
+        return torch.minimum(torch.maximum(base + ACTION_SCALE * action, self.low), self.high)
 
 
-def export(checkpoint: Path, policy_id: str, out: Path) -> Path:
+def export(checkpoint: Path, policy_id: str, out: Path, task: str = "stand") -> Path:
     state = torch.load(checkpoint)
-    model = ActorCritic()
+    walk = task == "walk"
+    model = ActorCritic(obs_size(task))
     model.load_state_dict(state["model"])
     model.eval()
-    env = G1Env(seed=0, push=False)
-    deployed = Deployed(model, env).eval()
+    if walk:
+        from .imitate import MimicEnv
+
+        env = MimicEnv(seed=0)
+    else:
+        env = G1Env(seed=0, push=False)
+    deployed = Deployed(model, env, walk).eval()
 
     out.mkdir(parents=True, exist_ok=True)
     onnx_path = out / f"{policy_id}.onnx"
     torch.onnx.export(
-        deployed, torch.zeros(1, OBS_DIM), str(onnx_path), input_names=["obs"], output_names=["ctrl"],
+        deployed, torch.zeros(1, obs_size(task)), str(onnx_path), input_names=["obs"], output_names=["ctrl"],
         dynamic_axes={"obs": {0: "batch"}, "ctrl": {0: "batch"}}, opset_version=17, dynamo=False,
     )
 
@@ -62,17 +72,20 @@ def export(checkpoint: Path, policy_id: str, out: Path) -> Path:
         with torch.no_grad():
             torch_ctrl = deployed(torch.as_tensor(obs)[None])[0].numpy()
         worst = max(worst, float(np.abs(onnx_ctrl - torch_ctrl).max()))
-        env.data.ctrl[:] = onnx_ctrl
-        obs, *_ = env.step((onnx_ctrl - env.default) / ACTION_SCALE)
+        base = env.ref_next if walk else env.default
+        obs, _, fell, done, _ = env.step((onnx_ctrl - base) / ACTION_SCALE)
+        if fell or done:
+            obs = env.reset()
     assert worst < 1e-4, f"ONNX and torch disagree by {worst} rad"
 
     meta = {
         "id": policy_id,
         "robot": "unitree_g1",
         "mjcf": MJCF,
-        "obs_dim": OBS_DIM,
+        "obs_dim": obs_size(task),
         "nu": NU,
-        "trained_on": [],  # standing and pushes, no PoseClip yet
+        # Standing learns from pushes, not from people; walking from the clips it imitates.
+        "trained_on": [m.id for m in env.motions] if walk else [],
         "steps": int(state["step"]),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -86,8 +99,9 @@ def main() -> None:
     p.add_argument("checkpoint", type=Path)
     p.add_argument("--id", required=True, help="policy id, e.g. g1-stand")
     p.add_argument("--out", type=Path, default=OUT)
+    p.add_argument("--task", choices=["stand", "walk"], default="stand")
     args = p.parse_args()
-    export(args.checkpoint, args.id, args.out)
+    export(args.checkpoint, args.id, args.out, args.task)
 
 
 if __name__ == "__main__":

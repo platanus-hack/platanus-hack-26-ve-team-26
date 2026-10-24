@@ -115,7 +115,11 @@ class MimicEnv(G1Env):
 
     def reset(self) -> np.ndarray:
         self.motion = self.motions[self.rng.integers(len(self.motions))]
-        self.t = self.rng.uniform(0, max(0.0, self.motion.duration - MIN_REMAINING_S))
+        return self.reset_at(self.rng.uniform(0, max(0.0, self.motion.duration - MIN_REMAINING_S)))
+
+    def reset_at(self, t: float) -> np.ndarray:
+        """Start the episode at second t of the current clip, in its reference pose."""
+        self.t = t
         q, root_vel, joint_vel, _ = self.motion.sample(self.t)
         d = self.data
         mujoco.mj_resetData(self.model, d)
