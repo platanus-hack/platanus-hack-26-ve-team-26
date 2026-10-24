@@ -1,0 +1,122 @@
+:root {
+  color-scheme: dark;
+  --bg: #111317;
+  --panel: #1b1e24;
+  --text: #e9ecf1;
+  --muted: #9aa3ae;
+  --accent: #50dc50;
+  --danger: #e63c3c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 system-ui, sans-serif;
+}
+
+header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: var(--panel);
+}
+
+h1 {
+  margin: 0;
+  font-size: 18px;
+}
+
+header p {
+  margin: 2px 0 0;
+  color: var(--muted);
+}
+
+nav {
+  display: flex;
+  gap: 8px;
+}
+
+button,
+.button {
+  padding: 8px 14px;
+  border: 1px solid #3a3f48;
+  border-radius: 6px;
+  background: #262a31;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+button.recording {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+#stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+#video,
+#overlay {
+  grid-area: 1 / 1;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+/* The camera faces the user: mirror it so moving right moves right on screen. The clip is not mirrored. */
+#stage.mirror #video,
+#stage.mirror #overlay {
+  transform: scaleX(-1);
+}
+
+#status {
+  position: absolute;
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.6);
+}
+
+footer {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 10px 16px;
+  background: var(--panel);
+}
+
+#download {
+  color: var(--accent);
+}
+
+#fps {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  color: var(--muted);
+  font-size: 13px;
+}

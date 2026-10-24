@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tridi · cámara en vivo</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Pose en vivo</h1>
+        <p>MediaPipe corre en tu navegador. Ponte de perfil, con el cuerpo entero en cuadro, y graba unos segundos caminando.</p>
+      </div>
+      <nav>
+        <button id="camera">Usar cámara</button>
+        <label class="button" id="file-label">Usar un video<input id="file" type="file" accept="video/*" hidden /></label>
+        <button id="record" disabled>Grabar</button>
+      </nav>
+    </header>
+    <main id="stage">
+      <video id="video"></video>
+      <canvas id="overlay"></canvas>
+      <p id="status">Elige la cámara o un video.</p>
+      <span id="fps"></span>
+    </main>
+    <footer id="result" hidden>
+      <span id="summary"></span>
+      <a id="download" download>Descargar PoseClip</a>
+    </footer>
+    <video id="source" hidden muted playsinline></video>
+    <script type="module" src="/src/demo.js"></script>
+  </body>
+</html>
