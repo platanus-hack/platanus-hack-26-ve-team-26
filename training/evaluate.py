@@ -75,7 +75,7 @@ def run(policy: Policy, seed: int, pushes: bool) -> dict[str, float]:
     floor = env.data.xpos[feet, 2].copy()  # where the soles rest when standing
     start = env.data.qpos[:2].copy()
     yaw0 = yaw_of(env.data.qpos[3:7])
-    survived = 0
+    survived = np.zeros(len(PUSHES))  # per push, so a weak side shows (the right one, in stand-v7b)
     taps = 0
     airborne = np.zeros(2, dtype=bool)
     rates: list[float] = []
@@ -90,7 +90,7 @@ def run(policy: Policy, seed: int, pushes: bool) -> dict[str, float]:
                 if k == second * 50:
                     env.push_now(PUSH_N, angle)
                 if k == second * 50 + 100:  # still up 2 s after the push
-                    survived += 1
+                    survived[PUSHES.index((second, angle))] = 1
         action = policy.act(env, obs)
         rates.append(float(np.mean(np.abs(action - prev_action))))
         prev_action = action
@@ -115,9 +115,9 @@ def run(policy: Policy, seed: int, pushes: bool) -> dict[str, float]:
     }
 
 
-def evaluate(policy: Policy, pushes: bool) -> dict[str, float]:
+def evaluate(policy: Policy, pushes: bool) -> dict:
     results = [run(policy, seed, pushes) for seed in range(TRIALS)]
-    return {key: float(np.mean([r[key] for r in results])) for key in results[0]}
+    return {key: np.mean([r[key] for r in results], axis=0) for key in results[0]}
 
 
 def report(name: str, policy: Policy) -> None:
@@ -126,7 +126,7 @@ def report(name: str, policy: Policy) -> None:
     print(
         f"{name:>14}: quieto {quiet['seconds']:5.1f} s de 20, gira {quiet['yaw_rate']:5.1f} °/s, se va {quiet['drift']:.2f} m, "
         f"{quiet['taps']:.1f} pisadas/s, acción {quiet['rate']:.3f} | empujado {pushed['seconds']:5.1f} s, "
-        f"aguanta {pushed['survived']:.1f} de 4"
+        f"aguanta {pushed['survived'].sum():.1f} de 4 (adelante izq atrás der: {' '.join(f'{v:.1f}' for v in pushed['survived'])})"
     )
 
 
