@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs && node scripts/check-mimic.mjs && node scripts/check-smooth.mjs && node scripts/check-touch.mjs && node scripts/check-gestures.mjs && node scripts/check-root.mjs && node scripts/check-worlds.mjs && node scripts/check-scenes.mjs",
+    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs && node scripts/check-onnx.mjs && node scripts/check-mimic.mjs && node scripts/check-smooth.mjs && node scripts/check-touch.mjs && node scripts/check-gestures.mjs && node scripts/check-root.mjs && node scripts/check-worlds.mjs && node scripts/check-scenes.mjs",
     "retarget": "node scripts/retarget-clip.mjs",
     "make-kinematic-model": "node scripts/make-kinematic-model.mjs",
     "make-stones-scene": "node scripts/make-stones-scene.mjs"

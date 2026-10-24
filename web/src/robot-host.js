@@ -27,7 +27,7 @@ export function loadRobot() {
   })
     .then(async (loaded) => {
       // The trained policy comes with the robot, so "Empujar" shows it recovering anywhere. It
-      // swaps in the policy's own model of the G1 and onnxruntime-web (14 MB), hence here, once.
+      // swaps in the policy's own model of the G1, hence here, once.
       progress = { ...progress, compiling: true, policy: true };
       notify();
       try {

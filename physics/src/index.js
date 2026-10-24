@@ -229,8 +229,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * @param options.motion  for an imitation policy (policy.json `task: "mimic"`): the RobotMotion it
      *   learned (the object, or a URL). The robot then does that clip with physics, from its first
      *   pose, and starts over at the end; clipTime() says where it is, and push() still works.
-     * Loading another policy of the same model only swaps the network. onnxruntime-web (14 MB of
-     * WebAssembly) is downloaded the first time.
+     * Loading another policy of the same model only swaps the network (run by onnx-lite.js, a
+     * few KB of JavaScript).
      */
     async loadPolicy(onnx, meta, { motion } = {}) {
       const bytes = typeof onnx === 'string' ? new Uint8Array(await (await fetch(onnx)).arrayBuffer()) : new Uint8Array(onnx);

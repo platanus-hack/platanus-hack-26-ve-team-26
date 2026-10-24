@@ -1,8 +1,8 @@
 // Headless check of the trained policy on the G1, in Node with the same MuJoCo WASM and the same
-// onnxruntime-web the page uses: it must build training's observation exactly, or the robot falls.
+// policy runtime the page uses (onnx-lite.js): it must build training's observation exactly, or the robot falls.
 // Run: npm run check
 import { readFileSync } from 'node:fs';
-import * as ort from 'onnxruntime-web';
+import * as ort from '../src/onnx-lite.js'; // the page's runtime (check-onnx compares it with onnxruntime)
 import { createPolicy } from '../src/policy.js';
 import { loadG1Node } from './node-model.mjs';
 

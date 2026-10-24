@@ -4,7 +4,7 @@
 // information, not a requirement: measuring robustness for real is SIM-5, with a policy trained
 // on these worlds. Run: npm run check
 import { readdirSync, readFileSync } from 'node:fs';
-import * as ort from 'onnxruntime-web';
+import * as ort from '../src/onnx-lite.js'; // the page's runtime (check-onnx compares it with onnxruntime)
 import { createPolicy } from '../src/policy.js';
 import { middleValues, sceneFile, WORLD_ORDER } from '../src/worlds.js';
 import { loadG1Node } from './node-model.mjs';

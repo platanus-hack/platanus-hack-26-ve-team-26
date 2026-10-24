@@ -1,12 +1,12 @@
-// Headless check of an imitation policy, in Node with the same MuJoCo WASM and onnxruntime-web the
-// page uses. training/browser_fixture.py recorded, for the first decisions of the clip, the robot's
+// Headless check of an imitation policy, in Node with the same MuJoCo WASM and policy runtime the
+// page uses (onnx-lite.js). training/browser_fixture.py recorded, for the first decisions of the clip, the robot's
 // state, the observation Python built and the targets the network answered. Here the browser code
 // (src/reference.js and src/policy.js) is put in each of those states and must build the same
 // observation and get the same targets. If the observation differed, the robot would fall in the
 // browser even though everything "runs".
 // Run: npm run check
 import { readFileSync } from 'node:fs';
-import * as ort from 'onnxruntime-web';
+import * as ort from '../src/onnx-lite.js'; // the page's runtime (check-onnx compares it with onnxruntime)
 import { createPolicy } from '../src/policy.js';
 import { loadG1Node } from './node-model.mjs';
 

@@ -3,7 +3,7 @@
 // still stands with its policy, and the robot really collides with a place: shoved into a wall it
 // touches it, and shoved into a loose box it moves it. Run: npm run check
 import { readdirSync, readFileSync } from 'node:fs';
-import * as ort from 'onnxruntime-web';
+import * as ort from '../src/onnx-lite.js'; // the page's runtime (check-onnx compares it with onnxruntime)
 import { createPolicy } from '../src/policy.js';
 import { placeXml } from '../src/scenes.js';
 import { loadG1Node } from './node-model.mjs';
