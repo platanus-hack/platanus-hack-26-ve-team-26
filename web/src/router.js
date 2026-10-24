@@ -18,6 +18,24 @@ const SLOW_MS = 300;
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// A screen's code is a file named after its build. A page opened before a deploy asks for the old
+// file, which the new deploy no longer has: the screen fails until a reload brings the new page.
+// So a failed screen reloads the page once on its own; only if it fails again within this long (no
+// connection, really) does the offline screen show.
+const RELOAD_GUARD_MS = 30_000;
+const RELOADED_AT = 'tridi-reloaded-at';
+
+function reloadForNewDeploy() {
+  try {
+    if (Date.now() - Number(sessionStorage.getItem(RELOADED_AT) ?? 0) < RELOAD_GUARD_MS) return false;
+    sessionStorage.setItem(RELOADED_AT, String(Date.now()));
+  } catch {
+    return false; // no storage (private mode): no guard against a reload loop, so do not reload
+  }
+  location.reload();
+  return true;
+}
+
 /** Starts loading a screen's code ahead of a click, e.g. while the pointer is over its card. */
 export function prefetch(name) {
   return ROUTES[name]?.().then((screen) => screen.prefetch?.());
@@ -42,6 +60,7 @@ export function startRouter(app, context) {
       [screen] = await Promise.all([load(), wait(FADE_MS)]);
     } catch (error) {
       console.error(error);
+      if (reloadForNewDeploy()) return;
       screen = await import('./screens/offline.js');
     } finally {
       clearTimeout(slow);
