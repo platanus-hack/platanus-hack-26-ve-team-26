@@ -89,3 +89,51 @@ export const firstFrameUrl = (baseUrl, jobId, videoIndex) =>
 
 /** The finished PoseClip. */
 export const fetchClip = (baseUrl, clipId) => call(`${baseUrl.replace(/\/$/, '')}/clips/${clipId}.json`);
+
+// --- Camera clips and training (docs/contrato.md, "Clips de la cámara y entrenamiento") -----------
+
+// The contract asks the web to poll a training every ~2 s: a checkpoint takes minutes.
+const TRAIN_POLL_MS = 2000;
+
+// A training is followed for half an hour or more, through a tunnel that can drop for a moment:
+// network errors are retried, and only 5 in a row (about 10 s of silence) end the watch.
+const TRAIN_NETWORK_RETRIES = 5;
+
+/** Sends a camera PoseClip to the server, which stores it under its own id. Returns that id. */
+export async function sendClip(baseUrl, clip, { signal } = {}) {
+  const { clip_id } = await call(`${baseUrl.replace(/\/$/, '')}/clips`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(clip),
+    signal,
+  });
+  return clip_id;
+}
+
+/** Queues a server clip for training. Returns its train id (the same one if it was already queued or trained). */
+export async function trainClip(baseUrl, clipId, { signal } = {}) {
+  const { train_id } = await call(`${baseUrl.replace(/\/$/, '')}/clips/${clipId}/train`, { method: 'POST', signal });
+  return train_id;
+}
+
+/**
+ * Follows a training until it is "done" or "failed", calling onUpdate with every state
+ * (the JSON of GET /train/{id}). Returns the last state.
+ */
+export async function watchTraining(baseUrl, trainId, { onUpdate, signal } = {}) {
+  const base = baseUrl.replace(/\/$/, '');
+  for (let failures = 0; ; ) {
+    let train;
+    try {
+      train = await call(`${base}/train/${trainId}`, { signal });
+      failures = 0;
+    } catch (e) {
+      if (e instanceof UploadError || signal?.aborted || ++failures > TRAIN_NETWORK_RETRIES) throw e;
+    }
+    if (train) {
+      onUpdate?.(train);
+      if (train.state === 'done' || train.state === 'failed') return train;
+    }
+    await new Promise((r) => setTimeout(r, TRAIN_POLL_MS));
+  }
+}

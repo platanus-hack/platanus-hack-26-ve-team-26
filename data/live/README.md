@@ -48,6 +48,17 @@ const clip = await fetchClip(base, job.videos[0].clip_id);
 await chooseSubject(base, jobId, n, x, y); // y otra vez watchJob
 ```
 
+## Entrenar un clip (WEB-2)
+
+```js
+import { sendClip, trainClip, watchTraining } from 'tridi-live';
+
+const clipId = clip.source === 'camera' ? await sendClip(base, clip) : clip.id; // la cámara manda su PoseClip (POST /clips)
+const trainId = await trainClip(base, clipId); // a la cola; si ya estaba, el mismo train_id
+const train = await watchTraining(base, trainId, { onUpdate: (t) => {} }); // GET /train cada 2 s, con reintentos de red
+// train.state === 'done' && !train.error → la entrega está en #/entrega/<clipId>
+```
+
 **URL del servidor:** el túnel cambia de URL en cada arranque, así que `data/serve.sh` imprime y copia el link de la web con `?api=<url del túnel>` (por ejemplo `https://tridi-alpha.vercel.app/?api=https://xxxx.trycloudflare.com`). `resolveApiUrl` lo lee y lo guarda en el navegador, así que recargar o volver sin el parámetro sigue funcionando. Solo acepta URLs `http(s)`.
 
 Los errores del servidor llegan como `UploadError` con el mensaje en español. Formato de cada respuesta en el [contrato](../../docs/contrato.md).

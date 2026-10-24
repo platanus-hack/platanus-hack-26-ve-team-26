@@ -8,7 +8,7 @@ export { buildPoseClip } from './poseclip.js';
 export { PoseFilter } from './oneeuro.js';
 export { drawSkeleton } from './draw.js';
 export { checkApi, resolveApiUrl } from './api.js';
-export { UploadError, chooseSubject, fetchClip, firstFrameUrl, uploadVideo, watchJob } from './upload.js';
+export { UploadError, chooseSubject, fetchClip, firstFrameUrl, sendClip, trainClip, uploadVideo, watchJob, watchTraining } from './upload.js';
 
 // The WASM runtime and the models come from their official hosts, pinned to the package version
 // in package.json, so the web build does not have to copy them.
