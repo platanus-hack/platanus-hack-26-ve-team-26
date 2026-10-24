@@ -147,3 +147,38 @@ Sigue 3,54 s de 11,85 s. 24 de 32 episodios terminan por alejarse del recorrido,
 | `stand-v6` (+16 M desde v5, detenida) | | | ~5 s, sin mejorar |
 
 Conclusión: afinar desde v2 hereda el giro; desde cero con el premio nuevo no aprende a equilibrarse en 46 M pasos. Queda `g1-stand`. Sigue un análisis aparte.
+
+## Parte 5: una postura quieta (`stand-v7`)
+
+### Diagnóstico (medido)
+
+- `g1-stand` gira porque el premio "quieto" solo mira la velocidad lineal de la pelvis: pivotar sobre un pie la deja en cero. Hasta 10 M pasos no giraba; entre 10 M y 20 M aprendió el pivote. Cada empujón lo recupera con una pirueta.
+- `stand-v5` sí se queda de pie sin empujones (a 10 M era la postura ideal: 0,7°/s, 9 cm, sin pisadas) pero muere en el primer empujón de 250 N: nunca aprendió a dar el paso porque se lo cobraba desde el paso 0. Dar el paso es física: 250 N mueven la pelvis a 0,7 m/s, fuera del pie; los tobillos del G1 (kp 20) son 5× más blandos que lo que exige equilibrarse parado.
+- Castigos `exp(-x²/σ)` saturados no tienen gradiente (por eso `v4` no soltó los pies). PPO sin entropía: la exploración se cierra sola.
+
+### Qué se hizo
+
+- `training/evaluate.py`: además de segundos de pie y empujones, mide giro (°/s), desplazamiento (m), pisadas/s y brusquedad, para `.pt` y `.onnx`, con el desglose de qué lado del empujón falla.
+- `training/env.py` `Stance` + `ppo.py --reward/--push-every/--std/--seed`: castigo cuadrático al giro, castigo a los pies y premio por tenerlos apoyados solo cuando no hubo empujón en los últimos `calm_s`, suavidad configurable, total nunca bajo 0. Todo apagado por defecto: el premio base es idéntico bit a bit.
+- `training/watch.py`: monitor en vivo.
+
+### Resultados
+
+| Política | Gira | Se va | Pisadas/s | Acción | Empujones 250 N |
+| --- | --- | --- | --- | --- | --- |
+| `g1-stand` (hoy) | 55°/s | 0,36 m | 3,9 | 0,227 | 4/4 |
+| `stand-v5` @30 M | 1,0 | 0,54 | 0,3 | 0,217 | 0/4 |
+| `stand-v7b` @8 M (desde `g1-stand`, turn 0,3 feet 0,5 planted 0,1 rate 0,02, empujones 50–300 N cada 4–8 s, std 0,3) | 0,8 | 0,13 | 0,3 | 0,024 | 3,2/4 |
+| `stand-v7b` @12 M | 0,6 | 0,12 | 0,1 | 0,023 | 2,6/4 (adelante 1, izq 1, atrás 0,4, der 0,4) |
+
+La postura quieta está resuelta y 10× más suave. Falta la recuperación lateral sin pirueta. `stand-v7c` (en curso al cerrar): continúa `v7b` con empujones de 150–350 N y `calm_s=2`.
+
+### Sigue (comandos)
+
+```bash
+uv run --project training python -m training.evaluate training/runs/stand-v7c/step_*.pt   # acepta si gira < 5°/s, se va < 0,15 m y aguanta 4 de 4
+uv run --project training python -m training.export training/runs/stand-v7c/step_<N>.pt --id g1-stand --task stand   # reemplaza la política de hoy
+cd physics && npm run check    # y probar Empujar en la web
+```
+
+Si gana: `g1-stand` pasa a 58 M pasos; actualizar la escalera del Gym (`web/src/screens/home.js` GYM_STAGES), `web/src/policies.js`, la tabla de `training/README.md`, `training-curve.json` y el pitch. Si no pasa, queda `g1-stand` y lo demás ya está en `main`.
