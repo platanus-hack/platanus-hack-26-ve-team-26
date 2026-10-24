@@ -26,7 +26,7 @@ flowchart LR
 | 4. Entrenamiento | PPO con la recompensa de imitación (DeepMimic). Empujones y mundos al azar en cada episodio. Cada checkpoint se exporta a ONNX | Mac del servidor, CPU | Cadena completa y probada (SRV-2). La caminata sigue 3,5 s de 11,8 (`walk-v4`) y los jumping jacks 1,3 s de 5,2 (`jacks-v2`). Solo en piso plano |
 | 5. Datos | Corre la política final en muchos mundos y guarda lo que hizo el robot | Mac del servidor | ✅ `training/rollout.py`, en los 4 mundos; vale cuando la política haga el clip |
 | 6. Mostrar | MuJoCo WASM + onnxruntime-web: el robot sigue el movimiento con sus motores; se lo puede empujar y cambiar de mundo | Navegador | ✅ Políticas de pie y de imitación (`g1-walk` en Simulaciones) |
-| 7. Entregar | Descargar la política y los datos | Servidor y web | ✅ Panel de entrega (`#/entrega/<clip_id>`): repetición de los 32 episodios, prueba en 4 mundos, escalera y descargas. Precargada: Caminar. Falta llegar a él desde un video que se entrena en la web (WEB-2) |
+| 7. Entregar | Descargar la política y los datos | Servidor y web | ✅ Panel de entrega (`#/entrega/<clip_id>`): repetición de los 32 episodios, prueba en 4 mundos, escalera y descargas. Precargada: Caminar. Desde un clip propio se llega con Entrenar (WEB-2) |
 
 Entrenar un video toma decenas de minutos. Mientras tanto la web muestra las simulaciones precargadas y, a medida que salen, los checkpoints del robot del usuario: se lo ve mejorar.
 
@@ -112,8 +112,8 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Web (`web/`)
 
-- [~] **WEB-1. La cámara graba al encenderse.** Hecho grabar, el contador, Parar y la galería; falta mandarlo (SRV-1). `startRecording()` al encender (ya existe en `data/live`), contador hasta 30 s y botón Parar. El `PoseClip` aparece en la galería (marioneta) y se manda con `POST /clips`. *Necesita:* SRV-1 para mandarlo; grabar y mostrarlo, no.
-- [ ] **WEB-2. Entrenar.** Botón "Entrenar al robot con este video" en clips de cámara y subidos. Etapa "Entrenando": posición en la cola, porcentaje, tiempo estimado y el robot del usuario en cada checkpoint nuevo (carga el ONNX en cuanto aparece). Mientras tanto, las precargadas. *Necesita:* SRV-2, SRV-3 y SIM-1.
+- [x] **WEB-1. La cámara graba al encenderse.** Hecho grabar, el contador, Parar y la galería; se manda al servidor (`POST /clips`) al entrenarlo (WEB-2). `startRecording()` al encender (ya existe en `data/live`), contador hasta 30 s y botón Parar. El `PoseClip` aparece en la galería (marioneta) y se manda con `POST /clips`. *Necesita:* SRV-1 para mandarlo; grabar y mostrarlo, no.
+- [~] **WEB-2. Entrenar.** Hecho (`web/src/training.js` y la caja Entrenar de Simulaciones, con `sendClip`, `trainClip` y `watchTraining` de `data/live`): el botón, la cola, las etapas, los pasos, cuánto sigue, el tiempo que falta y "Ver la entrega". Probado de punta a punta contra el servidor local con 20 k pasos. Falta cargar el robot del usuario en cada checkpoint. Botón "Entrenar al robot con este video" en clips de cámara y subidos. Etapa "Entrenando": posición en la cola, porcentaje, tiempo estimado y el robot del usuario en cada checkpoint nuevo (carga el ONNX en cuanto aparece). Mientras tanto, las precargadas. *Necesita:* SRV-2, SRV-3 y SIM-1.
 - [ ] **WEB-3. Resultado.** El robot con su política (con física), Empujar, un selector de mundos (`view.setWorld`) y botones para descargar la política y los datos. *Necesita:* WEB-2 y SIM-3.
 - [~] **WEB-4. Precargadas con imitación.** Primera versión: en Simulaciones, para Caminar, "Robot entrenado con" ofrece `g1-walk` (`IMITATIONS` en `web/src/policies.js`); falta el manifiesto y las demás precargadas. Cada entrada del manifiesto suma `policy`, y la galería las muestra con su robot entrenado. *Necesita:* SIM-1 y las precargadas entrenadas.
 
@@ -137,7 +137,7 @@ A las 12:00 se mira ENT-1. Si la caminata no aprende, se achica antes de seguir:
 **Lo que falta, en orden de importancia** (sábado 24, 10:00). La cadena entera está armada y probada; quedan dos huecos y lo que los vuelve honestos:
 
 1. **ENT-1:** que una política haga su clip entero. Sin esto, la política y los datos que se entregan no valen.
-2. **WEB-2 y WEB-3:** entrenar un video desde la web y ver el resultado. El servidor ya tiene todo (SRV-1..3); falta la pantalla.
+2. **WEB-2 y WEB-3:** entrenar un video desde la web ya funciona y lleva al panel de entrega; falta ver al robot del usuario con su política en Simulaciones.
 3. **ENT-6:** la escalera ya está en la entrega de Caminar; falta una desde cero (jacks) para el pitch.
 4. **ENT-3 y SIM-5:** empujones y mundos en la imitación, y el número de robustez medido. Hasta entonces, la política se entrenó solo en piso plano y el pitch lo dice así.
 5. **DOC-2 y WEB-4:** las precargadas por el mismo flujo, entrenadas de noche.
