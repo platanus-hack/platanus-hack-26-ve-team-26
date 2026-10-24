@@ -193,7 +193,7 @@ export function mount(root, { api }) {
       </div>
     </section>
 
-    <section class="chapter policy" id="policy" data-shot="policy" data-mode="stand">
+    <section class="chapter policy" id="policy" data-shot="policy" data-mode="stand" data-level="g1-stand-quiet">
       <div class="sticky">
         <div class="caption policy-caption panel">
           <p class="product">Tridi Policy</p>
@@ -209,7 +209,7 @@ export function mount(root, { api }) {
       </div>
     </section>
 
-    <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand">
+    <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand" data-level="g1-stand-quiet">
       <div class="closing-inner">
         <p class="product">Para equipos de humanoides</p>
         <p class="lede">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
@@ -477,22 +477,23 @@ export function mount(root, { api }) {
   let modeToken = 0;
   async function setMode(next) {
     if (!view || mode === next) return;
-    const previous = mode;
+    const [kind, wanted = FINAL_LEVEL] = next.split(':');
+    const previous = mode?.split(':')[0];
     mode = next;
     const token = ++modeToken;
     Object.assign(gym, { since: 0, shownAt: 0 });
-    if (next === 'walk') {
+    if (kind === 'walk') {
       await useLevel(FINAL_LEVEL);
       const motion = await walkMotion;
       // From the first frame, with the video: resuming where the video was paused made the robot
       // jump along the walk (1.9 m) the moment it started.
       video.currentTime = 0;
       if (token === modeToken && motion) view.playClip(motion);
-    } else if (next === 'gym') {
+    } else if (kind === 'gym') {
       await useLevel(gymLevel());
       if (token === modeToken) startGymRun();
     } else {
-      await useLevel(FINAL_LEVEL);
+      await useLevel(wanted);
       // Stood back up only when it is not already standing on its own: on the first visit, after
       // the walk (a puppet) or lying on the floor. From the Gym it keeps standing, with no jump.
       const fallen = view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M;

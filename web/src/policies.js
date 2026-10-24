@@ -12,6 +12,9 @@ export const LEVELS = [
   { id: 'g1-stand-step-10000000', label: '10 millones de pasos' },
   { id: 'g1-stand-step-20000768', label: '20 millones de pasos' },
   { id: 'g1-stand', label: '40 millones de pasos' },
+  // stand-v7b (training/README.md): continues g1-stand with the stance terms. It no longer pivots
+  // (0,8 deg/s, 9x smoother) but holds 3 of 4 pushes: shown, not yet the final one.
+  { id: 'g1-stand-quiet', label: '48 millones de pasos, quieta (3 de 4 empujones)' },
 ].filter(({ id }) => URLS[`../../training/policies/${id}.onnx`]);
 
 export const FINAL_LEVEL = 'g1-stand';

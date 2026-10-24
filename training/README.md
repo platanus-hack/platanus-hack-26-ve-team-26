@@ -119,5 +119,6 @@ Dos vueltas en una M2: `stand-v1` (20 M pasos, 38,5 min, empujones al azar de 0 
 | `g1-stand-step-10000000` (v1, 10 M) | 9,6 s | 1,2 |
 | `g1-stand-step-20000768` (v1, 20 M) | 13,4 s | 2,2 |
 | **`g1-stand`** (v2, 40 M en total) | **20 s** | **4** |
+| `g1-stand-quiet` (`stand-v7b` @ 8 M, 48 M en total: `g1-stand` + términos de quietud) | 20 s, sin girar (0,8°/s), 9× más suave | 3,2 (falla desde la derecha) |
 
 `g1-stand` aguanta todos los empujones hasta 250 N; con 300 N, 3,2 de 4; con 350 N, 1,2. La escalera de `g1-stand-step-*` es la del pitch: el mismo robot sin entrenar, a medias y entrenado. Curvas: `policies/g1-stand-progress.csv` (v1) y `policies/g1-stand-v2-progress.csv`.
