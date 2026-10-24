@@ -11,7 +11,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[3]
 curve = json.loads((ROOT / "web/src/landing/training-curve.json").read_text())
 OUT = ROOT / "docs/pitch/deck/tridi-deck.html"
 
-# ---- The training curve, drawn from the real log: seconds standing per attempt ----
+# ---- The training curve, kept for when a slide needs it again (it lived in the long deck) ----
 pts = curve["points"]
 xs = [p[0] if isinstance(p, list) else p["x"] for p in pts]
 ys = [p[1] if isinstance(p, list) else p["y"] for p in pts]
@@ -35,175 +35,89 @@ def slide(n, kind, body, label=""):
 
 S = []
 
-S.append(slide(1, "dark cover", '''
+# 30 s de pitch (láminas 1-3), 2 min 30 de demo (lámina 4) y el cierre (5-7).
+S.append(slide(1, "dark cover", """
   <p class="kicker">Platanus Hack 26 · Caracas · Three Dimensions</p>
   <h1>Robots que<br>aprenden<br>de un video</h1>
   <p class="lede">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual,
      practicando en física real hasta no caerse.</p>
-  <p class="meta"><span>Cesar Martinez</span><span>Juan Villa</span><span>Pastor Jimenez</span><span>Ale Hernández</span></p>'''))
+  <p class="meta"><span>Cesar Martinez</span><span>Juan Villa</span><span>Pastor Jimenez</span><span>Ale Hernández</span></p>""",
+  "0:00 · 4 s"))
 
-S.append(slide(2, "dark statement", '''
+S.append(slide(2, "dark statement", """
   <p class="kicker">El problema</p>
   <h2>La IA aprendió a hablar<br>leyendo internet.<br>
-      <em>La IA física no tiene<br>un internet de movimiento.</em></h2>''', "El problema"))
+      <em>La física no tiene<br>un internet de movimiento.</em></h2>
+  <p class="lede wide">Los robots ya tienen cuerpo. Les falta experiencia: hoy se la enseñan con
+     trajes de captura, en un estudio, sobre un piso perfecto que en la calle no existe.</p>""",
+  "0:04 · 12 s"))
 
-S.append(slide(3, "paper", '''
-  <p class="kicker">El problema</p>
-  <h2>Los robots ya tienen cuerpo.<br>Les falta experiencia.</h2>
-  <p class="body">Para que un humanoide aprenda a caminar, bailar o cargar una caja necesita
-     miles de ejemplos de cómo se mueve una persona. Hoy esos ejemplos se graban con trajes de
-     captura, en un estudio, sobre un piso perfecto que en la calle no existe.</p>
-  <ul class="bullets">
-    <li><b>Caro</b><span>un estudio de captura por sesión</span></li>
-    <li><b>Lento</b><span>un movimiento nuevo, días de trabajo</span></li>
-    <li><b>No escala</b><span>y millones de horas de video ya existen</span></li>
-  </ul>''', "El problema"))
-
-S.append(slide(4, "paper key", '''
+S.append(slide(3, "paper key", """
   <p class="kicker">Por qué el video no alcanza</p>
   <h2>Si copia el video,<br><em>se cae.</em></h2>
   <p class="body">El robot tiene otras medidas y otro peso: lo que la persona hace en pantalla es
-     físicamente imposible para él. Pasar el movimiento a su cuerpo es solo geometría — y la
-     geometría no sabe de gravedad.</p>
-  <div class="stat-row">
-    <div class="stat"><b>29</b><span>articulaciones del G1</span></div>
-    <div class="stat"><b>3,2 cm</b><span>error mediano al pasar el movimiento</span></div>
-    <div class="stat"><b>0 s</b><span>lo que aguanta de pie si solo copia</span></div>
+     físicamente imposible para él. Pasarle el movimiento es solo geometría, y la geometría no
+     sabe de gravedad.</p>
+  <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p>""",
+  "0:16 · 14 s"))
+
+S.append(slide(4, "dark demo", """
+  <p class="kicker">Demo · 2 min 30</p>
+  <h2>Mejor se los<br>enseñamos</h2>
+  <ol class="beats light">
+    <li><b>Capture</b><span>Un video de celular se vuelve el esqueleto 3D de una persona, y ese movimiento entra al cuerpo del G1.</span></li>
+    <li><b>Gym</b><span>El mismo robot sin entrenar, a medias y entrenado: 40 millones de pasos de práctica, 73 minutos en una laptop.</span></li>
+    <li><b>Policy</b><span>La política corre en el navegador de ustedes. Empújenlo: 250 newtons sobre 33 kilos.</span></li>
+  </ol>""",
+  "0:30 · 2:30"))
+
+S.append(slide(5, "paper", """
+  <p class="kicker">Lo que acaban de ver, medido</p>
+  <h2>Los números</h2>
+  <div class="stat-row four">
+    <div class="stat"><b>3,2 cm</b><span>error mediano al pasar el movimiento al G1</span></div>
+    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop, sin GPU</span></div>
+    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta de pie</span></div>
+    <div class="stat"><b>265 KB</b><span>la red completa que mueve 29 motores</span></div>
   </div>
-  <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p>''', "La idea"))
-
-S.append(slide(5, "paper", '''
-  <p class="kicker">Cómo funciona</p>
-  <h2>Tres piezas</h2>
-  <div class="cols">
-    <div class="col"><p class="product">Tridi Capture</p>
-      <p>Un video de celular, la cámara de la laptop o un MP4. Encuentra a la persona —aunque
-         haya más gente— y saca su esqueleto en 3D, cuadro por cuadro.</p>
-      <p class="num">33 puntos · 30 por segundo</p></div>
-    <div class="col"><p class="product">Tridi Gym</p>
-      <p>El robot practica ese movimiento millones de veces en física real. Si se cae, vuelve a
-         intentarlo. Nadie le escribe cómo pararse.</p>
-      <p class="num">40 M pasos · 73 min en una laptop</p></div>
-    <div class="col"><p class="product">Tridi Policy</p>
-      <p>Sale una red pequeña que mueve los 29 motores del robot, y el movimiento humano
-         corregido por la física para que un robot sí pueda hacerlo.</p>
-      <p class="num">265 KB · decide cada 20 ms</p></div>
-  </div>''', "Producto"))
-
-S.append(slide(6, "paper", '''
-  <p class="kicker">Tridi Capture</p>
-  <h2>De un video cualquiera<br>al cuerpo del robot</h2>
-  <ol class="beats">
-    <li><b>Un video cualquiera</b><span>Once segundos de celular. Sin trajes, sin estudio, sin marcadores.</span></li>
-    <li><b>Su esqueleto, en 3D</b><span>33 puntos por cuadro, 30 veces por segundo. Si hay más gente, eliges a quién seguir.</span></li>
-    <li><b>En el cuerpo del robot</b><span>Otras medidas, otro peso, 29 articulaciones: 3,2 cm de error mediano.</span></li>
-  </ol>
-  <p class="foot-note">10 segundos de video salen procesados en unos 40.</p>''', "Producto"))
-
-S.append(slide(7, "dark", '''
-  <p class="kicker">Tridi Gym</p>
-  <h2>Nadie le escribe<br>cómo pararse</h2>
-  <p class="body">Lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada 2,5 segundos mientras
-     entrena, hasta con 300 newtons desde cualquier dirección.</p>
   <table class="ladder">
     <thead><tr><th>Práctica</th><th>Aguanta de pie</th><th>Empujones de 250 N</th></tr></thead>
     <tbody>
       <tr><td>Sin entrenar</td><td>1,1 s</td><td>0 de 4</td></tr>
-      <tr><td>3 millones de pasos</td><td>4,2 s</td><td>0 de 4</td></tr>
-      <tr><td>10 millones</td><td>9,6 s</td><td>1,2 de 4</td></tr>
-      <tr><td>20 millones</td><td>13,4 s</td><td>2,2 de 4</td></tr>
-      <tr class="on"><td>40 millones</td><td>20 s, los completos</td><td>4 de 4</td></tr>
+      <tr><td>10 millones de pasos</td><td>9,6 s</td><td>1,2 de 4</td></tr>
+      <tr class="on"><td>40 millones de pasos</td><td>20 s, los completos</td><td>4 de 4</td></tr>
     </tbody>
-  </table>''', "Cómo aprende"))
+  </table>
+  <p class="foot-note">El empujón del botón va en dirección al azar: medido desde 60 direcciones
+     aguanta 56, así que lo tumba 1 de cada 15 veces.</p>""",
+  "Al terminar la demo"))
 
-S.append(slide(8, "dark chart-slide", '''
-  <p class="kicker">Tridi Gym · log real</p>
-  <h2>Segundos de pie por intento</h2>
-  <figure class="chart">
-    <svg viewBox="0 0 980 300" preserveAspectRatio="none" role="img"
-         aria-label="La curva de entrenamiento: de poco más de un segundo de pie a los veinte del tope">
-      <line class="cap" x1="0" y1="__CAP__" x2="980" y2="__CAP__"/>
-      <polyline points="__PATH__"/>
-    </svg>
-    <figcaption><span>0</span><span>__CAPSEC__ s: el tope del intento</span><span>__STEPS__ millones de pasos</span></figcaption>
-  </figure>
-  <p class="body">__MIN__ minutos de entrenamiento en una laptop, sin GPU. La línea es el log, no un dibujo.</p>'''
-  .replace("__CAP__", f"{cap_y:.1f}").replace("__PATH__", path)
-  .replace("__CAPSEC__", str(curve["episodeCap"])).replace("__MIN__", str(curve["minutes"]))
-  .replace("__STEPS__", str(round(curve["steps"] / 1_000_000))), "Cómo aprende"))
-
-S.append(slide(9, "paper key", '''
-  <p class="kicker">La prueba</p>
-  <h2>Empújalo</h2>
-  <p class="body">En la web, cualquiera le da al botón y empuja al robot con 250 newtons durante una
-     décima de segundo, sobre 33 kilos. Es física resolviéndose en su propio teléfono.</p>
-  <div class="stat-row">
-    <div class="stat"><b>250 N</b><span>el empujón del botón</span></div>
-    <div class="stat"><b>4 de 4</b><span>aguantados por la política entrenada</span></div>
-    <div class="stat"><b>56 de 60</b><span>direcciones probadas alrededor del robot</span></div>
-  </div>
-  <p class="punch">Un video de un robot<br>no se deja empujar.</p>
-  <p class="foot-note">Las 4 direcciones que falla son un sector de unos 20° por detrás: el botón
-     empuja al azar, así que lo tumba 1 de cada 15 veces. Está medido en <code>physics/README.md</code>.</p>''', "La prueba"))
-
-S.append(slide(10, "paper", '''
-  <p class="kicker">Tridi Policy</p>
-  <h2>Lo que entregamos<br>cabe en un correo</h2>
-  <div class="specs">
-    <div><b>265 KB</b><span>la red completa que mueve al robot</span></div>
-    <div><b>29</b><span>motores que controla a la vez</span></div>
-    <div><b>20 ms</b><span>entre una decisión y la siguiente</span></div>
-    <div><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></div>
-  </div>
-  <p class="body">Hoy entregamos la política de pie, que corre en el navegador de quien la prueba.
-     Lo siguiente es entregar también los datos: el movimiento de la persona corregido por la
-     física, listo para entrenar tu propio robot.</p>''', "Producto"))
-
-S.append(slide(11, "paper", '''
-  <p class="kicker">Para quién</p>
+S.append(slide(6, "paper", """
+  <p class="kicker">Para quién, y qué es nuestro</p>
   <h2>Equipos que están<br>construyendo humanoides</h2>
-  <p class="body">Y los laboratorios de robótica que entrenan políticas de control. Lo que compran
-     no es un robot: son horas de movimiento humano que su robot sí pueda ejecutar, y la política
-     que las ejecuta.</p>
-  <ul class="bullets">
-    <li><b>Hoy</b><span>una política de pie que aguanta empujones, en 73 minutos de laptop</span></li>
-    <li><b>Entrenando</b><span>caminar como la persona del video</span></li>
-    <li><b>Lo que viene</b><span>practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador</span></li>
-  </ul>
-  <p class="foot-note">No tenemos clientes ni socios, y no vamos a insinuarlo. Hablar con el primero
-     es lo que hacemos el lunes.</p>''', "Para quién"))
-
-S.append(slide(12, "paper", '''
-  <p class="kicker">En qué nos diferenciamos</p>
-  <h2>Lo que ya existe,<br>dicho por nosotros</h2>
-  <table class="vs">
-    <thead><tr><th>Quién</th><th>Qué hace</th><th>Qué le falta</th></tr></thead>
-    <tbody>
-      <tr><td>VideoMimic</td><td>Video monocular a política, sobre un robot físico</td><td>Un laboratorio y un robot de 16.000 dólares</td></tr>
-      <tr><td>Ultimate Bots</td><td>Tu video a un robot en el navegador, gratis</td><td><b>Copia</b>: evalúa con un modelo que NVIDIA ya tenía entrenado</td></tr>
-      <tr><td>AgiBot LinkCraft</td><td>Video de celular a su robot, en su nube</td><td>Cerrado, su robot, su plataforma</td></tr>
-      <tr class="on"><td>Tridi</td><td>Video a una política <b>que entrenamos nosotros</b>, abierta y en el navegador</td><td>Todavía en simulación, no en un robot real</td></tr>
-    </tbody>
-  </table>''', "Originalidad"))
-
-S.append(slide(13, "dark", '''
-  <p class="kicker">Lo decimos claro</p>
-  <h2>Qué es nuestro<br>y qué no</h2>
   <div class="cols two">
     <div class="col"><p class="product">La física es de MuJoCo</p>
-      <p>El estándar en robótica, el mismo que usa Google DeepMind. Nadie escribe un motor de
-         contacto en 36 horas. Lo nuestro es todo lo que va encima: el camino del video al robot,
-         el mundo donde aprende y el entrenamiento.</p></div>
-    <div class="col"><p class="product">Y no es un LLM</p>
-      <p>Las empresas le van a poner un LLM a sus robots para decidir a dónde ir. Alguien tiene que
-         enseñarles a llegar sin caerse. Eso es Tridi: una red pequeña que aprendió a no caerse.</p></div>
-  </div>''', "Honestidad"))
+      <p>El estándar en robótica. Nadie escribe un motor de contacto en 36 horas. Lo nuestro es
+         todo lo que va encima: el camino del video al robot, el mundo donde aprende y el
+         entrenamiento. Y no es un LLM: las empresas le van a poner uno a sus robots para decidir
+         a dónde ir; alguien tiene que enseñarles a llegar sin caerse.</p></div>
+    <div class="col"><p class="product">Dónde estamos</p>
+      <ol class="road">
+        <li><span>Hoy</span><b>Pararse y aguantar empujones de 250 N</b></li>
+        <li><span>Entrenando</span><b>Caminar como la persona del video</b></li>
+        <li><span>Lo que viene</span><b>Practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador</b></li>
+      </ol></div>
+  </div>
+  <p class="foot-note">No tenemos clientes ni socios, y no vamos a insinuarlo. Hablar con el
+     primero es lo que hacemos el lunes.</p>""",
+  "Preguntas"))
 
-S.append(slide(14, "dark cover end", '''
-  <p class="kicker">Pruébalo ahora</p>
+S.append(slide(7, "dark cover end", """
+  <p class="kicker">Pruébenlo ahora</p>
   <h1>Robots que<br>aprenden<br>de un video</h1>
-  <p class="lede">Abre la web, sube un video tuyo y empuja al robot. Está desplegado y es abierto.</p>
-  <p class="meta"><span>tridi-alpha.vercel.app</span><span>github.com/platanus-hack/platanus-hack-26-ve-team-26</span></p>'''))
+  <p class="lede">Abran la web, suban un video suyo y empujen al robot. Está desplegado y es abierto.</p>
+  <p class="meta"><span>tridi-alpha.vercel.app</span><span>github.com/platanus-hack/platanus-hack-26-ve-team-26</span></p>""",
+  "Cierre"))
 
 CSS = """
 @import url('https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap');
@@ -275,6 +189,16 @@ tr.on td{color:var(--signal);font-weight:500}
 .chart .cap{stroke:rgb(239 237 232/.3);stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
 .chart figcaption{display:flex;justify-content:space-between;margin-top:10px;
   font:400 13px/1 var(--mono);color:var(--dim)}
+.lede.wide{max-width:62ch;font-size:21px}
+.stat-row.four{gap:40px}
+.stat-row.four .stat b{font-size:36px}
+.beats.light li{border-color:var(--fg)}
+.road{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.road li{display:flex;gap:14px;align-items:baseline}
+.road span{flex:0 0 96px;font:500 12px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--signal)}
+.paper .road span{color:var(--signal-ink)}
+.road b{font-size:17px;font-weight:500}
+.demo h2{font-size:52px}
 .foot-note{margin:0;font-size:15px;color:var(--muted);max-width:78ch}
 .dark .foot-note{color:var(--dim)}
 code{font:400 .92em var(--mono)}

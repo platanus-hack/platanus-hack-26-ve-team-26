@@ -72,6 +72,16 @@ tr.on td{color:var(--signal);font-weight:500}
 .chart .cap{stroke:rgb(239 237 232/.3);stroke-width:1;stroke-dasharray:4 5;vector-effect:non-scaling-stroke}
 .chart figcaption{display:flex;justify-content:space-between;margin-top:10px;
   font:400 13px/1 var(--mono);color:var(--dim)}
+.lede.wide{max-width:62ch;font-size:21px}
+.stat-row.four{gap:40px}
+.stat-row.four .stat b{font-size:36px}
+.beats.light li{border-color:var(--fg)}
+.road{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px}
+.road li{display:flex;gap:14px;align-items:baseline}
+.road span{flex:0 0 96px;font:500 12px/1.4 var(--mono);text-transform:uppercase;letter-spacing:.12em;color:var(--signal)}
+.paper .road span{color:var(--signal-ink)}
+.road b{font-size:17px;font-weight:500}
+.demo h2{font-size:52px}
 .foot-note{margin:0;font-size:15px;color:var(--muted);max-width:78ch}
 .dark .foot-note{color:var(--dim)}
 code{font:400 .92em var(--mono)}
@@ -100,192 +110,87 @@ code{font:400 .92em var(--mono)}
   <p class="lede">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual,
      practicando en física real hasta no caerse.</p>
   <p class="meta"><span>Cesar Martinez</span><span>Juan Villa</span><span>Pastor Jimenez</span><span>Ale Hernández</span></p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl"></span><span class="pg">01</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:00 · 4 s</span><span class="pg">01</span></footer>
 </section>
 <section class="slide dark statement">
   <div class="inner">
   <p class="kicker">El problema</p>
   <h2>La IA aprendió a hablar<br>leyendo internet.<br>
-      <em>La IA física no tiene<br>un internet de movimiento.</em></h2></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">El problema</span><span class="pg">02</span></footer>
-</section>
-<section class="slide paper">
-  <div class="inner">
-  <p class="kicker">El problema</p>
-  <h2>Los robots ya tienen cuerpo.<br>Les falta experiencia.</h2>
-  <p class="body">Para que un humanoide aprenda a caminar, bailar o cargar una caja necesita
-     miles de ejemplos de cómo se mueve una persona. Hoy esos ejemplos se graban con trajes de
-     captura, en un estudio, sobre un piso perfecto que en la calle no existe.</p>
-  <ul class="bullets">
-    <li><b>Caro</b><span>un estudio de captura por sesión</span></li>
-    <li><b>Lento</b><span>un movimiento nuevo, días de trabajo</span></li>
-    <li><b>No escala</b><span>y millones de horas de video ya existen</span></li>
-  </ul></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">El problema</span><span class="pg">03</span></footer>
+      <em>La física no tiene<br>un internet de movimiento.</em></h2>
+  <p class="lede wide">Los robots ya tienen cuerpo. Les falta experiencia: hoy se la enseñan con
+     trajes de captura, en un estudio, sobre un piso perfecto que en la calle no existe.</p></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:04 · 12 s</span><span class="pg">02</span></footer>
 </section>
 <section class="slide paper key">
   <div class="inner">
   <p class="kicker">Por qué el video no alcanza</p>
   <h2>Si copia el video,<br><em>se cae.</em></h2>
   <p class="body">El robot tiene otras medidas y otro peso: lo que la persona hace en pantalla es
-     físicamente imposible para él. Pasar el movimiento a su cuerpo es solo geometría — y la
-     geometría no sabe de gravedad.</p>
-  <div class="stat-row">
-    <div class="stat"><b>29</b><span>articulaciones del G1</span></div>
-    <div class="stat"><b>3,2 cm</b><span>error mediano al pasar el movimiento</span></div>
-    <div class="stat"><b>0 s</b><span>lo que aguanta de pie si solo copia</span></div>
-  </div>
+     físicamente imposible para él. Pasarle el movimiento es solo geometría, y la geometría no
+     sabe de gravedad.</p>
   <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">La idea</span><span class="pg">04</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:16 · 14 s</span><span class="pg">03</span></footer>
+</section>
+<section class="slide dark demo">
+  <div class="inner">
+  <p class="kicker">Demo · 2 min 30</p>
+  <h2>Mejor se los<br>enseñamos</h2>
+  <ol class="beats light">
+    <li><b>Capture</b><span>Un video de celular se vuelve el esqueleto 3D de una persona, y ese movimiento entra al cuerpo del G1.</span></li>
+    <li><b>Gym</b><span>El mismo robot sin entrenar, a medias y entrenado: 40 millones de pasos de práctica, 73 minutos en una laptop.</span></li>
+    <li><b>Policy</b><span>La política corre en el navegador de ustedes. Empújenlo: 250 newtons sobre 33 kilos.</span></li>
+  </ol></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">0:30 · 2:30</span><span class="pg">04</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
-  <p class="kicker">Cómo funciona</p>
-  <h2>Tres piezas</h2>
-  <div class="cols">
-    <div class="col"><p class="product">Tridi Capture</p>
-      <p>Un video de celular, la cámara de la laptop o un MP4. Encuentra a la persona —aunque
-         haya más gente— y saca su esqueleto en 3D, cuadro por cuadro.</p>
-      <p class="num">33 puntos · 30 por segundo</p></div>
-    <div class="col"><p class="product">Tridi Gym</p>
-      <p>El robot practica ese movimiento millones de veces en física real. Si se cae, vuelve a
-         intentarlo. Nadie le escribe cómo pararse.</p>
-      <p class="num">40 M pasos · 73 min en una laptop</p></div>
-    <div class="col"><p class="product">Tridi Policy</p>
-      <p>Sale una red pequeña que mueve los 29 motores del robot, y el movimiento humano
-         corregido por la física para que un robot sí pueda hacerlo.</p>
-      <p class="num">265 KB · decide cada 20 ms</p></div>
-  </div></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Producto</span><span class="pg">05</span></footer>
-</section>
-<section class="slide paper">
-  <div class="inner">
-  <p class="kicker">Tridi Capture</p>
-  <h2>De un video cualquiera<br>al cuerpo del robot</h2>
-  <ol class="beats">
-    <li><b>Un video cualquiera</b><span>Once segundos de celular. Sin trajes, sin estudio, sin marcadores.</span></li>
-    <li><b>Su esqueleto, en 3D</b><span>33 puntos por cuadro, 30 veces por segundo. Si hay más gente, eliges a quién seguir.</span></li>
-    <li><b>En el cuerpo del robot</b><span>Otras medidas, otro peso, 29 articulaciones: 3,2 cm de error mediano.</span></li>
-  </ol>
-  <p class="foot-note">10 segundos de video salen procesados en unos 40.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Producto</span><span class="pg">06</span></footer>
-</section>
-<section class="slide dark">
-  <div class="inner">
-  <p class="kicker">Tridi Gym</p>
-  <h2>Nadie le escribe<br>cómo pararse</h2>
-  <p class="body">Lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada 2,5 segundos mientras
-     entrena, hasta con 300 newtons desde cualquier dirección.</p>
+  <p class="kicker">Lo que acaban de ver, medido</p>
+  <h2>Los números</h2>
+  <div class="stat-row four">
+    <div class="stat"><b>3,2 cm</b><span>error mediano al pasar el movimiento al G1</span></div>
+    <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop, sin GPU</span></div>
+    <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta de pie</span></div>
+    <div class="stat"><b>265 KB</b><span>la red completa que mueve 29 motores</span></div>
+  </div>
   <table class="ladder">
     <thead><tr><th>Práctica</th><th>Aguanta de pie</th><th>Empujones de 250 N</th></tr></thead>
     <tbody>
       <tr><td>Sin entrenar</td><td>1,1 s</td><td>0 de 4</td></tr>
-      <tr><td>3 millones de pasos</td><td>4,2 s</td><td>0 de 4</td></tr>
-      <tr><td>10 millones</td><td>9,6 s</td><td>1,2 de 4</td></tr>
-      <tr><td>20 millones</td><td>13,4 s</td><td>2,2 de 4</td></tr>
-      <tr class="on"><td>40 millones</td><td>20 s, los completos</td><td>4 de 4</td></tr>
+      <tr><td>10 millones de pasos</td><td>9,6 s</td><td>1,2 de 4</td></tr>
+      <tr class="on"><td>40 millones de pasos</td><td>20 s, los completos</td><td>4 de 4</td></tr>
     </tbody>
-  </table></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Cómo aprende</span><span class="pg">07</span></footer>
-</section>
-<section class="slide dark chart-slide">
-  <div class="inner">
-  <p class="kicker">Tridi Gym · log real</p>
-  <h2>Segundos de pie por intento</h2>
-  <figure class="chart">
-    <svg viewBox="0 0 980 300" preserveAspectRatio="none" role="img"
-         aria-label="La curva de entrenamiento: de poco más de un segundo de pie a los veinte del tope">
-      <line class="cap" x1="0" y1="0.0" x2="980" y2="0.0"/>
-      <polyline points="0.0,282.0 6.2,280.6 12.3,277.9 18.5,272.1 24.7,261.3 30.8,250.8 37.0,242.8 43.1,237.0 49.3,235.4 55.5,232.8 61.6,230.1 67.8,228.2 74.0,226.3 80.1,222.4 86.3,215.7 92.5,215.4 98.6,213.9 104.8,214.4 110.9,206.4 117.1,198.1 123.3,193.1 129.4,191.7 135.6,184.5 141.8,174.1 147.9,183.0 154.1,181.8 160.3,179.4 166.4,161.5 172.6,161.8 178.7,160.0 184.9,155.0 191.1,157.9 197.2,141.9 203.4,146.5 209.6,136.7 215.7,112.5 221.9,121.0 228.1,129.3 234.2,123.0 240.4,132.8 246.5,129.4 252.7,115.7 258.9,118.5 265.0,109.3 271.2,93.0 277.4,109.0 283.5,121.8 289.7,109.8 295.8,105.4 302.0,116.4 308.2,106.4 314.3,99.8 320.5,120.6 326.7,104.7 332.8,105.6 339.0,111.2 345.2,122.8 351.3,106.2 357.5,95.4 363.6,91.2 369.8,73.8 376.0,108.6 382.1,194.4 388.3,145.3 394.5,137.1 400.6,122.7 406.8,113.3 413.0,104.7 419.1,100.2 425.3,92.4 431.4,85.0 437.6,92.2 443.8,113.1 449.9,94.9 456.1,85.5 462.3,93.4 468.4,79.8 474.6,77.3 480.8,87.3 486.9,77.0 493.1,162.4 499.2,150.8 505.4,134.6 511.6,149.7 517.7,137.6 523.9,147.5 530.1,141.3 536.2,126.8 542.4,118.6 548.6,110.1 554.7,121.3 560.9,108.9 567.0,88.9 573.2,95.1 579.4,119.7 585.5,105.3 591.7,98.8 597.9,98.1 604.0,105.8 610.2,91.8 616.4,91.7 622.5,78.3 628.7,84.9 634.8,94.9 641.0,98.4 647.2,91.2 653.3,81.1 659.5,98.0 665.7,110.7 671.8,121.6 678.0,128.8 684.2,95.2 690.3,91.5 696.5,83.8 702.6,126.0 708.8,108.9 715.0,90.0 721.1,72.9 727.3,104.7 733.5,102.0 739.6,73.8 745.8,96.9 751.9,104.1 758.1,114.0 764.3,94.8 770.4,72.3 776.6,66.3 782.8,67.7 788.9,74.9 795.1,90.9 801.3,87.3 807.4,90.9 813.6,100.7 819.7,84.0 825.9,94.1 832.1,95.2 838.2,82.3 844.4,84.9 850.6,87.3 856.7,88.8 862.9,80.1 869.1,85.2 875.2,90.4 881.4,99.9 887.5,72.5 893.7,78.9 899.9,68.4 906.0,71.1 912.2,67.4 918.4,87.9 924.5,69.6 930.7,80.2 936.9,97.8 943.0,94.9 949.2,82.9 955.3,118.5 961.5,121.5 967.7,127.9 973.8,103.5 980.0,93.6"/>
-    </svg>
-    <figcaption><span>0</span><span>20 s: el tope del intento</span><span>40 millones de pasos</span></figcaption>
-  </figure>
-  <p class="body">73 minutos de entrenamiento en una laptop, sin GPU. La línea es el log, no un dibujo.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Cómo aprende</span><span class="pg">08</span></footer>
-</section>
-<section class="slide paper key">
-  <div class="inner">
-  <p class="kicker">La prueba</p>
-  <h2>Empújalo</h2>
-  <p class="body">En la web, cualquiera le da al botón y empuja al robot con 250 newtons durante una
-     décima de segundo, sobre 33 kilos. Es física resolviéndose en su propio teléfono.</p>
-  <div class="stat-row">
-    <div class="stat"><b>250 N</b><span>el empujón del botón</span></div>
-    <div class="stat"><b>4 de 4</b><span>aguantados por la política entrenada</span></div>
-    <div class="stat"><b>56 de 60</b><span>direcciones probadas alrededor del robot</span></div>
-  </div>
-  <p class="punch">Un video de un robot<br>no se deja empujar.</p>
-  <p class="foot-note">Las 4 direcciones que falla son un sector de unos 20° por detrás: el botón
-     empuja al azar, así que lo tumba 1 de cada 15 veces. Está medido en <code>physics/README.md</code>.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">La prueba</span><span class="pg">09</span></footer>
+  </table>
+  <p class="foot-note">El empujón del botón va en dirección al azar: medido desde 60 direcciones
+     aguanta 56, así que lo tumba 1 de cada 15 veces.</p></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Al terminar la demo</span><span class="pg">05</span></footer>
 </section>
 <section class="slide paper">
   <div class="inner">
-  <p class="kicker">Tridi Policy</p>
-  <h2>Lo que entregamos<br>cabe en un correo</h2>
-  <div class="specs">
-    <div><b>265 KB</b><span>la red completa que mueve al robot</span></div>
-    <div><b>29</b><span>motores que controla a la vez</span></div>
-    <div><b>20 ms</b><span>entre una decisión y la siguiente</span></div>
-    <div><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></div>
-  </div>
-  <p class="body">Hoy entregamos la política de pie, que corre en el navegador de quien la prueba.
-     Lo siguiente es entregar también los datos: el movimiento de la persona corregido por la
-     física, listo para entrenar tu propio robot.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Producto</span><span class="pg">10</span></footer>
-</section>
-<section class="slide paper">
-  <div class="inner">
-  <p class="kicker">Para quién</p>
+  <p class="kicker">Para quién, y qué es nuestro</p>
   <h2>Equipos que están<br>construyendo humanoides</h2>
-  <p class="body">Y los laboratorios de robótica que entrenan políticas de control. Lo que compran
-     no es un robot: son horas de movimiento humano que su robot sí pueda ejecutar, y la política
-     que las ejecuta.</p>
-  <ul class="bullets">
-    <li><b>Hoy</b><span>una política de pie que aguanta empujones, en 73 minutos de laptop</span></li>
-    <li><b>Entrenando</b><span>caminar como la persona del video</span></li>
-    <li><b>Lo que viene</b><span>practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador</span></li>
-  </ul>
-  <p class="foot-note">No tenemos clientes ni socios, y no vamos a insinuarlo. Hablar con el primero
-     es lo que hacemos el lunes.</p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Para quién</span><span class="pg">11</span></footer>
-</section>
-<section class="slide paper">
-  <div class="inner">
-  <p class="kicker">En qué nos diferenciamos</p>
-  <h2>Lo que ya existe,<br>dicho por nosotros</h2>
-  <table class="vs">
-    <thead><tr><th>Quién</th><th>Qué hace</th><th>Qué le falta</th></tr></thead>
-    <tbody>
-      <tr><td>VideoMimic</td><td>Video monocular a política, sobre un robot físico</td><td>Un laboratorio y un robot de 16.000 dólares</td></tr>
-      <tr><td>Ultimate Bots</td><td>Tu video a un robot en el navegador, gratis</td><td><b>Copia</b>: evalúa con un modelo que NVIDIA ya tenía entrenado</td></tr>
-      <tr><td>AgiBot LinkCraft</td><td>Video de celular a su robot, en su nube</td><td>Cerrado, su robot, su plataforma</td></tr>
-      <tr class="on"><td>Tridi</td><td>Video a una política <b>que entrenamos nosotros</b>, abierta y en el navegador</td><td>Todavía en simulación, no en un robot real</td></tr>
-    </tbody>
-  </table></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Originalidad</span><span class="pg">12</span></footer>
-</section>
-<section class="slide dark">
-  <div class="inner">
-  <p class="kicker">Lo decimos claro</p>
-  <h2>Qué es nuestro<br>y qué no</h2>
   <div class="cols two">
     <div class="col"><p class="product">La física es de MuJoCo</p>
-      <p>El estándar en robótica, el mismo que usa Google DeepMind. Nadie escribe un motor de
-         contacto en 36 horas. Lo nuestro es todo lo que va encima: el camino del video al robot,
-         el mundo donde aprende y el entrenamiento.</p></div>
-    <div class="col"><p class="product">Y no es un LLM</p>
-      <p>Las empresas le van a poner un LLM a sus robots para decidir a dónde ir. Alguien tiene que
-         enseñarles a llegar sin caerse. Eso es Tridi: una red pequeña que aprendió a no caerse.</p></div>
-  </div></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Honestidad</span><span class="pg">13</span></footer>
+      <p>El estándar en robótica. Nadie escribe un motor de contacto en 36 horas. Lo nuestro es
+         todo lo que va encima: el camino del video al robot, el mundo donde aprende y el
+         entrenamiento. Y no es un LLM: las empresas le van a poner uno a sus robots para decidir
+         a dónde ir; alguien tiene que enseñarles a llegar sin caerse.</p></div>
+    <div class="col"><p class="product">Dónde estamos</p>
+      <ol class="road">
+        <li><span>Hoy</span><b>Pararse y aguantar empujones de 250 N</b></li>
+        <li><span>Entrenando</span><b>Caminar como la persona del video</b></li>
+        <li><span>Lo que viene</span><b>Practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador</b></li>
+      </ol></div>
+  </div>
+  <p class="foot-note">No tenemos clientes ni socios, y no vamos a insinuarlo. Hablar con el
+     primero es lo que hacemos el lunes.</p></div>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Preguntas</span><span class="pg">06</span></footer>
 </section>
 <section class="slide dark cover end">
   <div class="inner">
-  <p class="kicker">Pruébalo ahora</p>
+  <p class="kicker">Pruébenlo ahora</p>
   <h1>Robots que<br>aprenden<br>de un video</h1>
-  <p class="lede">Abre la web, sube un video tuyo y empuja al robot. Está desplegado y es abierto.</p>
+  <p class="lede">Abran la web, suban un video suyo y empujen al robot. Está desplegado y es abierto.</p>
   <p class="meta"><span>tridi-alpha.vercel.app</span><span>github.com/platanus-hack/platanus-hack-26-ve-team-26</span></p></div>
-  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl"></span><span class="pg">14</span></footer>
+  <footer class="chrome"><span class="wm"><svg class="mark" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="6.5" r="2.6"/><path d="M12 10v6.5M7 12.5h10M12 16.5l-3.5 5M12 16.5l3.5 5"/></svg>Tridi</span><span class="lbl">Cierre</span><span class="pg">07</span></footer>
 </section>
 </body></html>
