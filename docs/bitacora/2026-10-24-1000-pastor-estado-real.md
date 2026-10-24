@@ -103,3 +103,13 @@ Pedido de Pastor: los mundos de Simulaciones con el nivel de la landing, primero
 - César: revisar W12.5 y la grilla de `props.js` y `city.js`.
 - No medido en un celular real (la ventana de prueba estaba oculta y no dibuja a ritmo).
 - Después, la interacción: que el viento mueva objetos sueltos, salpicaduras al pisar el agua, piedras que ruedan.
+
+## Parte 5: los entornos en la repetición del panel de entrega
+
+- **`web/src/screens/delivery.js`** (archivo de Juan, commit aparte): la repetición viste la escena con el entorno del mundo de cada episodio (`dressWorld` de `looks/`) cuando el robot llega a ese mundo, lo anima en el bucle del panel y lo saca al salir. Entre episodios del mismo mundo no se rearma.
+- **El viento de cada episodio:** `looks/` acepta ahora un viento dado (`dressWorld(view, { wind })`), además del de la física. El panel le pasa el `params.wind_mps` del episodio elegido (6,3 a 13,6 m/s en los de viento de Caminar): el pasto, la bandera, los molinos y las corrientes muestran esa velocidad.
+- **Lo que falta para que sea exacto:** la dirección del viento no está en la entrega. `training/rollout.py` sortea un ángulo por episodio y no lo guarda, así que la repetición usa la dirección del viento de la app (MuJoCo +y). Para Juan: sumar `wind_angle` a los parámetros de cada episodio (contrato, "Datos para entrenar robots") y la repetición lo leería.
+
+### Qué funcionó
+
+- En local, `#/entrega/clip_2026-10-23_caminar-perfil_01`: plano en la calle, piedras en el campo rocoso, resbaloso en el vestíbulo mojado y viento en la pradera, con corrientes solo en los episodios de viento; 60 cuadros por segundo; al salir a Simulaciones queda un solo entorno, el de esa pantalla. `vite build` pasa.
