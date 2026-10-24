@@ -10,23 +10,31 @@ Las láminas son [`deck/tridi-deck.html`](deck/tridi-deck.html) y su PDF. Cada u
 
 ## Los 30 segundos
 
-**Medido: 28 s de habla en la ventana de 30** (con [`tools/cronometro.py`](tools/cronometro.py), a 4,2 sílabas por segundo). No hay margen para improvisar: cada palabra de más empuja la demo.
+**Medido: 29 s de habla en la ventana de 30** (con [`tools/cronometro.py`](tools/cronometro.py), a 4,2 sílabas por segundo).
 
-### 0:00–0:04 · Lámina 1, portada
+**La apertura ataca la categoría, nunca a un equipo.** Nuestro competidor directo del track hace agentes de IA; decir su nombre, o insinuarlo, nos haría quedar chicos. Decir que *los agentes ya saben pensar y ninguno sabe pararse* ataca igual de fuerte, es verdad, y deja al jurado pensando en el hueco que nosotros llenamos. Nunca mirar a nadie del público al decirlo.
 
-> "Tridi: robots que aprenden de un video."
+### 0:00–0:07 · Lámina 1, portada
 
-### 0:04–0:16 · Lámina 2, el problema
+> "**Physical AI is the new sexy.**
+> Los agentes de IA ya saben pensar. Ninguno sabe pararse."
 
-> "La IA aprendió a hablar leyendo internet. La física no tiene un internet de movimiento.
-> Los robots ya tienen cuerpo: les falta experiencia."
+### 0:07–0:12 · Lámina 2, por qué esto es otro juego
 
-### 0:16–0:30 · Lámina 3, por qué el video no alcanza
+> "Un bug se revierte. Una caída, no.
+> The real world has no undo."
 
-> "Y el video no les sirve tal cual: el robot tiene otro peso y otras medidas. **Si copia el video, se cae.**
-> El video le dice qué hacer. La simulación le enseña cómo."
+### 0:12–0:22 · Lámina 3, por qué el video no alcanza
 
----
+> "El robot tiene otro peso y otras medidas. **Si copia el video, se cae.**
+> El video le dice qué hacer. La física le enseña cómo."
+
+### 0:22–0:30 · Lámina 4, los mundos
+
+> "Nuestro simulador no tiene un piso perfecto: acera, piedras, recién trapeado, viento.
+> **Perfect floors don't exist.**"
+
+*Cuidado con esta última: hoy la política de pie entrena con empujones al azar y la probamos en los cuatro mundos; entrenar la imitación en los cuatro es el paso siguiente (ENT-3). Por eso la frase habla del **simulador**, no de lo que ya está entrenado. Si ENT-3 entra antes del domingo, pasa a ser "no entrenamos en un piso perfecto" y es más fuerte.*
 
 ## Los 2:30 de demo
 
@@ -52,9 +60,10 @@ El video corre y ustedes hablan encima. **No hay que narrar lo que se ve: hay qu
 
 1. **Las láminas 1 a 3 son 30 segundos: no se improvisa.** Es el único texto memorizado de toda la presentación.
 2. **Ningún número sin medir.**
-3. **Nunca "clientes" ni un logo de otra empresa.** Se dice "los equipos que están construyendo humanoides".
-4. **Si el robot se cae al empujarlo, decirlo:** pasa 1 de cada 15 veces y está medido.
-5. **El banco de preguntas del jurado** sigue en [`guion-3-minutos.md`](guion-3-minutos.md#las-preguntas-del-jurado-los-2-minutos).
+3. **Atacar la categoría, nunca a un equipo.** "Los agentes ya saben pensar, ninguno sabe pararse" se dice mirando al jurado, no al público. Si alguien pregunta por otro proyecto, se habla bien de él y se vuelve al nuestro.
+4. **Nunca "clientes" ni un logo de otra empresa.** Se dice "los equipos que están construyendo humanoides".
+5. **Si el robot se cae al empujarlo, decirlo:** pasa 1 de cada 15 veces y está medido.
+6. **El banco de preguntas del jurado** sigue en [`guion-3-minutos.md`](guion-3-minutos.md#las-preguntas-del-jurado-los-2-minutos).
 
 ## Pendiente
 

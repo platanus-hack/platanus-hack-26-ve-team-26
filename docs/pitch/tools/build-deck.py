@@ -35,8 +35,8 @@ def slide(n, kind, body, label=""):
 
 S = []
 
-# Una idea por lámina y poco texto: 30 s de pitch (1-3), la demo (4) y el cierre (5-7).
-# Las imágenes son capturas del G1 real de la landing desplegada, no stock (marca.md, punto 3).
+# El deck ataca la categoría, no a un equipo: "physical AI" contra "agentes", nunca a una persona.
+# Títulos en inglés donde el inglés pega más corto; el cuchillo, en español.
 
 SKELETON = """<svg class="flow" viewBox="0 0 760 300" role="img"
    aria-label="Un video se convierte en un esqueleto de 33 puntos, ese movimiento entra al robot, y sin física el robot se cae">
@@ -71,55 +71,71 @@ SKELETON = """<svg class="flow" viewBox="0 0 760 300" role="img"
 S.append(slide(1, "dark split cover", """
   <div class="words">
     <p class="kicker">Platanus Hack 26 · Three Dimensions</p>
-    <h1>Robots que<br>aprenden<br>de un video</h1>
+    <h1>Physical&nbsp;AI<br>is the<br>new sexy</h1>
+    <p class="knife">Los agentes ya saben pensar.<br><em>Ninguno sabe pararse.</em></p>
     <p class="meta"><span>Tridi</span><span>Cesar · Juan · Pastor · Ale</span></p>
   </div>
   <figure class="shot"><img src="img/g1-de-pie.jpg" alt="El Unitree G1 simulado, de pie"></figure>""",
-  "0:00 · 4 s"))
+  "0:00 · 7 s"))
 
 S.append(slide(2, "dark statement", """
-  <h2>La IA aprendió a hablar<br>leyendo internet.<br>
-      <em>La física no tiene<br>un internet de movimiento.</em></h2>""",
-  "0:04 · 12 s"))
+  <h2>Un bug<br>se revierte.<br><em>Una caída, no.</em></h2>
+  <p class="en">The real world has no undo.</p>""",
+  "0:07 · 5 s"))
 
 S.append(slide(3, "paper split-v key", """
   <div class="words">
     <h2>Si copia el video,<br><em>se cae.</em></h2>
-    <p class="punch">El video le dice <em>qué</em> hacer.<br>La simulación le enseña <em>cómo</em>.</p>
+    <p class="punch">El video le dice <em>qué</em> hacer.<br>La física le enseña <em>cómo</em>.</p>
   </div>
-  """ + SKELETON, "0:16 · 14 s"))
+  """ + SKELETON, "0:12 · 10 s"))
 
-S.append(slide(4, "dark demo", """
+S.append(slide(4, "dark worlds", """
+  <p class="kicker">Nuestro motor</p>
+  <h2>Perfect floors<br>don't exist</h2>
+  <ul class="places">
+    <li><b>Acera</b><span>plano, fricción normal</span></li>
+    <li><b>Piedras</b><span>el suelo deja de ser plano</span></li>
+    <li><b>Recién trapeado</b><span>fricción baja</span></li>
+    <li><b>Pradera con viento</b><span>fuerza lateral constante</span></li>
+  </ul>
+  <p class="en">Un demo se hace en el vacío. Un robot, con fricción.</p>""",
+  "0:22 · 8 s"))
+
+S.append(slide(5, "dark demo", """
   <p class="kicker">Demo</p>
   <h1>2:30</h1>
   <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p>""",
   "0:30"))
 
-S.append(slide(5, "paper", """
+S.append(slide(6, "paper", """
   <p class="kicker">Lo que acaban de ver, medido</p>
   <div class="stat-row four">
     <div class="stat"><b>3,2 cm</b><span>error al pasar el movimiento al robot</span></div>
     <div class="stat"><b>73 min</b><span>de entrenamiento en una laptop</span></div>
     <div class="stat"><b>4 de 4</b><span>empujones de 250 N que aguanta</span></div>
     <div class="stat"><b>265 KB</b><span>la red que mueve 29 motores</span></div>
-  </div>""", "Al terminar la demo"))
+  </div>
+  <p class="foot-note">Un solo archivo define cada mundo: fricción, viento, masas y fuerza de los
+     motores. El mismo que ve la web es el que entrena al robot.</p>""", "Al terminar la demo"))
 
-S.append(slide(6, "paper", """
+S.append(slide(7, "paper", """
   <p class="kicker">Para equipos de humanoides</p>
   <h2>Dónde estamos</h2>
   <ol class="road big">
     <li><span>Hoy</span><b>Se para y aguanta empujones</b></li>
     <li><span>Entrenando</span><b>Caminar como la persona del video</b></li>
-    <li><span>Lo que viene</span><b>Piedras, viento y piso resbaloso</b></li>
+    <li><span>Lo que viene</span><b>Entrenar en los cuatro mundos, no solo probar</b></li>
   </ol>
-  <p class="foot-note">La física es de MuJoCo; nuestro es todo lo que va encima. Y no es un LLM.</p>""",
+  <p class="foot-note">La física es de MuJoCo; nuestro es todo lo que va encima. Y no es un LLM:
+     el LLM decide a dónde ir, nosotros enseñamos a llegar sin caerse.</p>""",
   "Preguntas"))
 
-S.append(slide(7, "dark split end", """
+S.append(slide(8, "dark split end", """
   <div class="words">
-    <p class="kicker">Pruébenlo ahora</p>
-    <h2>tridi-alpha<br>.vercel.app</h2>
-    <p class="meta"><span>Abierto en GitHub</span><span>platanus-hack/…-ve-team-26</span></p>
+    <p class="kicker">Pruébenlo ahora · empújenlo</p>
+    <h2>Physical&nbsp;AI<br>is the<br>new sexy</h2>
+    <p class="meta"><span>tridi-alpha.vercel.app</span><span>Abierto en GitHub</span></p>
   </div>
   <figure class="shot"><img src="img/g1-perfil.jpg" alt="El Unitree G1 simulado, de perfil"></figure>""",
   "Cierre"))
@@ -227,6 +243,18 @@ tr.on td{color:var(--signal);font-weight:500}
 .road.big li{align-items:center}
 .road.big span{flex:0 0 200px;font-size:13px}
 .road.big b{font-size:40px;font-weight:500;letter-spacing:-.02em}
+
+.knife{margin:0;max-width:26ch;font:500 26px/1.2 var(--display);color:var(--fg)}
+.knife em{font-style:normal;color:var(--signal)}
+.statement .en{margin:0;font:400 22px/1 var(--mono);color:var(--dim);letter-spacing:-.01em}
+.places{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.places li{border-top:2px solid var(--fg);padding-top:14px}
+.places b{display:block;font-size:25px;font-weight:600;letter-spacing:-.015em;line-height:1.05}
+.places span{display:block;margin-top:10px;font:400 14px/1.4 var(--mono);color:var(--dim)}
+
+.dark .en{margin:0;font:400 19px/1 var(--mono);color:var(--dim)}
+.split.cover h1{font-size:82px}
+.split.end h2{font-size:72px;word-break:normal}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
 .stat-row.four .stat b{font-size:52px}
