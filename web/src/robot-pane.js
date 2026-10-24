@@ -31,7 +31,7 @@ export function mountRobotPane(pane, dots, { beforePush } = {}) {
 
   const stopProgress = onRobotProgress(({ done, total, compiling, policy }) => {
     $('.robot-progress').style.width = `${(100 * done) / total}%`;
-    if (policy) $('.robot-status').textContent = 'Cargando la política entrenada…';
+    if (policy) $('.robot-status').textContent = 'Enseñándole a mantenerse de pie…';
     else if (compiling) $('.robot-status').textContent = 'Armando al robot…';
   });
   // Already loaded (any visit after the first): no placeholder and no fade, the robot is there.

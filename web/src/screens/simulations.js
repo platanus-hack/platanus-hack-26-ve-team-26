@@ -10,7 +10,7 @@ export function mount(root, { dots }, [clipId] = []) {
   root.innerHTML = `
     <section class="page sims">
       <header class="page-head">
-        <a class="back" href="#/">← Tridi</a>
+        <a class="back" href="#/">← Volver al inicio</a>
         <h1>Simulaciones</h1>
       </header>
       <div class="sims-grid">

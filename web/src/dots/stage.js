@@ -79,14 +79,13 @@ function dotField() {
 }
 
 export class DotStage {
-  /** @param options.field  draw the drifting background dots (off for the sober brand) */
-  constructor(canvas, { field = true } = {}) {
-    this.showField = field;
+  constructor(canvas) {
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setScissorTest(true);
     this.views = [];
+    this.scenes = []; // custom scenes drawn in an element's rectangle (addScene)
 
     this.field = { scene: new THREE.Scene(), camera: new THREE.PerspectiveCamera(50, 1, 0.1, 50) };
     this.field.points = dotField();
@@ -121,7 +120,7 @@ export class DotStage {
     camera.position.fromArray(variant.camera.position);
     camera.lookAt(new THREE.Vector3().fromArray(variant.camera.target));
     const robot = new DotRobot({ count: ROBOT_DOTS, props: variant.props });
-    robot.placeCloud(camera, new THREE.Vector3().fromArray(variant.camera.face), 1.05);
+    robot.placeFace(camera, new THREE.Vector3().fromArray(variant.camera.face), 1.05);
     scene.add(robot.points, robot.bones.root);
 
     const target = new THREE.Vector3().fromArray(variant.camera.target);
@@ -155,6 +154,24 @@ export class DotStage {
     this.views = this.views.filter((v) => v !== view);
   }
 
+  /**
+   * Draws any three.js scene inside `element`, on this same canvas and render loop, e.g. the
+   * home intro's walking figure. `update(t, dt, rect)` runs before each draw while the element
+   * is on screen; it sets the camera aspect from `rect` itself.
+   * @param {{ scene: THREE.Scene, camera: THREE.Camera, update?: Function }} item
+   * @returns the item, to pass to removeScene
+   */
+  addScene(element, item) {
+    const entry = { ...item, element };
+    this.scenes.push(entry);
+    return entry;
+  }
+
+  removeScene(entry) {
+    this.scenes = this.scenes.filter((s) => s !== entry);
+    entry.dispose?.();
+  }
+
   resize() {
     const { innerWidth: w, innerHeight: h } = window;
     const size = this.renderer.getSize(new THREE.Vector2());
@@ -184,7 +201,17 @@ export class DotStage {
     this.renderer.setViewport(0, 0, w, h);
     this.renderer.setScissor(0, 0, w, h);
     this.renderer.clear();
-    if (this.showField) this.renderer.render(scene, camera);
+    this.renderer.render(scene, camera);
+
+    for (const entry of this.scenes) {
+      const rect = entry.element.getBoundingClientRect();
+      if (rect.bottom < 0 || rect.top > h || rect.width === 0) continue; // off screen: skip
+      entry.update?.(t, dt, rect);
+      const bottom = h - rect.bottom;
+      this.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
+      this.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
+      this.renderer.render(entry.scene, entry.camera);
+    }
 
     const cards = this.views.filter((v) => v.variant.card);
     const touchTurn = cards[Math.floor(t / TOUCH_TURN_S) % Math.max(1, cards.length)];

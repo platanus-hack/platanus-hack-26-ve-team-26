@@ -34,9 +34,9 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** web con la marca corporativa ([decisión de Juan](decisiones/2026-10-24-marca-b2b-robotica.md)): landing de 8 secciones con el G1 en vivo y Empujar en el hero, el problema y qué hace Tridi, cómo funciona, la consola (cámara, subir, simulaciones), resultados con cada cifra enlazada a su README, para quién, tecnología y contacto. Las tres pantallas de la consola funcionan como antes. Un solo G1 para toda la web, cargado detrás de una pantalla de carga: listo en 6,6 s (antes 26 s) y al instante al volver a una pantalla ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
+- **Funciona:** web en el estilo claro, que abre con una intro de dos slides ([decisión](decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)): qué es Tridi, con una persona de puntos que camina, y elegir cómo empezar, con los robots de puntos. Cámara, Subir y Simulaciones funcionan. Un solo G1 para toda la web, cargado detrás de una pantalla de carga: listo en 6,6 s (antes 26 s) y al instante al volver a una pantalla ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
 - **En curso:** —
-- **Bloqueado por:** nada. Falta el voto de referencias de Juan, Pastor y Ale (la paleta se ajusta en `web/src/style.css`).
+- **Bloqueado por:** nada. Conversar con Juan: la vuelta al estilo claro cambia su decisión de marca corporativa.
 - **Sigue:** Pastor pasa la raíz de Vercel a `web/`. Subir un video real con el servidor de Juan.
 
 ---
