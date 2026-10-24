@@ -9,6 +9,13 @@ const VISIBLE_GROUPS = new Set([0, 1, 2]);
 // The camera aims at the pelvis height of the standing G1 (0.79 m) and follows the robot
 // sideways only, so a fall reads as a fall instead of the camera diving with it.
 const TARGET_HEIGHT = 0.75;
+// With followTau set, a frame later than this (a hidden tab, a canvas out of the page) eases the
+// camera as if only 0.1 s had passed, so it does not leap across the floor in one frame.
+const MAX_FOLLOW_DT = 0.1; // s
+// A pelvis that moved more than this between two frames was teleported (a sim.reset, a clip starting
+// over, a seek), and the camera jumps with it instead of sliding there. At 60 fps a 250 N push moves it
+// at most 3.4 cm per frame, and the run of data/clips 10 cm.
+const FOLLOW_SNAP = 0.3; // m
 // Scene colors; the web app passes its own palette through createSimView's `theme` option.
 export const DEFAULT_THEME = { background: 0x0e141b, ground: 0x18212c, gridMajor: 0x3a4a5c, gridMinor: 0x253140 };
 
@@ -65,6 +72,12 @@ export class RobotView {
     this.followed = new THREE.Vector3();
     // Height the camera aims at; a page directing the camera (createSimView's `viewer`) can change it.
     this.targetHeight = TARGET_HEIGHT;
+    // Seconds the camera takes to catch up with the robot sideways (it covers 63% of the way in that
+    // time). 0 keeps it locked to the pelvis, which is what the app's screens use; a page filming a
+    // walk can raise it so the sway of each step does not shake the picture.
+    this.followTau = 0;
+    this.lastPelvis = new THREE.Vector3(); // the pelvis at the previous follow(); only x and z are read
+    this.lastFollowMs = null;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -187,6 +200,22 @@ export class RobotView {
   follow() {
     const [x, y] = this.sim.bodyPosition('pelvis');
     this.followed.set(x, this.targetHeight, -y); // MuJoCo (x, y, z) is three.js (x, z, -y)
+    // The jump is the pelvis' own move since the previous frame, not its distance to the camera's
+    // target: with followTau set the target lags behind a fast walk on purpose.
+    const now = performance.now();
+    const first = this.lastFollowMs === null;
+    const jumped = first || Math.hypot(this.followed.x - this.lastPelvis.x, this.followed.z - this.lastPelvis.z) > FOLLOW_SNAP;
+    const dt = first ? 0 : Math.min(Math.max(0, (now - this.lastFollowMs) / 1000), MAX_FOLLOW_DT);
+    this.lastPelvis.copy(this.followed);
+    this.lastFollowMs = now;
+    // Share of the way to the pelvis covered this frame: all of it when locked or after a jump.
+    const k = this.followTau > 0 && !jumped ? 1 - Math.exp(-dt / this.followTau) : 1;
+    if (k < 1) {
+      // Sideways only; the height is set at once, as when locked.
+      const { target } = this.controls;
+      this.followed.x = target.x + k * (this.followed.x - target.x);
+      this.followed.z = target.z + k * (this.followed.z - target.z);
+    }
     const delta = this.followed.clone().sub(this.controls.target);
     this.controls.target.add(delta);
     this.camera.position.add(delta);
