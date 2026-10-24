@@ -27,7 +27,7 @@ scripts/ship.sh
 scripts/ship.sh "feat(physics): rigid bodies and collisions"
 ```
 
-`ship.sh` hace, en orden: rebasea sobre `origin/main`, sube tu rama, abre el PR, lo mergea con squash, borra la rama remota y deja tu rama local igual a `main`. Sigues trabajando en la misma rama sin hacer nada más.
+`ship.sh` hace, en orden: rebasea sobre `origin/main`, revisa los archivos de entrega (`scripts/check-submission.sh`), sube tu rama, abre el PR, lo mergea con squash, borra la rama remota y deja tu rama local igual a `main`. Sigues trabajando en la misma rama sin hacer nada más.
 
 Si cambias de tema, cambia el nombre: `git switch -c pastor/ragdoll` justo después de un `ship`.
 
@@ -66,6 +66,7 @@ Con agentes basta con decirle "resuelve el conflicto con main conservando el cam
 
 Se detiene en el primer error y no borra nada. Arreglas lo que dice y lo vuelves a correr: retoma donde quedó (si el PR ya existe, no abre otro).
 
+- **`submission: ...`:** Platanus revisa cada commit de `main` y marca "Submission Invalid" en Discord si `platanus-hack-project.jsonc` o `project-description.md` tienen el texto de plantilla. Llénalos (o recupera lo que se borró) y corre `ship.sh` otra vez.
 - **Conflicto al rebasear:** se resuelve igual que arriba y se corre `ship.sh` otra vez.
 - **`gh` sin sesión:** `gh auth login`.
 - **El merge falla** (por ejemplo, porque `main` cambió en ese segundo): vuelves a correr `ship.sh`.

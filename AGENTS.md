@@ -41,6 +41,8 @@ Rules and template in [`docs/bitacora/README.md`](docs/bitacora/README.md).
 
 `platanus-hack-project.jsonc` (name, Spanish one-liner and description, deploy URL), `project-description.md`, `project-logo.png` (1000x1000, max 500 KB) and a concise `README.md`. Edit them only when the person asks.
 
+Platanus validates **every commit on `main`** and posts "Submission Invalid" in Discord if these files hold placeholders, or lose their filled values. `scripts/ship.sh` runs `scripts/check-submission.sh` and refuses to ship otherwise. `deploy-url` points to the repo until the web app is deployed; replace it then.
+
 ## Conventions
 
 - Code, commits and PRs in English. Docs and texts for the team in Spanish.

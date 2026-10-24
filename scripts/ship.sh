@@ -22,6 +22,12 @@ if [ -z "$(git log --oneline origin/main..HEAD)" ]; then
   exit 0
 fi
 
+# Platanus marks every commit on main that fails its submission check as invalid.
+if ! "$(dirname "$0")/check-submission.sh"; then
+  echo "ship: fix the submission files above before shipping to main."
+  exit 1
+fi
+
 # Default title: the oldest commit on the branch, which usually names the feature.
 title=${1:-$(git log --reverse --format=%s origin/main..HEAD | head -n 1)}
 
