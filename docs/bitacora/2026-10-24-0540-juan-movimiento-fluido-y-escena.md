@@ -111,3 +111,39 @@ Seis quejas: el robot siempre se tambalea (y se ve bugueado "en el giro"), la ma
 - **`stand-v4`** entrenando en `../tridi-training` (rama `juan/training`): término propio para el giro (0,2; a 14°/s pierde la mitad) y otro para los pies quietos (0,1), 12 M pasos desde v2. Se acepta solo si gira menos de 5°/s y aguanta 4 de 4 empujones de 250 N; si no, se queda v2.
 - **Avisar a César:** el Gym vuelve a ir con el scroll (deshace `9a4a944`, con freno para que no se sienta trabado) y `skeleton.js` atenúa los brazos en vez de esconderlos (también en la galería).
 - **Avisar a Pastor:** `viewer.followTau` (opcional). La política de pie gira, y el entrenamiento `stand-v4` está en curso.
+
+## Parte 4: la entrega (panel `#/entrega`)
+
+Pedido de Juan: al terminar la demo, un panel donde se vea, se explore y se descargue lo que generó el entrenamiento. Es la prioridad #1 del análisis de pitch: pone "qué se entrega" frente al jurado.
+
+### Qué se hizo
+
+- Contrato (`0f47b73`, `c9a377f`, `96cd5a7`): sección "La entrega de un clip": `delivery.json` (resumen por mundo y por episodio, escalera de checkpoints, archivos con su peso), `replay.json` (cada episodio a 25 Hz, siempre con su última fila, fuerza de los pies como pico de cada tramo) y `GET /deliveries/{clip_id}/{nombre}`.
+- `training/deliver.py`: arma la carpeta. `data/deliveries/clip_2026-10-23_caminar-perfil_01/` es la entrega real de la caminata (2,4 MB, estática: va en el deploy y no depende de la Mac).
+- `data/server.py`: la cola de entrenamiento arma la entrega después del rollout; si falla, el entrenamiento queda `done` con nota. Solo sirve los nombres del contrato y nada hasta que exista `delivery.json`. `check_training` lo prueba.
+- `web/src/screens/delivery.js` (+ `.css`): repetición 3D del episodio elegido tal cual se grabó (`sim.puppet`, porque `playClip` apoyaría en el piso al robot caído), matriz 4 mundos × 8 episodios, 5 canales de telemetría sincronizados, escalera de checkpoints, descargas y guía de formatos. Tarjeta "La entrega" en el cierre de la landing; el texto de Policy ya dice lo que se entrega hoy.
+- Revisión por agentes: números recalculados desde `dataset.zip` (coinciden), endpoint probado contra rutas raras (404), prueba en navegador a 1440×900, 1280×720 y 375×812. 29 hallazgos, todos cerrados.
+- `training/watch.py`: monitor en vivo de un entrenamiento (`progress.csv`); redibuja la pantalla entera.
+
+### Qué dicen los datos de la caminata (`g1-walk`, 20 M pasos)
+
+| Mundo | Completos | De pie (media) |
+| --- | --- | --- |
+| Plano | 0/8 | 4,1 s |
+| Piedras | 0/8 | 3,0 s |
+| Resbaloso | 0/8 | 1,6 s |
+| Viento | 0/8 | 0,8 s |
+
+Sigue 3,54 s de 11,85 s. 24 de 32 episodios terminan por alejarse del recorrido, 8 por caída. Solo entrenó en piso plano. El panel lo muestra tal cual.
+
+### Política de pie: intentos de quitarle el giro
+
+| Corrida | Qué | Giro | Equilibrio |
+| --- | --- | --- | --- |
+| `g1-stand` (v2, 40 M) | la de hoy | −57°/s | 20 s, 4/4 empujones |
+| `stand-v3` (+10 M desde v2) | giro sumado a "still" (0,1) | −52°/s | — |
+| `stand-v4` (+12 M desde v2) | término "turn" 0,2 + "feet" 0,1 | −25°/s | — |
+| `stand-v5` (30 M desde cero, mismo premio) | | −0,9°/s | 4,6 s, 0/4 |
+| `stand-v6` (+16 M desde v5, detenida) | | | ~5 s, sin mejorar |
+
+Conclusión: afinar desde v2 hereda el giro; desde cero con el premio nuevo no aprende a equilibrarse en 46 M pasos. Queda `g1-stand`. Sigue un análisis aparte.
