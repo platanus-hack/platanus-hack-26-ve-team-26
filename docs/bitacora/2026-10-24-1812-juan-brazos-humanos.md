@@ -39,6 +39,8 @@ Juan reporta en En vivo: el robot no distingue palmas hacia adelante o hacia atr
 
 - **El robot de En vivo no se podía girar con el mouse:** `4d5dd3e` (spinner de la marca) quitó `pointer-events: none` de `.robot-loading`. La capa se desvanece al cargar pero seguía encima del canvas y se quedaba con los arrastres. Vuelto en `style.css`; probado en tridi-alpha arrastrando sobre el robot (la cámara gira). Arregla también los paneles de Simulaciones, que usan la misma capa.
 
+- **La web queda en En vivo y la entrega** ([decisión](../decisiones/2026-10-24-web-solo-en-vivo-y-entrega.md)): fuera Simulaciones (5 archivos y su ruta), subir video desactivado ("Próximamente"), En vivo sin grabación. Probado en tridi-alpha: 3 tarjetas en teléfono y escritorio, `#/simulaciones` abre la landing, En vivo sigue con la cámara falsa y sin errores en la consola.
+
 ## Decisiones
 
 - B3 (pesar más el codo) no se hizo: con geometría exacta los codos ya salían bien; la causa era profundidad y espejo.
