@@ -30,9 +30,10 @@ uv run --project data python -m data.server              # solo el servidor, en 
 uv run --project data python -m data.check_server video1.mp4 video2.mp4  # prueba de punta a punta
 ```
 
-- **Dónde corre:** en la Mac de Juan (MPS: ~40 s por video de 10 s) con un túnel rápido de Cloudflare (`brew install cloudflared`). El túnel no pide cuenta, pero **su URL cambia cada vez que arranca**: por eso la web la lee de `?api=` y `serve.sh` imprime el link listo. Antes de la demo: correr `data/serve.sh` y abrir ese link en la pantalla del stand. El mismo código corre en Render (lee `PORT`) si se decide moverlo, pero sin GPU es varias veces más lento.
+- **Dónde corre:** en la Mac de Juan (MPS: ~40 s por video de 10 s) con un túnel rápido de Cloudflare (`brew install cloudflared`). El túnel no pide cuenta, pero **su URL cambia cada vez que arranca**: por eso la web la lee de `?api=` y `serve.sh` imprime el link listo. Antes de la demo: correr `data/serve.sh` y abrir ese link en la pantalla del stand. El mismo código corre en Render (lee `PORT`) si después hace falta, pero sin GPU es varias veces más lento.
 - **Un video a la vez:** la cola tiene un solo trabajador, porque YOLO y MediaPipe ya ocupan toda la GPU.
-- **Límites por estar en internet:** 2 GB por subida (`TRIDI_MAX_UPLOAD_MB`), solo extensiones de video o `.zip`, ids aleatorios validados, y CORS solo para la web desplegada y los servidores de desarrollo (`TRIDI_CORS_ORIGINS`).
+- **Límites por estar en internet:** 60 MB por subida (`TRIDI_MAX_UPLOAD_MB`) y 30 s por video (`TRIDI_MAX_DURATION_S`), solo extensiones de video o `.zip`, ids aleatorios validados, y CORS solo para la web desplegada y los servidores de desarrollo (`TRIDI_CORS_ORIGINS`).
+- **Solo se guardan los `PoseClip`:** el video se borra al fallar o cancelar, y a los 10 minutos de terminar (el tiempo para elegir a otra persona). Topes: 60 MB por subida y 30 s por video ([decisión](../docs/decisiones/2026-10-24-servidor-de-video-en-la-mac.md)).
 - **Los trabajos viven en memoria:** si el servidor se reinicia, la web pierde el progreso de lo que estaba en cola. Los clips quedan en `data/server_data/clips/` (no se versiona).
 
 ## Cómo funciona

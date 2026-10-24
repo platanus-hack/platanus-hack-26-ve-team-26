@@ -48,7 +48,7 @@ Platanus validates **every commit on `main`** and posts "Submission Invalid" in 
 Vercel and Render cannot connect to this organization repo, so they deploy from the public mirror [`Torpass/tridi`](https://github.com/Torpass/tridi), which `scripts/ship.sh` updates after every merge (`scripts/mirror.sh`). Never commit to the mirror. Detail in [`docs/decisiones/2026-10-23-deploy.md`](docs/decisiones/2026-10-23-deploy.md).
 
 - **Web:** Vercel project `tridi` (Pastor's account), production https://tridi-alpha.vercel.app, built from `physics/` until `web/` exists.
-- **Video server:** Render, from the same mirror, once `data/` has an HTTP server.
+- **Video server:** `data/server.py` runs on Juan's Mac behind a Cloudflare tunnel (`data/serve.sh`); the web finds it through `?api=`. It keeps only PoseClips, never videos. Detail in [`docs/decisiones/2026-10-24-servidor-de-video-en-la-mac.md`](docs/decisiones/2026-10-24-servidor-de-video-en-la-mac.md).
 
 ## Conventions
 
