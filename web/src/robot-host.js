@@ -3,6 +3,7 @@
 // start of it). Screens borrow its canvas: attach() moves it into their pane, and leaving the
 // screen takes it out, where physics/ pauses it. A WebGL context survives being moved.
 import { createSimView } from 'tridi-physics';
+import { FINAL_LEVEL, policyUrls } from './policies.js';
 import { SCENE_THEME } from './skeleton.js';
 
 const canvas = document.createElement('canvas');
@@ -23,11 +24,25 @@ export function loadRobot() {
       progress = { done, total, compiling: done === total };
       notify();
     },
-  }).then((loaded) => (view = loaded));
+  })
+    .then(async (loaded) => {
+      // The trained policy comes with the robot, so "Empujar" shows it recovering anywhere. It
+      // swaps in the policy's own model of the G1 and onnxruntime-web (14 MB), hence here, once.
+      progress = { ...progress, compiling: true, policy: true };
+      notify();
+      try {
+        const { onnx, json } = policyUrls(FINAL_LEVEL);
+        await loaded.loadPolicy(onnx, json);
+      } catch (error) {
+        console.error(error); // the robot still stands with its stiff motors
+      }
+      return loaded;
+    })
+    .then((loaded) => (view = loaded));
   return ready;
 }
 
-/** Calls `listener` with { done, total, compiling } now and as files arrive; returns unsubscribe. */
+/** Calls `listener` with { done, total, compiling, policy } now and as loading moves on; returns unsubscribe. */
 export function onRobotProgress(listener) {
   listeners.add(listener);
   listener(progress);

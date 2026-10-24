@@ -45,8 +45,8 @@ export function mount(root, { dots, api }) {
   root.innerHTML = `
     <section class="page upload" data-step="checking">
       <header class="page-head">
-        <a class="back" href="#/">← Volver al inicio</a>
-        <h1>Sube un video</h1>
+        <a class="back" href="#/">← Tridi</a>
+        <h1>Subir un video</h1>
       </header>
       <div class="upload-grid">
         <div class="intro-scene" aria-hidden="true"></div>

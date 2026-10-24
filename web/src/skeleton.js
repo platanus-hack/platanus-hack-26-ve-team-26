@@ -18,11 +18,11 @@ const FOOT_JOINTS = [27, 28, 29, 30, 31, 32];
 const MIN_VISIBILITY = 0.5;
 const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next to a limb
 const JOINT_RADIUS = 0.03;
-const HUMAN_COLOR = 0x4c7cf3; // the app's accent: the human is blue, the robot is gray
+const HUMAN_COLOR = 0x2952ff; // the brand accent: the person is the data, the robot is gray
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
-/** Light, cool scene colors shared by the skeleton and the robot (createSimView's `theme`). */
-export const SCENE_THEME = { background: 0xeef2f7, ground: 0xe4eaf2, gridMajor: 0xc3cfdf, gridMinor: 0xd6dee9 };
+/** The page's light gray (style.css --bg), shared by the skeleton and the robot (createSimView's `theme`). */
+export const SCENE_THEME = { background: 0xf1f2f4, ground: 0xe8eaed, gridMajor: 0xcfd3d9, gridMinor: 0xdfe2e6 };
 
 export class SkeletonView {
   constructor(canvas) {

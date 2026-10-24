@@ -29,9 +29,10 @@ export function mountRobotPane(pane, dots, { beforePush } = {}) {
   let placeholder = null;
   const handle = { view: null, ready: robot.ready, dispose };
 
-  const stopProgress = onRobotProgress(({ done, total, compiling }) => {
+  const stopProgress = onRobotProgress(({ done, total, compiling, policy }) => {
     $('.robot-progress').style.width = `${(100 * done) / total}%`;
-    if (compiling) $('.robot-status').textContent = 'Armando al robot…';
+    if (policy) $('.robot-status').textContent = 'Cargando la política entrenada…';
+    else if (compiling) $('.robot-status').textContent = 'Armando al robot…';
   });
   // Already loaded (any visit after the first): no placeholder and no fade, the robot is there.
   if (robotView()) pane.classList.add('ready', 'instant');

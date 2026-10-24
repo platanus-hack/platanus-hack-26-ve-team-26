@@ -68,10 +68,10 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 
 La web es un producto para empresas de robots humanoides: profesional, sobria, con números reales. Regla en [`../docs/decisiones/2026-10-24-marca-b2b-robotica.md`](../docs/decisiones/2026-10-24-marca-b2b-robotica.md); guía completa en [`../docs/marca.md`](../docs/marca.md).
 
-- [ ] **W9.1 Estilo.** Los 4 votan 3 referencias de `docs/marca.md`; con eso, paleta (una base y un acento), tipografía (sans + mono para datos) y componentes. Estilo propio, sin copiar a Tesla ni a nadie.
-- [ ] **W9.2 Landing.** Las 8 secciones de `docs/marca.md` (hero con el G1 en vivo, problema, cómo funciona, pruébalo, resultados, para quién, tecnología, cierre).
-- [ ] **W9.3 Consola.** Cámara, Subir y Simulaciones con el mismo estilo, como la parte "producto" de la landing. Las funciones no cambian.
-- [ ] **W9.4 Cifras.** Cada número de la web sale de un README del repo y respeta "Lo que NO podemos decir" de `docs/pitch/diferencia.md`. Sin logos ni nombres de empresas como clientes.
+- [~] **W9.1 Estilo.** Voto de César registrado en la decisión de marca (figure.ai, skild.ai, scale.com; base clara). Aplicado: base gris clarito `#f1f2f4`, superficies blancas, tinta casi negra, un acento cobalto, Geist y Geist Mono (`web/src/style.css`). Falta el voto de los otros 3.
+- [x] **W9.2 Landing.** `web/src/screens/home.js`, con el G1 en vivo y Empujar en el hero, y la política entrenada cargada. Las 8 secciones de `docs/marca.md` (hero con el G1 en vivo, problema, cómo funciona, pruébalo, resultados, para quién, tecnología, cierre).
+- [x] **W9.3 Consola.** Mismo estilo en las tres pantallas; los robots de puntos quedan en gris, sin cara, como una nube de datos que se arma en robot (pantalla de carga y espera del G1). Salieron el fondo de puntos, la luz del cursor y las tarjetas inclinables. Cámara, Subir y Simulaciones con el mismo estilo, como la parte "producto" de la landing. Las funciones no cambian.
+- [x] **W9.4 Cifras.** Cada número enlaza a su README: ~40 s por 10 s de video (`data/`), 3,2 cm (`physics/`), 73 min, 40 M pasos, 4 de 4 empujones y la escalera (`training/`). Sin logos ni empresas como clientes. Cada número de la web sale de un README del repo y respeta "Lo que NO podemos decir" de `docs/pitch/diferencia.md`. Sin logos ni nombres de empresas como clientes.
 
 ## M7. Pulido para la demo
 

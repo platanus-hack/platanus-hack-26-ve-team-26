@@ -79,7 +79,9 @@ function dotField() {
 }
 
 export class DotStage {
-  constructor(canvas) {
+  /** @param options.field  draw the drifting background dots (off for the sober brand) */
+  constructor(canvas, { field = true } = {}) {
+    this.showField = field;
     this.canvas = canvas;
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -119,7 +121,7 @@ export class DotStage {
     camera.position.fromArray(variant.camera.position);
     camera.lookAt(new THREE.Vector3().fromArray(variant.camera.target));
     const robot = new DotRobot({ count: ROBOT_DOTS, props: variant.props });
-    robot.placeFace(camera, new THREE.Vector3().fromArray(variant.camera.face), 1.05);
+    robot.placeCloud(camera, new THREE.Vector3().fromArray(variant.camera.face), 1.05);
     scene.add(robot.points, robot.bones.root);
 
     const target = new THREE.Vector3().fromArray(variant.camera.target);
@@ -182,7 +184,7 @@ export class DotStage {
     this.renderer.setViewport(0, 0, w, h);
     this.renderer.setScissor(0, 0, w, h);
     this.renderer.clear();
-    this.renderer.render(scene, camera);
+    if (this.showField) this.renderer.render(scene, camera);
 
     const cards = this.views.filter((v) => v.variant.card);
     const touchTurn = cards[Math.floor(t / TOUCH_TURN_S) % Math.max(1, cards.length)];

@@ -1,6 +1,6 @@
 // A robot made of dots for the home menu. Its pose comes from a small bone tree moved on the
 // CPU (16 bones), and the GPU places every dot: on its bone while the robot moves, and on the
-// robot's face when the card is hovered (`morph` from 0 to 1). Thousands of dots, one draw call.
+// cloud of data points when `morph` goes to 1. Thousands of dots, one draw call.
 import * as THREE from 'three';
 import { box, capsule, ellipsoid, screen } from './shapes.js';
 
@@ -9,11 +9,12 @@ import { box, capsule, ellipsoid, screen } from './shapes.js';
 const LIMBS = { upperArm: 0.22, forearm: 0.2, thigh: 0.32, shin: 0.32 };
 const MAX_BONES = 24; // 16 body bones plus room for props; sized into the shader below
 
+// Grays and the brand's single accent (style.css --accent): dots are data, not a character.
 export const PALETTE = {
-  body: new THREE.Color('#2c3a51'),
-  visor: new THREE.Color('#0b1322'),
-  accent: new THREE.Color('#4c7cf3'),
-  soft: new THREE.Color('#8fa6c9'),
+  body: new THREE.Color('#2a2f37'),
+  visor: new THREE.Color('#0d1015'),
+  accent: new THREE.Color('#2952ff'),
+  soft: new THREE.Color('#9aa1ab'),
 };
 
 /** Builds the bone tree; every bone's origin is its joint. */
@@ -67,58 +68,21 @@ function bodyParts() {
 }
 
 /**
- * The face the dots gather into: a round helmet, a dark visor with two big eyes and a small
- * smile, a friendly robot rather than a menacing one. In its own frame: x right, y up, z
- * toward the viewer, about 1 m across.
+ * The shape the dots gather into when `morph` is 1: a loose cloud of data points, the raw
+ * motion before it becomes a robot (the splash runs it backwards: cloud, then robot). In its own
+ * frame, about 1 m across; a few points carry the accent, like measured samples.
  */
-function facePoints(n) {
-  const R = [0.46, 0.52, 0.3];
-  const front = (x, y) => R[2] * Math.sqrt(Math.max(0, 1 - (x / R[0]) ** 2 - (y / R[1]) ** 2));
-  const onFace = (x, y, lift) => [x, y, front(x, y) + lift];
+function cloudPoints(n) {
   const out = [];
-  const add = (count, make) => {
-    for (let i = 0; i < count; i++) out.push(make());
-  };
-  const inVisor = (x, y) => Math.abs(x) < 0.34 && Math.abs(y - 0.04) < 0.13;
-
-  // Helmet shell, leaving the visor area to the visor dots.
-  add(Math.round(n * 0.5), () => {
-    for (;;) {
-      const [x, y, z] = ellipsoid([0, 0, 0], R, 1, ([, , pz]) => pz > -0.2)[0];
-      if (!inVisor(x, y) || z < 0) return { p: [x, y, z], color: PALETTE.body };
-    }
-  });
-  add(Math.round(n * 0.26), () => {
-    const x = (Math.random() - 0.5) * 0.68;
-    const y = 0.04 + (Math.random() - 0.5) * 0.26;
-    return { p: onFace(x, y, 0.02), color: PALETTE.visor };
-  });
-  // Eyes: two soft ovals that glow.
-  add(Math.round(n * 0.14), () => {
-    const side = Math.random() < 0.5 ? 1 : -1;
-    const a = Math.random() * 2 * Math.PI;
+  for (let i = 0; i < n; i++) {
+    // Denser toward the center: the cube root would be uniform, the square root clusters a bit.
     const r = Math.sqrt(Math.random());
-    const x = side * 0.15 + 0.065 * r * Math.cos(a);
-    const y = 0.05 + 0.05 * r * Math.sin(a);
-    return { p: onFace(x, y, 0.04), color: PALETTE.accent, glow: 1 };
-  });
-  // Smile, a short arc under the visor.
-  add(Math.round(n * 0.05), () => {
-    const x = (Math.random() - 0.5) * 0.24;
-    const y = -0.2 + 2.2 * x * x;
-    return { p: onFace(x, y, 0.02), color: PALETTE.accent, glow: 1 };
-  });
-  // Ears: discs on both sides.
-  while (out.length < n) {
-    const side = Math.random() < 0.5 ? 1 : -1;
-    const a = Math.random() * 2 * Math.PI;
-    const r = 0.09 * Math.sqrt(Math.random());
-    out.push({ p: [side * (R[0] + 0.02), r * Math.sin(a), r * Math.cos(a)], color: PALETTE.soft });
-  }
-  // Shuffled, so each body dot flies to a random spot of the face.
-  for (let i = out.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [out[i], out[j]] = [out[j], out[i]];
+    const z = Math.random() * 2 - 1;
+    const angle = Math.random() * 2 * Math.PI;
+    const ring = Math.sqrt(1 - z * z);
+    const p = [0.5 * r * ring * Math.cos(angle), 0.55 * r * z, 0.5 * r * ring * Math.sin(angle)];
+    const sample = Math.random() < 0.06;
+    out.push({ p, color: sample ? PALETTE.accent : PALETTE.body, glow: sample ? 1 : 0 });
   }
   return out;
 }
@@ -225,7 +189,7 @@ export class DotRobot {
     }
 
     this.count = bone.length;
-    this.face = facePoints(this.count);
+    this.face = cloudPoints(this.count);
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(position, 3));
     geometry.setAttribute('aBone', new THREE.Float32BufferAttribute(bone, 1));
@@ -254,8 +218,8 @@ export class DotRobot {
     this.points.frustumCulled = false;
   }
 
-  /** Puts the face in front of `camera`, centered on `center` and `scale` meters across. */
-  placeFace(camera, center, scale = 1) {
+  /** Puts the data cloud in front of `camera`, centered on `center` and `scale` meters across. */
+  placeCloud(camera, center, scale = 1) {
     const frame = new THREE.Object3D();
     frame.position.copy(center);
     frame.lookAt(camera.position);

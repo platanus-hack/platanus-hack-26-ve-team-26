@@ -17,8 +17,8 @@ export function mount(root, { dots }) {
   root.innerHTML = `
     <section class="page live">
       <header class="page-head">
-        <a class="back" href="#/">← Volver al inicio</a>
-        <h1>Entrena a Tridi en vivo</h1>
+        <a class="back" href="#/">← Tridi</a>
+        <h1>Cámara en vivo</h1>
       </header>
       <div class="live-grid">
         <section class="pane camera-pane">

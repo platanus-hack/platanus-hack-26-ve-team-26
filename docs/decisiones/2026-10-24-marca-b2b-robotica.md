@@ -25,3 +25,14 @@ La web nació como demo para el público (menú 3D, robots de puntos, galería).
 - César rehace la presentación de `web/` según [`../marca.md`](../marca.md) (tarea M9 en [`../../web/TAREAS.md`](../../web/TAREAS.md)). Los robots de puntos y lo lúdico quedan solo si encajan en la paleta sobria, o salen.
 - Ale alinea el pitch con el mismo mensaje y las mismas cifras.
 - Toda cifra de la web sale del repo (READMEs con números medidos) y respeta "Lo que NO podemos decir" de [`../pitch/diferencia.md`](../pitch/diferencia.md#lo-que-no-podemos-decir).
+
+## Referencias elegidas
+
+Votos hasta ahora (falta el de Juan, Pastor y Ale; la votación cierra con los 4):
+
+- **César:** figure.ai, skild.ai, scale.com, con base clara (blanco tirando a gris claro).
+  - De figure.ai: el robot como protagonista y casi nada más alrededor.
+  - De skild.ai: vender el cerebro (la política), no el robot.
+  - De scale.com: el tono de empresa de datos para IA, con cifras.
+
+La primera versión de la web (`web/`, M9) usa esto: base `#f1f2f4`, superficies blancas, tinta `#11141a`, acento cobalto `#2952ff`, Geist y Geist Mono. Si el voto de los 4 cambia la dirección, se ajustan los colores en `web/src/style.css` (`:root`).
