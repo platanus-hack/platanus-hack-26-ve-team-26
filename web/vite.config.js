@@ -8,6 +8,6 @@ export default defineConfig({
     // install a linked package's dependencies. Resolving these from web/node_modules makes a
     // fresh install build, and keeps a single copy of three.js. Their versions must match
     // physics/package.json and data/live/package.json.
-    dedupe: ['three', '@mujoco/mujoco', '@mediapipe/tasks-vision'],
+    dedupe: ['three', '@mujoco/mujoco', '@mediapipe/tasks-vision', 'onnxruntime-web'],
   },
 });
