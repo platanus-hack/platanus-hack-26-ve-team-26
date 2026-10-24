@@ -1,28 +1,247 @@
 :root {
-  --bg: #0e1116;
-  --fg: #e8eaed;
-  --muted: #9aa0a6;
-
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  line-height: 1.5;
-  color: var(--fg);
-  background-color: var(--bg);
-  -webkit-font-smoothing: antialiased;
+  /* Same palette as physics/ so both pages read as one product. */
+  --bg: #0e141b;
+  --panel: #151d26;
+  --line: #253140;
+  --text: #e6edf3;
+  --muted: #8b9aab;
+  --accent: #f5c542;
+  --error: #ff7b72;
+  --panel-width: 340px;
+  color-scheme: dark;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html,
 body {
+  height: 100%;
   margin: 0;
-  min-height: 100vh;
+}
+
+/* Desktop: the stage takes all the space left by the panel. Everything fits in the viewport,
+   so the main buttons never need a scroll. */
+body {
   display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 0 16px;
+  grid-template: 'top top' auto 'stage panel' 1fr / 1fr var(--panel-width);
+  background: var(--bg);
+  color: var(--text);
+  font: 15px/1.4 system-ui, -apple-system, sans-serif;
+}
+
+#topbar {
+  grid-area: top;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
 }
 
 h1 {
   margin: 0;
+  font-size: 18px;
 }
 
-p {
+#topbar p {
+  margin: 0;
   color: var(--muted);
+  font-size: 13px;
+}
+
+button,
+select {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #1a1400;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.secondary,
+select {
+  background: #2b3644;
+  color: var(--text);
+}
+
+button:disabled,
+select:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* Stage */
+
+#stage {
+  grid-area: stage;
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+}
+
+#view {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#loading {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 12px;
+  padding: 16px;
+  text-align: center;
+}
+
+#loading[hidden] {
+  display: none;
+}
+
+#loading .track {
+  width: min(360px, 80vw);
+  height: 6px;
+  border-radius: 3px;
+  background: var(--line);
+  overflow: hidden;
+}
+
+#progress-bar {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.15s;
+}
+
+#loading.error #progress-text {
+  color: var(--error);
+}
+
+#controls {
+  position: absolute;
+  left: 50%;
+  bottom: 36px;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border-radius: 10px;
+  background: rgb(21 29 38 / 0.85);
+}
+
+#stats {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Panel */
+
+#panel {
+  grid-area: panel;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--panel);
+  border-left: 1px solid var(--line);
+}
+
+[role='tablist'] {
+  display: flex;
+  border-bottom: 1px solid var(--line);
+}
+
+[role='tab'] {
+  flex: 1;
+  border-radius: 0;
+  background: none;
+  color: var(--muted);
+  border-bottom: 2px solid transparent;
+}
+
+[role='tab'][aria-selected='true'] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+[role='tabpanel'] {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+h2 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+
+[role='tabpanel'] p {
+  color: var(--muted);
+}
+
+.note {
+  font-size: 13px;
+}
+
+#gallery {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+#phase {
+  margin: 0;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+}
+
+#phase:empty {
+  display: none;
+}
+
+#phase[data-phase='error'] {
+  color: var(--error);
+}
+
+/* Phones: the stage on top, the panel below. The stage keeps most of the screen. */
+@media (max-width: 720px) {
+  body {
+    grid-template: 'top' auto 'stage' 58vh 'panel' 1fr / 1fr;
+    height: auto;
+    min-height: 100%;
+  }
+
+  #panel {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+
+  #controls {
+    bottom: 30px;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  button,
+  select {
+    padding: 8px 10px;
+  }
 }

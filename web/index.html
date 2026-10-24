@@ -6,10 +6,56 @@
     <title>Tridi</title>
   </head>
   <body>
-    <main>
+    <header id="topbar">
       <h1>Tridi</h1>
       <p>De video humano a un robot simulado que aprende a moverse solo.</p>
+    </header>
+
+    <main id="stage">
+      <canvas id="view"></canvas>
+      <div id="loading">
+        <div class="track"><div id="progress-bar"></div></div>
+        <p id="progress-text">Cargando MuJoCo y el robot…</p>
+      </div>
+      <div id="controls">
+        <button id="play" disabled>Pausa</button>
+        <select id="speed" disabled aria-label="Velocidad">
+          <option value="0.25">x0,25</option>
+          <option value="0.5">x0,5</option>
+          <option value="1" selected>x1</option>
+        </select>
+        <button id="reset" class="secondary" disabled>Reiniciar</button>
+        <button id="push" class="secondary" disabled>Empujar</button>
+      </div>
+      <p id="stats"></p>
     </main>
+
+    <aside id="panel">
+      <nav role="tablist">
+        <button role="tab" id="tab-capture" aria-controls="pane-capture">Capturar</button>
+        <button role="tab" id="tab-upload" aria-controls="pane-upload">Subir</button>
+        <button role="tab" id="tab-gallery" aria-controls="pane-gallery">Galería</button>
+      </nav>
+      <section role="tabpanel" id="pane-capture" aria-labelledby="tab-capture">
+        <h2>Cámara en vivo</h2>
+        <p>Muévete frente a la cámara y Tridi saca tu esqueleto 3D al instante.</p>
+        <button disabled>Encender cámara</button>
+        <p class="note">Próximamente.</p>
+      </section>
+      <section role="tabpanel" id="pane-upload" aria-labelledby="tab-upload">
+        <h2>Subir un video</h2>
+        <p>Un <code>.mp4</code> o un <code>.zip</code> de videos. Si hay varias personas, Tridi sigue a la más grande y central, y puedes elegir otra.</p>
+        <button disabled>Elegir archivo</button>
+        <p class="note">Próximamente.</p>
+      </section>
+      <section role="tabpanel" id="pane-gallery" aria-labelledby="tab-gallery">
+        <h2>Simulaciones</h2>
+        <p>Movimientos ya procesados y políticas ya entrenadas.</p>
+        <ul id="gallery"></ul>
+      </section>
+      <p id="phase" aria-live="polite"></p>
+    </aside>
+
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>
