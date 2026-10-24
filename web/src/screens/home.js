@@ -29,6 +29,29 @@ const CHOICES = [
   },
 ];
 
+// The card leans toward the cursor by up to this angle; the robot camera follows (dots/stage.js).
+const TILT_DEG = { x: 10, y: 8 };
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function tiltWithPointer(card, view) {
+  if (reducedMotion) return;
+  card.addEventListener('pointermove', (event) => {
+    if (event.pointerType !== 'mouse') return; // a finger scrolling the page should not tilt it
+    const rect = card.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    const y = ((event.clientY - rect.top) / rect.height) * 2 - 1;
+    card.style.setProperty('--ry', `${x * TILT_DEG.x}deg`);
+    card.style.setProperty('--rx', `${-y * TILT_DEG.y}deg`);
+    card.style.setProperty('--px', `${((x + 1) / 2) * 100}%`);
+    card.style.setProperty('--py', `${((y + 1) / 2) * 100}%`);
+    view.tilt.set(x, -y);
+  });
+  card.addEventListener('pointerleave', () => {
+    for (const name of ['--rx', '--ry', '--px', '--py']) card.style.removeProperty(name);
+    view.tilt.set(0, 0);
+  });
+}
+
 export function mount(root, { dots }) {
   root.innerHTML = `
     <section class="home">
@@ -61,7 +84,9 @@ export function mount(root, { dots }) {
     card.addEventListener('focus', warm, { once: true });
     card.addEventListener('touchstart', warm, { once: true, passive: true });
     nav.append(card);
-    return dots.addView(card.querySelector('.choice-scene'), choice.variant, card);
+    const view = dots.addView(card.querySelector('.choice-scene'), choice.variant, card);
+    tiltWithPointer(card, view);
+    return view;
   });
   return () => views.forEach((view) => dots.removeView(view));
 }

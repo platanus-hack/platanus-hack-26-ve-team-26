@@ -47,6 +47,16 @@ body {
   pointer-events: none;
 }
 
+/* A soft cool light that follows the cursor over the whole page (dots/stage.js sets --mx, --my). */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(76 124 243 / 0.1), transparent 60%);
+}
+
 #app {
   position: relative;
   z-index: 1;
@@ -178,22 +188,73 @@ select:disabled {
   width: min(1200px, 100%);
 }
 
-/* The upper part of each card stays transparent: its robot is drawn on the canvas behind. */
+/* A glass slab: the upper part stays transparent (its robot is drawn on the canvas behind,
+   and the robot's camera turns with the tilt), the stacked shadows give it thickness, and the
+   text panel floats in front of it. --rx and --ry come from the cursor (screens/home.js). */
 .choice {
+  position: relative;
   display: flex;
   flex-direction: column;
-  border: 1px solid rgb(255 255 255 / 0.9);
+  border: 1px solid rgb(255 255 255 / 0.95);
   border-radius: var(--radius);
-  box-shadow: var(--shadow);
+  background: linear-gradient(160deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.12) 45%);
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 2px 0 #e3e9f2,
+    0 4px 0 #d9e1ec,
+    0 6px 0 #cfd8e5,
+    0 8px 0 #c6d0df,
+    var(--shadow);
   text-decoration: none;
-  overflow: hidden;
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
+  /* Perspective per card: each one tilts around its own center, not the row's. */
+  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
+  animation: float 7s ease-in-out infinite;
+}
+
+/* Each card floats on its own beat, so the row breathes instead of moving as one block. */
+.choice:nth-child(2) {
+  animation-delay: -2.3s;
+}
+
+.choice:nth-child(3) {
+  animation-delay: -4.6s;
+}
+
+@keyframes float {
+  50% {
+    translate: 0 -6px;
+  }
 }
 
 .choice:hover,
 .choice:focus-visible {
-  transform: translateY(-6px);
-  box-shadow: 0 32px 70px -28px rgb(24 44 84 / 0.45);
+  transition: transform 0.12s ease-out, box-shadow 0.3s;
+  animation-play-state: paused;
+  box-shadow:
+    inset 0 1px 0 #ffffff,
+    0 2px 0 #e3e9f2,
+    0 4px 0 #d9e1ec,
+    0 6px 0 #cfd8e5,
+    0 8px 0 #c6d0df,
+    0 40px 80px -30px rgb(24 44 84 / 0.5);
+}
+
+/* Shine: a light spot under the cursor, as on glass. */
+.choice::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(420px circle at var(--px, 50%) var(--py, 0%), rgb(255 255 255 / 0.55), transparent 55%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+
+.choice:hover::after {
+  opacity: 1;
 }
 
 .choice-scene {
@@ -204,13 +265,17 @@ select:disabled {
   position: relative;
   display: grid;
   gap: 6px;
+  margin: 0 10px 10px;
   padding: 22px 24px 24px;
-  border-top: 1px solid var(--line);
+  border-radius: calc(var(--radius) - 8px);
   background: var(--surface);
   backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px -18px rgb(24 44 84 / 0.4);
+  transform: translateZ(24px); /* floats in front of the slab when the card tilts */
 }
 
 .step {
+  transform: translateZ(18px);
   position: absolute;
   top: -20px;
   right: 22px;
@@ -577,9 +642,8 @@ select:disabled {
     flex: 1;
     align-content: center;
     gap: 4px;
-    padding: 16px;
-    border-top: 0;
-    border-left: 1px solid var(--line);
+    margin: 8px 8px 8px 0;
+    padding: 14px;
   }
 
   .step {
@@ -620,5 +684,6 @@ select:disabled {
 @media (prefers-reduced-motion: reduce) {
   * {
     transition: none !important;
+    animation: none !important;
   }
 }
