@@ -188,7 +188,7 @@ La cola entrena **de a uno** y admite **3** en espera: con unos 30 min cada uno,
   "followed_s": 4.2, "duration_s": 11.8,  // cuánto del clip sigue el último checkpoint, desde el principio
   "checkpoints": [{ "steps": 3000000, "policy_id": "clip_…-step-3000000" }],
   "eta_s": 1500,                          // tiempo estimado hasta "done"
-  "error": null                           // en español si "failed"
+  "error": null                           // en español si "failed"; también si "done" pero la entrega no se armó (la política y el dataset sí están)
 }
 ```
 
@@ -281,7 +281,7 @@ Lo que el cliente se lleva cuando termina el entrenamiento de un video, reunido 
   "hz": 25,
   "episodes": [
     { "qpos": [[...36]],                      // la pose, como en RobotMotion, tal cual: se muestra sin limpiar (view.playClip apoyaría en el piso al robot que se cayó)
-      "foot_force": [[310.2, 0.0]],           // N, fuerza vertical de cada pie (izquierdo, derecho)
+      "foot_force": [[310.2, 0.0]],           // N, fuerza vertical de cada pie (izquierdo, derecho): el pico desde esta fila hasta la siguiente, para que no se pierda el golpe de un talón
       "pose_error": [0.12],                   // rad
       "pelvis_error": [0.03] }                // m
   ]
