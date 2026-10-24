@@ -530,10 +530,6 @@ html.is-landing.lenis body {
   height: 100svh; /* one screen: the stages change on their own clock, not with the scroll */
 }
 
-.gym-stages li {
-  cursor: pointer;
-}
-
 .gym-hint {
   margin-top: 6px !important;
   font: 500 10px/1.4 var(--mono);
@@ -543,55 +539,125 @@ html.is-landing.lenis body {
 
 .gym-caption {
   left: var(--gutter);
-  top: 50%;
+  top: 88px; /* under the top bar: the steps meter makes the caption too tall to center */
   width: min(36vw, 520px);
-  transform: translateY(-50%);
 }
 
 .gym-text {
   margin-top: 16px !important;
 }
 
-/* The three stages: the one on screen lights up, the others wait dimmed. */
-.gym-stages {
+/* The steps: a big count of the stage on screen and an axis from 0 to 40 M with the three stops
+   at their real positions; the bar fills up to the current one (home.js showGymStage). */
+.steps-meter {
   display: grid;
-  gap: 10px;
-  margin: 24px 0 0;
-  padding: 0;
-  list-style: none;
+  gap: 18px;
+  margin-top: 22px;
 }
 
-.gym-stages li {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 14px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-left: 3px solid transparent;
-  opacity: 0.4;
-  transition: opacity 0.35s ease, border-color 0.35s ease;
+.steps-now {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin: 0 !important;
 }
 
-.gym-stages li.on {
-  border-left-color: var(--signal);
-  opacity: 1;
+.steps-now b {
+  font: 500 clamp(48px, 5.4vw, 84px)/0.9 var(--display);
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--signal);
 }
 
-.stage-steps {
-  grid-row: span 3;
-  align-self: center;
-  min-width: 7ch;
-  font: 500 12px/1 var(--mono);
+.steps-now span {
+  font: 500 12px/1.2 var(--mono);
   text-transform: uppercase;
   color: var(--dim);
+}
+
+.steps-axis {
+  position: relative;
+  height: 64px;
+  margin: 0 12px;
+}
+
+.axis-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 7px;
+  height: 2px;
+  background: var(--line-dark);
+}
+
+.axis-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--signal);
+  transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.axis-stop {
+  position: absolute;
+  left: var(--at);
+  top: 0;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dim);
+  transform: translateX(-50%);
+  cursor: pointer;
+}
+
+.axis-dot {
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--fg-2);
+  border-radius: 50%;
+  background: var(--scene);
+  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+}
+
+.axis-stop.past .axis-dot,
+.axis-stop.on .axis-dot {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.axis-stop.on .axis-dot {
+  transform: scale(1.35);
+}
+
+.axis-label {
+  font: 500 12px/1 var(--mono);
+}
+
+.axis-verdict {
+  font: 500 13px/1 var(--display);
+  white-space: nowrap;
+}
+
+.axis-stop.on .axis-label,
+.axis-stop.on .axis-verdict {
+  color: var(--signal);
+}
+
+.stage-detail {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--signal);
+  background: rgb(238 236 231 / 0.04);
 }
 
 .stage-verdict {
   font: 500 clamp(20px, 1.8vw, 26px)/1.1 var(--display);
   letter-spacing: -0.02em;
-}
-
-.gym-stages li.on .stage-verdict {
   color: var(--signal);
 }
 
@@ -605,6 +671,12 @@ html.is-landing.lenis body {
   color: var(--dim);
 }
 
+.steps-explain {
+  margin: 0 !important;
+  font-size: 13px;
+  color: var(--dim);
+}
+
 .gym-status {
   margin-top: 14px !important;
   font: 500 11px/1.5 var(--mono);
@@ -614,8 +686,9 @@ html.is-landing.lenis body {
 
 .chart-fig {
   display: grid;
-  gap: 8px;
-  margin-top: 28px;
+  gap: 6px;
+  width: 78%; /* a supporting detail now: the axis above already shows the progress */
+  margin-top: 16px;
 }
 
 .chart-fig figcaption {
@@ -1029,8 +1102,8 @@ html.is-landing.lenis body {
     transform: none;
   }
 
-  .gym-stages li:not(.on),
-  .gym .chart-fig {
+  .gym .chart-fig,
+  .steps-explain {
     display: none;
   }
 

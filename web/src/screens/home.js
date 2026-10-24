@@ -41,6 +41,10 @@ const GYM_STAGES = [
   { level: 'g1-stand-step-10000000', steps: 10e6, verdict: 'Más o menos', up: '9,6 s', pushes: '1 de 4', text: 'Ya se para, pero un empujón lo tumba casi siempre.' },
   { level: 'g1-stand', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Aguanta de pie y se recupera de los empujones.' },
 ];
+// What a step is, for the Gym's explanation (training/README.md): the policy decides 50 times a
+// second, and training runs 64 simulated robots at once.
+const DECISIONS_PER_S = 50;
+const PARALLEL_ROBOTS = 64;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const narrow = () => innerWidth < 860;
 
@@ -131,17 +135,26 @@ export function mount(root, { api }) {
         <div class="caption gym-caption">
           <p class="product">Tridi Gym</p>
           <p class="gym-text">Nadie le escribe cómo pararse: lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada ${num(GYM_PUSH_EVERY_S, 1)} segundos.</p>
-          <ol class="gym-stages">
-            ${GYM_STAGES.map((stage, i) => `
-            <li data-stage="${i}">
-              <span class="stage-steps">${stage.steps ? `${stage.steps / 1e6} M` : '0'} pasos</span>
-              <b class="stage-verdict">${stage.verdict}</b>
-              <span class="stage-text">${stage.text}</span>
-              <span class="stage-numbers">${stage.up} de pie · ${stage.pushes} empujones</span>
-            </li>`).join('')}
-          </ol>
+          <div class="steps-meter">
+            <p class="steps-now"><b data-gym="steps">0</b><span>pasos de práctica</span></p>
+            <div class="steps-axis">
+              <i class="axis-line" aria-hidden="true"><i class="axis-fill"></i></i>
+              ${GYM_STAGES.map((stage, i) => `
+              <button class="axis-stop" type="button" data-stage="${i}" style="--at: ${(100 * stage.steps) / GYM_STAGES.at(-1).steps}%">
+                <i class="axis-dot" aria-hidden="true"></i>
+                <span class="axis-label">${stage.steps ? `${stage.steps / 1e6} M` : '0'}</span>
+                <span class="axis-verdict">${stage.verdict}</span>
+              </button>`).join('')}
+            </div>
+            <div class="stage-detail">
+              <b class="stage-verdict" data-gym="verdict"></b>
+              <span class="stage-text" data-gym="text"></span>
+              <span class="stage-numbers" data-gym="numbers"></span>
+            </div>
+            <p class="steps-explain">Un paso es una decisión del robot: toma ${DECISIONS_PER_S} por segundo. ${GYM_STAGES.at(-1).steps / 1e6} millones son unas ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, repartidas entre ${PARALLEL_ROBOTS} robots simulados a la vez, en ${curve.minutes} minutos de laptop.</p>
+          </div>
           <p class="gym-status"><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></p>
-          <p class="gym-hint">Cambia sola cada pocos segundos · toca una etapa para verla</p>
+          <p class="gym-hint">Cambia sola cada pocos segundos · toca un punto del eje para verlo</p>
           <figure class="chart-fig">
             <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a cerca de 20 s al final"></svg>
             <figcaption>Segundos de pie por intento · ${curve.minutes} minutos en una laptop · log real</figcaption>
@@ -423,8 +436,8 @@ export function mount(root, { api }) {
     gymClock.stage = (gymClock.stage + 1) % GYM_STAGES.length;
     gymClock.since = performance.now();
   }
-  $$('.gym-stages li').forEach((li, i) =>
-    on(li, 'click', () => {
+  $$('.axis-stop').forEach((stop, i) =>
+    on(stop, 'click', () => {
       gymClock.stage = i;
       gymClock.since = performance.now();
     }),
@@ -434,7 +447,27 @@ export function mount(root, { api }) {
     const stage = gymStage();
     if (stage === shownStage) return;
     shownStage = stage;
-    $$('.gym-stages li').forEach((li, i) => li.classList.toggle('on', i === stage));
+    const current = GYM_STAGES[stage];
+    $$('.axis-stop').forEach((stop, i) => {
+      stop.classList.toggle('on', i === stage);
+      stop.classList.toggle('past', i < stage);
+    });
+    $('.axis-fill').style.width = $$('.axis-stop')[stage].style.getPropertyValue('--at');
+    $('[data-gym="verdict"]').textContent = current.verdict;
+    $('[data-gym="text"]').textContent = current.text;
+    $('[data-gym="numbers"]').textContent = `${current.up} de pie · ${current.pushes} empujones`;
+    // The big number counts up (or back) to this stage's steps.
+    const shown = { value: Number($('[data-gym="steps"]').dataset.value ?? 0) };
+    gsap.to(shown, {
+      value: current.steps,
+      duration: reducedMotion ? 0 : 0.9,
+      ease: 'power2.out',
+      onUpdate: () => {
+        const el = $('[data-gym="steps"]');
+        el.dataset.value = shown.value;
+        el.textContent = shown.value >= 1e6 ? `${num(shown.value / 1e6, shown.value < 1e7 ? 1 : 0)} M` : steps(shown.value);
+      },
+    });
     // The training log draws itself up to this stage's steps.
     const upTo = GYM_STAGES[stage].steps / curve.steps;
     gsap.to('.chart .line', { strokeDashoffset: 1 - Math.max(upTo, 0.02), duration: reducedMotion ? 0 : 0.9, ease: 'power2.out' });
