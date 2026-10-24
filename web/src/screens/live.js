@@ -235,7 +235,7 @@ export function mount(root, { dots, api }) {
     note('');
     try {
       await api.checked;
-      if (!api.ok) return say('Para usar el teléfono hace falta el servidor de videos: abre la web con el enlace que imprime data/serve.sh (…?api=<url>).', true);
+      if (!api.ok) return say('Para usar el teléfono hace falta el servidor de videos, y ahora no está encendido.', true);
       if (LOCAL_API.test(api.url)) return say('El teléfono no puede llegar a un servidor en esta máquina: abre la web con el enlace de data/serve.sh (?api=<túnel>).', true);
       returnToWebcam = !!live && !isPhone();
       stop(); // keeps what the webcam recorded

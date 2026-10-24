@@ -122,8 +122,9 @@ async function loadDelivery(clipId, api, signal) {
     return { manifest, source: 'static', url: (name) => (FILE_NAME.test(name ?? '') ? FILE_URLS[`${BUNDLED}${clipId}/${name}`] ?? null : null) };
   }
   if (!CLIP_ID.test(clipId)) throw new DeliveryError(`"${clipId}" no es el id de un clip.`);
+  await api?.checked;
   if (!api?.url) {
-    throw new DeliveryError('Esta entrega no viene con la página y no hay un servidor de videos configurado. Abre la página con el enlace que da el servidor (…?api=<url>) para verla.');
+    throw new DeliveryError('Esta entrega no viene con la página y el servidor de videos no está encendido ahora. Intenta de nuevo en un rato.');
   }
   const base = `${api.url}/deliveries/${clipId}/`;
   let response;

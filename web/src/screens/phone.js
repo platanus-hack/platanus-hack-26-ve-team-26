@@ -4,7 +4,7 @@
 // session (createPhoneSender), with a small image of the camera (createImageGrabber) so the Mac
 // shows what the phone sees under the skeleton; the robot on the Mac copies whoever this phone films. Nothing else
 // loads here: no robot, no 3D, so a phone opens it in a moment. The server's address comes in
-// ?api= of the QR's link, which web/src/api.js already reads.
+// ?api= of the QR's link, which web/src/api.js reads first.
 export const title = 'Cámara del teléfono';
 
 // Phones run MediaPipe's "lite" model: half the work, as data/live recommends.

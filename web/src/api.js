@@ -1,8 +1,9 @@
-// The video server (data/server.py on a teammate's Mac, behind a tunnel). Checked when the page
-// opens, with retries: if it does not answer, "Subir" says so and the camera and gallery remain,
-// the fallback the team agreed on. Imported from data/live's own files, not from 'tridi-live', so this check does
+// The video server (data/server.py on a teammate's Mac, behind a tunnel). Found when the page opens
+// (?api=, the last one that worked, or the one data/serve.sh published: findApiUrl) and checked
+// with retries: if it does not answer, "Subir" says so and the camera and gallery remain, the
+// fallback the team agreed on. Imported from data/live's own files, not from 'tridi-live', so this check does
 // not pull in MediaPipe.
-import { checkApi, resolveApiUrl } from '../../data/live/src/api.js';
+import { checkApi, findApiUrl, resolveApiUrl } from '../../data/live/src/api.js';
 
 // While developing, data/server.py runs on this port by default (data/README.md).
 const DEV_SERVER = 'http://127.0.0.1:8000';
@@ -20,11 +21,17 @@ async function checkWithRetries(url) {
   return false;
 }
 
+// api.url starts as what the page address or this browser already knows, and is final once
+// api.checked resolves: read it after awaiting that.
 export function createApi() {
-  const url = resolveApiUrl({ fallback: import.meta.env.DEV ? DEV_SERVER : null });
-  const api = { url, ok: null };
-  api.checked = checkWithRetries(url).then((ok) => (api.ok = ok));
-  /** Asks again (the upload screen's "Reintentar"); resolves to whether it answered. */
-  api.recheck = () => (api.checked = checkWithRetries(api.url).then((ok) => (api.ok = ok)));
+  const fallback = import.meta.env.DEV ? DEV_SERVER : null;
+  const api = { url: resolveApiUrl({ fallback }), ok: null };
+  const find = async () => {
+    api.url = await findApiUrl({ fallback });
+    return (api.ok = await checkWithRetries(api.url));
+  };
+  api.checked = find();
+  /** Asks again (the upload screen's "Reintentar"), looking for the server anew in case it moved; resolves to whether it answered. */
+  api.recheck = () => (api.checked = find());
   return api;
 }

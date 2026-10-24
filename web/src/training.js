@@ -39,7 +39,7 @@ export function subscribe(item, listener) {
 
 /** Why this clip cannot be trained, or null. */
 export function cannotTrain(item, api) {
-  if (!api.ok) return 'Para entrenar hace falta el servidor de videos: abre la página con el enlace que imprime data/serve.sh (…?api=<url>).';
+  if (!api.ok) return 'Para entrenar hace falta el servidor de videos, y ahora no está encendido.';
   const ratio = item.data?.quality?.valid_ratio ?? 0;
   if (ratio < MIN_VALID_RATIO) {
     return `El cuerpo se ve en el ${Math.round(100 * ratio)} % de los cuadros y para entrenar hace falta el ${100 * MIN_VALID_RATIO} %: graba con el cuerpo entero en cuadro.`;
