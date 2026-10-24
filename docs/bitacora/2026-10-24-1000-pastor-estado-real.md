@@ -127,3 +127,9 @@ Pedido del equipo: que en Simulaciones la física se aplique al elegir Condicion
 ### Qué no funcionó
 
 - Una medición dio "títere apagado" en el plano: la ventana del navegador de prueba estaba oculta y no dibujaba cuadros (0 en 1,5 s), así que nada avanzaba. Con la ventana visible, todo bien.
+
+## Parte 7: el servidor de videos en la Mac de Pastor
+
+- `cloudflared` ya estaba instalado (2026.10.3); Pastor prendió `data/serve.sh` en su terminal a las 14:43. Mi intento desde la app falló: el lanzador de la app no tiene permiso para leer en Documentos, y desde la terminal el puerto 8000 ya estaba ocupado por ese servidor (y su intento copió al portapapeles un enlace a un túnel que se cerró; se volvió a copiar el bueno).
+- Verificado: `/health` por el túnel (`{"ok":true,"queue":0,"train_queue":0}`), CORS para el deploy y la pantalla Subir habilitada con `?api=`.
+- Anotado en la [decisión del servidor](../decisiones/2026-10-24-servidor-de-video-en-la-mac.md): puede correr en la Mac de Pastor; uno a la vez; los clips quedan en la Mac que los recibe.
