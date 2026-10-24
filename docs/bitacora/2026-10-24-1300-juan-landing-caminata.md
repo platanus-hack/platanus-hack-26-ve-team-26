@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/landing-walk
 sesion: 87e08cde-fa1c-59df-9e3a-90efaf486e34
 inicio: 2026-10-24 13:00
-estado: en curso
+estado: cerrada
 ---
 
 # `stand-v7d` shippeado como salió, y la caminata de Capture sin patinar
