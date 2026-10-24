@@ -1,6 +1,7 @@
-# Guion de 3 minutos: borrador 3, cronometrado
+# Guion de 3 minutos: borrador 4, cronometrado
 
 - **Fecha:** 2026-10-24 · **Quién:** Ale · **Estado:** cronometrado sobre el papel, falta leerlo en voz alta con reloj
+- **Borrador 4:** alineado con [`../marca.md`](../marca.md): el mismo titular y las mismas tres cifras que la web. El bloque "por qué" pasa a decir para quién es, y el cierre pasa a ser el titular.
 - **Borrador 3:** la escalera del aprendizaje con los números medidos de `training/` (y dicha por lo que es: sostenerse de pie, no imitar el clip), y el empujón convertido en comparación porque la política de hoy aguanta los cuatro de 250 N.
 
 Formato: **3 minutos de demo + 2 de preguntas**, domingo entre 10:00 y 14:00. Reglas que condicionan todo el guion ([capítulo 10](../../../platanus-ideas/docs/preparacion/10-bienvenida-caracas.md)):
@@ -12,6 +13,22 @@ Formato: **3 minutos de demo + 2 de preguntas**, domingo entre 10:00 y 14:00. Re
 
 Pesos: técnico 25 %, ambición 20 %, ejecución 20 %, impacto 20 %, originalidad 15 %.
 
+## El mensaje: el mismo que la web
+
+De [`../marca.md`](../marca.md). El pitch y la landing dicen **lo mismo, con las mismas palabras y las mismas cifras**: el jurado va a oír el pitch y después abrir la web, y cualquier diferencia entre los dos se lee como improvisación.
+
+- **Titular (se dice tal cual en el cierre):** "Datos de movimiento humano para robots humanoides, desde cualquier video."
+- **Bajada (no se dice; es el norte del tono):** "Tridi convierte video de personas reales en movimiento 3D y en políticas entrenadas en simulación física. Sin estudios de captura, sin trajes, sin teleoperación."
+- **Las tres cifras, una por bloque de la demo:**
+
+| Cifra | Dónde se dice | Fuente |
+| --- | --- | --- |
+| Elige y sigue a una persona entre varias; 10 s de video en ~40 s | Gancho (0:00) | [`data/README.md`](../../data/README.md) |
+| Retargeting al G1 con **3,2 cm de error mediano** | Copiar no es aprender (0:50) | [`physics/README.md`](../../physics/README.md) |
+| **4 de 4 empujones de 250 N**, con una política entrenada en **73 minutos** en una laptop | Escalera (0:16) y empujón (1:13) | [`training/README.md`](../../training/README.md) |
+
+**Prohibido, aquí y en la web:** la palabra "clientes" o "socios", y cualquier logo o nombre de empresa presentado como tal. Tesla, Figure o Unitree son **el tipo de comprador**, no compradores nuestros. Se dice "los equipos que están construyendo humanoides". Lo demás que no se puede decir está en [`diferencia.md`](diferencia.md#lo-que-no-podemos-decir).
+
 ## Cómo está cronometrado
 
 El borrador 1 no cabía: **225 segundos de puro hablar en una ventana de 180**, y eso sin contar un solo segundo de mirar la pantalla. Medido con [`tools/cronometro.py`](tools/cronometro.py), que cuenta las sílabas de las líneas habladas y las divide por la velocidad de habla (las indicaciones de escena en cursiva no cuentan).
@@ -22,9 +39,9 @@ El borrador 1 no cabía: **225 segundos de puro hablar en una ventana de 180**, 
 | **4,2 sílabas/s** | **La que usamos para presupuestar**: ritmo claro de presentación |
 | 4,8 sílabas/s | Apurado por los nervios, que es lo que pasa de verdad en el escenario |
 
-**Este borrador, medido: 151 s de habla + 24 s de pantalla = 175 s, con 5 s de margen** dentro de los 180. Los 24 s de pantalla son las tres marcas "Pantalla, N s" (8 + 10 + 6). La ventana de cada bloque de abajo no es un deseo: es su habla medida más sus segundos de pantalla, y las siete suman exactamente 3:00.
+**Este borrador, medido: 146 s de habla + 24 s de pantalla = 170 s, con 10 s de margen** dentro de los 180. Los 24 s de pantalla son las tres marcas "Pantalla, N s" (8 + 10 + 6). La ventana de cada bloque de abajo no es un deseo: es su habla medida más sus segundos de pantalla, y las siete suman exactamente 3:00.
 
-El margen se encogió de 8 a 5 s al meter los números medidos de la escalera, y el bloque de la escalera se come un segundo del gancho, que es el que tiene holgura. Con adrenalina uno habla más rápido (a 4,8 sílabas/s esto baja a 132 s y sobran 24), pero también mete palabras que no estaban. **Si al leerlo en voz alta se pasa, lo primero que se corta es el bloque del "por qué", no la demo.**
+El mensaje de marca costó unos 10 s (el titular en el cierre y dos cifras nuevas), que se pagaron recortando los dos bloques más gordos: la escalera dejó de enumerar los cuatro checkpoints uno por uno (están rotulados en pantalla) y la diferencia pasó de tres frases a dos. Con adrenalina uno habla más rápido (a 4,8 sílabas/s esto baja a 128 s y sobran 28), pero también mete palabras que no estaban. **Si al leerlo en voz alta se pasa, lo primero que se corta es el bloque de "para quién", no la demo.**
 
 Para recronometrar después de cualquier cambio:
 
@@ -36,21 +53,23 @@ python3 docs/pitch/tools/cronometro.py docs/pitch/guion-3-minutos.md 4.2
 
 ## El guion
 
-### 0:00–0:16 · El gancho (ejecución)
+### 0:00–0:18 · El gancho (ejecución)
 
 **En pantalla:** la app abierta, sin slides. Un `.mp4` vertical de celular.
 
-> "Este video lo grabé con un celular. Hay tres personas; le digo cuál me importa. *[click]*
-> Y ahora miren."
+> "Este video lo grabé con un celular. Hay varias personas; le digo cuál me importa. *[click]*
+> Cuarenta segundos después, esto."
+
+*El número de personas se dice según el clip que se use ese día: lo que está medido es que elige y sigue al sujeto entre varios, y que 10 s de video salen en unos 40 s ([`data/README.md`](../../data/README.md)). Si el clip tiene tres, se dice tres.*
 
 **Pantalla, 8 s:** esqueleto 3D sobre el video → el G1 caminando en la escena. Silencio. Dejarlo caminar.
 
-### 0:16–0:50 · La escalera del aprendizaje (técnico)
+### 0:18–1:01 · La escalera del aprendizaje (técnico)
 
 **En pantalla:** cuatro robots lado a lado, el mismo empujón, distintos checkpoints.
 
 > "Eso era copiar. Esto es otra cosa. *[los cuatro]*
-> El mismo robot, aprendiendo a sostenerse solo. Sin entrenar se cae en un segundo. A los tres millones de pasos aguanta cuatro. A los diez millones, diez, y resiste el primer empujón. A los cuarenta millones: los veinte segundos completos, y los cuatro empujones.
+> El mismo robot aprendiendo a sostenerse solo. Sin entrenar se cae en un segundo. A los diez millones de pasos aguanta diez. A los cuarenta millones, los veinte segundos completos y los cuatro empujones.
 > Nadie le programó cómo pararse: le dijimos qué cuenta como estar de pie, y se cayó decenas de miles de veces.
 > Setenta y tres minutos en esta laptop, sin GPU."
 
@@ -71,16 +90,16 @@ python3 docs/pitch/tools/cronometro.py docs/pitch/guion-3-minutos.md 4.2
 - *La escalera es de **sostenerse de pie y aguantar empujones**, no de imitar el clip. La imitación de un `PoseClip` es el bloque siguiente y hoy es cinemática (retargeting), no una política entrenada. Decir "aprendió a caminar con tu video" sería falso.*
 - *"Decenas de miles de caídas" sale de la cuenta, no del aire: 40 M pasos de política a 50 decisiones por segundo son 800.000 s simulados; con episodios de 20 s son unos 40.000 intentos, y al principio duraban un segundo, así que fueron más.*
 
-### 0:50–1:13 · Copiar no es aprender (técnico)
+### 1:01–1:22 · Copiar no es aprender (técnico)
 
 **En pantalla:** cámara en vivo, el G1 copiando a quien presenta.
 
-> "Esto sí es copiar: la cámara, el esqueleto, los ángulos del robot. Cinemática inversa sobre el modelo real del G1, veintinueve articulaciones.
+> "Esto sí es copiar: la cámara, el esqueleto, los ángulos del robot. Cinemática inversa sobre el modelo real del G1: veintinueve articulaciones, tres coma dos centímetros de error mediano.
 > Pero un robot que copia necesita a alguien delante. **El nuestro ya no.**"
 
 *La cámara entra acá y no al principio a propósito: es la forma más rápida de que se entienda el pipeline (persona → esqueleto → robot) y de dejar clara la diferencia con todo lo que ya existe.*
 
-### 1:13–1:50 · Pruébenlo, y empújenlo (ejecución y originalidad)
+### 1:22–1:56 · Pruébenlo, y empújenlo (ejecución y originalidad)
 
 **En pantalla:** QR grande. **Antes del empujón hay que darle a "Reiniciar"** (copiar la cámara es cinemático: con el robot en modo títere el empujón no hace nada).
 
@@ -91,23 +110,26 @@ python3 docs/pitch/tools/cronometro.py docs/pitch/guion-3-minutos.md 4.2
 
 **Pantalla, 6 s:** los dos empujones, uno al lado del otro. Son los cuatro segundos más importantes del pitch.
 
+*Si el entrenado se cae, no disimular: decirlo. Está medido ([`physics/README.md`](../../physics/README.md)): desde las 4 direcciones de la prueba aguanta siempre, pero probado desde 60 direcciones aguanta 56 (93 %), y las 4 que falla son un sector de unos 20° por detrás. El botón empuja en dirección al azar, así que **lo tumba 1 de cada 15 veces**. Dicho por nosotros es una medición; dicho por el jurado es una sorpresa.*
+
 *Cambió con la política v2: el robot entrenado **aguanta** los cuatro empujones de 250 N, así que el plano ya no es "se cae", es la comparación. Si se quiere una caída del entrenado, el empujón tiene que ser de 350 N (ahí aguanta 1,2 de 4). La frase sobre los pasos de física por segundo salió del guion hasta que Pastor confirme el número con la política corriendo: el lazo de `physics/` va a 2 ms, pero la política decide cada 20 ms sobre `scene_mjx.xml`, que usa pasos de 4 ms.*
 
-### 1:50–2:16 · Por qué (impacto y ambición)
+### 1:56–2:18 · Para quién (impacto y ambición)
 
-> "El cuello de botella de la robótica no es el hardware: son los datos de movimiento. Hoy se consiguen teleoperando un robot que cuesta lo que un carro.
-> Y hay millones de horas de gente moviéndose en videos de celular que nadie puede usar.
-> Tridi es el camino de un video cualquiera a un comportamiento entrenado."
+> "¿Para quién es esto? Para los equipos que están construyendo humanoides. Necesitan millones de horas de movimiento humano, y hoy las consiguen teleoperando un robot que cuesta lo que un carro.
+> El video ya existe. Nosotros lo convertimos en datos y en políticas entrenadas."
 
-### 2:16–2:53 · La diferencia, dicha por nosotros primero (originalidad)
+*"Los equipos que están construyendo humanoides", nunca "nuestros clientes" ni un nombre de empresa.*
 
-> "Esto ya existe. VideoMimic lo hizo el año pasado, con un laboratorio y un robot de dieciséis mil dólares. Y Ultimate Bots lleva tu video a un robot en el navegador, gratis.
-> Dos diferencias. Ellos usan un modelo que NVIDIA ya tenía entrenado; **nosotros entrenamos el nuestro**, y la recompensa está en el repo.
-> Y lo de ellos es un visor. **Lo nuestro es el mundo donde el robot aprendió.** Por eso el suyo se mira y el nuestro se empuja."
+### 2:18–2:49 · La diferencia, dicha por nosotros primero (originalidad)
 
-### 2:53–3:00 · Cierre
+> "Esto ya existe. VideoMimic lo hizo con un laboratorio y un robot de dieciséis mil dólares. Ultimate Bots lo lleva al navegador, gratis, con un modelo que NVIDIA ya tenía entrenado.
+> **Nosotros entrenamos el nuestro**, y la recompensa está en el repo. Lo de ellos es un visor; **lo nuestro es el mundo donde el robot aprendió.** Por eso el suyo se mira y el nuestro se empuja."
 
-> "Tridi. Subes un video, el robot aprende. Está abierto y lo pueden romper ahora."
+### 2:49–3:00 · Cierre
+
+> "Tridi: datos de movimiento humano para robots humanoides, desde cualquier video.
+> Está abierto, y lo pueden romper ahora."
 
 ---
 
@@ -119,18 +141,20 @@ Quien presenta habla; **la segunda persona maneja la pantalla** y no dice nada. 
 | --- | --- | --- |
 | 0:00 | pantalla | App abierta en la galería, con el `.mp4` ya elegido. **Nada de slides.** |
 | 0:05 | pantalla | Click en el sujeto del primer frame |
-| 0:07 | — | Dejar correr el robot. Silencio, 8 s |
-| 0:16 | pantalla | Vista de los cuatro checkpoints (0, 3 M, 10 M, 40 M), con el número de pasos encima |
-| 0:50 | pantalla | Encender la cámara |
-| 1:13 | pantalla | **"Reiniciar"** (sale del modo títere) y QR a pantalla completa |
-| 1:27 | pantalla | "Empujar" en el entrenado (aguanta) y acto seguido en el sin entrenar (se cae) |
-| 1:50 | pantalla | Dejar el QR y la galería corriendo hasta el final |
+| 0:09 | — | Dejar correr el robot. Silencio, 8 s |
+| 0:18 | pantalla | Vista de los cuatro checkpoints (0, 3 M, 10 M, 40 M), con el número de pasos encima |
+| 1:01 | pantalla | Encender la cámara |
+| 1:22 | pantalla | **"Reiniciar"** (sale del modo títere) y QR a pantalla completa |
+| 1:36 | pantalla | "Empujar" en el entrenado (aguanta) y acto seguido en el sin entrenar (se cae) |
+| 1:56 | pantalla | Dejar el QR y la galería corriendo hasta el final |
 | 3:00 | — | Fin. No cerrar la app: el jurado la sigue probando en las preguntas |
 
 ## Las preguntas del jurado (los 2 minutos)
 
 | Pregunta | Respuesta corta |
 | --- | --- |
+| **¿Quiénes son sus clientes?** | Ninguno: no tenemos clientes ni socios, y no vamos a insinuarlo. **El comprador son los equipos que construyen humanoides y los laboratorios de robótica.** Lo primero que hacemos el lunes es hablar con uno |
+| **¿El robot siempre aguanta el empujón?** | No. Desde las 4 direcciones de la prueba sí, pero medido desde 60 direcciones aguanta 56: hay un sector de unos 20° por detrás que todavía lo tumba, y el botón empuja al azar, así que **falla 1 de cada 15 veces**. Está en `physics/README.md` |
 | **¿Es un LLM?** | No. Es una política de control: red pequeña, entrada = estado del robot, salida = objetivos de los motores. Un modelo de lenguaje no aprende control motor desde poses |
 | **¿Entrena en vivo mientras hablan?** | No. Entrenar un clip toma horas en una Mac. Lo desplegado procesa el video nuevo y lo deja en cola; lo que se ve corriendo son políticas que entrenamos nosotros, con su número de pasos y su tiempo |
 | **¿La física es suya o es MuJoCo?** | **MuJoCo, y lo decimos nosotros primero.** Nuestro es el simulador que va encima: el lazo de pasos fijos de 2 ms, el visor que dibuja cualquier MJCF, el test que corre la misma física en Node, el modelo de empujón y el entorno de entrenamiento con su recompensa. El solver se instala con `npm install`; el mundo donde el robot aprende, no |
@@ -148,9 +172,10 @@ Quien presenta habla; **la segunda persona maneja la pantalla** y no dice nada. 
 1. **Demo primero.** Nada de "hola, somos el equipo 26": son 15 segundos del único minuto que importa.
 2. **Ningún número sin medir.** Si no se midió, no se dice.
 3. **Decir lo que no funciona antes de que lo pregunten.**
-4. **Reiniciar antes de empujar.** Si el robot está copiando la cámara, el empujón no hace nada y el mejor momento del pitch se cae.
-5. **Plan B grabado.** 40 segundos de la demo funcionando, listos para reproducir si la red falla. Se graba el sábado en la noche. **El servidor de video corre en la Mac de Juan con un túnel**, así que una caída de red mata la parte de subir video: el plan B no es opcional.
-6. **El voto público dura 10 días.** El mismo video del plan B sirve para compartir el domingo.
+4. **Nunca decir "clientes" ni nombrar una empresa como si lo fuera.** Se dice "los equipos que están construyendo humanoides".
+5. **Reiniciar antes de empujar.** Si el robot está copiando la cámara, el empujón no hace nada y el mejor momento del pitch se cae.
+6. **Plan B grabado.** 40 segundos de la demo funcionando, listos para reproducir si la red falla. Se graba el sábado en la noche. **El servidor de video corre en la Mac de Juan con un túnel**, así que una caída de red mata la parte de subir video: el plan B no es opcional.
+7. **El voto público dura 10 días.** El mismo video del plan B sirve para compartir el domingo.
 
 ## Pendiente
 

@@ -2,6 +2,8 @@
 
 - **Fecha:** 2026-10-23, actualizado el 24 · **Quién:** Ale · **Estado:** vigente, para revisar entre los 4
 
+> **El mensaje es el de [`../marca.md`](../marca.md):** *"Datos de movimiento humano para robots humanoides, desde cualquier video."* Este documento es el respaldo de ese titular: por qué se sostiene y qué no se puede decir alrededor de él.
+
 Investigación hecha para responder la última línea de la [decisión de la idea](../decisiones/2026-10-23-idea-tridi.md): *"existen trabajos de video → robot. Hay que tener lista la diferencia antes del domingo."* Los jueces buscan en internet y le piden a un agente que busque ([capítulo 10](../../../platanus-ideas/docs/preparacion/10-bienvenida-caracas.md): originalidad, 15 %). Esto es lo que van a encontrar y qué contestamos.
 
 ## Lo primero, sin adornos
@@ -88,6 +90,8 @@ Es la diferencia más chica y la **más fácil de demostrar en 15 segundos**: se
 | "Somos los primeros en pasar de video a robot" | VideoMimic (2025) ya lo hizo y llegó a un robot físico | "Esto lo empezó VideoMimic el año pasado, con un laboratorio y un robot de 16.000 dólares" |
 | "Somos los primeros en el navegador" | Ultimate Bots Studio, gratis y open source, desde mayo | "La parte de mostrar física en el navegador ya es un componente; lo nuestro es lo que pasa antes" |
 | "No necesitas GPU ni cuenta" | Tampoco en Ultimate Bots | Usarlo como comodidad, nunca como diferencia |
+| "Nuestros clientes" / "nuestros socios" | **No tenemos ninguno.** Decirlo o insinuarlo es falso, y es de lo primero que un juez verifica. Lo decidió el equipo en la [decisión de marca](../decisiones/2026-10-24-marca-b2b-robotica.md) | "Los equipos que están construyendo humanoides", como tipo de comprador. Y: "hablar con uno es lo primero que hacemos el lunes" |
+| Un logo o un nombre (Tesla, Figure, Unitree, Optimus) puesto como cliente, socio o aval | Mismo motivo, y además nos haría parecer una startup inflada ante un jurado que busca ingeniería | Nombrarlos solo como **referencia de a quién le serviría**, nunca con logo ni en una sección de "confían en nosotros" |
 | "Tenemos nuestro propio motor de física" | `physics/package.json` declara `@mujoco/mujoco` 3.16.0 y el G1 es el de MuJoCo Menagerie **sin cambios**. El agente del juez lo ve en diez segundos, y ahí se cae todo lo demás que digamos | "El solver es MuJoCo, como en todos. El simulador —escena, visor, lazo, test de física y entorno de entrenamiento— es nuestro" |
 | "Un LLM aprende a caminar" | Es falso y es la frase que más rápido nos hunde con un jurado técnico | "Una política neuronal pequeña, entrenada por imitación y refuerzo" |
 | "El robot aprendió en vivo" (si mostramos un checkpoint) | El entrenamiento real toma horas en Mac | "Esto se entrenó anoche en esta laptop: cuarenta millones de pasos, setenta y tres minutos; lo que ven ahora es la política entrenada" |
