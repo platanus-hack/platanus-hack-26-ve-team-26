@@ -1,6 +1,6 @@
 """PPO for the G1: an MLP policy learns to stand and take pushes, saving checkpoints along the way.
 
-    uv run --project training python -m training.ppo [--task stand|walk] [--steps 20000000] [--run stand]
+    uv run --project training python -m training.ppo [--task stand|mimic] [--motion <clip>] [--steps 20000000] [--run stand]
 
 Checkpoints go to training/runs/<run>/ as step_<N>.pt plus a progress.csv, at 0, 10k, 100k, 1M,
 3M, 10M... environment steps: the pitch shows the same robot at several of them side by side.
@@ -98,18 +98,20 @@ class ActorCritic(nn.Module):
 
 
 def obs_size(task: str) -> int:
-    if task == "walk":
+    if task == "mimic":
         from .imitate import MIMIC_OBS_DIM
 
         return MIMIC_OBS_DIM
     return OBS_DIM
 
 
-def save(model: ActorCritic, run_dir: Path, step: int) -> None:
-    torch.save({"model": model.state_dict(), "step": step}, run_dir / f"step_{step}.pt")
+def save(model: ActorCritic, run_dir: Path, step: int, meta: dict) -> None:
+    """A checkpoint also says what it learned (task and motion), so export and evaluation need no flags."""
+    torch.save({"model": model.state_dict(), "step": step, **meta}, run_dir / f"step_{step}.pt")
 
 
-def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str) -> None:
+def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str,
+          motion: str | None = None) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(0)
@@ -118,10 +120,11 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
     if init:  # continue from an earlier run (its steps are not counted again)
         model.load_state_dict(torch.load(init)["model"])
     opt = torch.optim.Adam(model.parameters(), lr=LR, eps=1e-5)
-    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n, task=task)
+    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n, task=task, motion=motion)
     obs = envs.reset()
+    meta = {"task": task, "motion": motion} if task == "mimic" else {"task": task}
     pending = [c for c in CHECKPOINTS if c <= total_steps]
-    save(model, run_dir, 0)
+    save(model, run_dir, 0, meta)
     pending.remove(0)
 
     log = open(run_dir / "progress.csv", "w", newline="")
@@ -207,8 +210,8 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
         print(f"\rstep {step:>10,} / {total_steps:,} ({100 * step / total_steps:4.1f}%)  reward/step {buf_rew.mean():.3f}  "
               f"episode {ep:5.1f} s  falls {falls:3d}  {sps:,.0f} steps/s", end="", flush=True)
         while pending and step >= pending[0]:
-            save(model, run_dir, pending.pop(0))
-    save(model, run_dir, step)
+            save(model, run_dir, pending.pop(0), meta)
+    save(model, run_dir, step, meta)
     print(f"\ndone: {step:,} steps in {(time.time() - start) / 60:.1f} min -> {run_dir}")
     envs.close()
 
@@ -217,8 +220,9 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="python -m training.ppo", description=__doc__.split("\n")[0])
     p.add_argument("--steps", type=int, default=20_000_000)
     p.add_argument("--run", default="stand")
-    p.add_argument("--task", choices=["stand", "walk"], default="stand",
-                   help="stand: balance and pushes (env.py); walk: imitate a RobotMotion (imitate.py)")
+    p.add_argument("--task", choices=["stand", "mimic", "walk"], default="stand",
+                   help="stand: balance and pushes (env.py); mimic: imitate a RobotMotion (imitate.py); walk: old name of mimic")
+    p.add_argument("--motion", help="mimic: a RobotMotion .json, or a clip id in physics/motions/ (default: the walk)")
     p.add_argument("--init", type=Path, help="checkpoint to continue from")
     p.add_argument("--push-min", type=float, default=PUSH_N[0], help="weakest random push, N")
     p.add_argument("--push-max", type=float, default=PUSH_N[1], help="strongest random push, N")
@@ -226,7 +230,8 @@ def main() -> None:
     # that moving each minibatch to the GPU costs more than the GPU saves. --device mps to compare.
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
-    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), args.task)
+    task = "mimic" if args.task == "walk" else args.task
+    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), task, args.motion)
 
 
 if __name__ == "__main__":

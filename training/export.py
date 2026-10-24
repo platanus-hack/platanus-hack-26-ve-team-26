@@ -3,7 +3,7 @@
     uv run --project training python -m training.export training/runs/stand-v1/step_20000000.pt --id g1-stand
 
 The ONNX takes the raw observation (93 numbers of env.observe() for standing, imitate.MIMIC_OBS_DIM
-of MimicEnv.observe() for walking) and returns the 29 motor targets (MuJoCo ctrl) directly: normalization, the deterministic action, the 0.25 rad scale, the standing
+of MimicEnv.observe() for imitation) and returns the 29 motor targets (MuJoCo ctrl) directly: normalization, the deterministic action, the 0.25 rad scale, the standing
 offset and the motor ranges are all inside, so the browser only builds obs and writes ctrl.
 """
 
@@ -43,16 +43,20 @@ class Deployed(nn.Module):
         return torch.minimum(torch.maximum(base + ACTION_SCALE * action, self.low), self.high)
 
 
-def export(checkpoint: Path, policy_id: str, out: Path, task: str = "stand") -> Path:
+def export(checkpoint: Path, policy_id: str, out: Path, task: str | None = None, motion: str | None = None) -> Path:
+    """task and motion come from the checkpoint (ppo.py saves them); the arguments are for older
+    checkpoints that do not say."""
     state = torch.load(checkpoint)
-    walk = task == "walk"
+    task = state.get("task") or task or "stand"
+    walk = task == "mimic"
     model = ActorCritic(obs_size(task))
     model.load_state_dict(state["model"])
     model.eval()
     if walk:
-        from .imitate import MimicEnv
+        from .imitate import DEFAULT_MOTION, MimicEnv
 
-        env = MimicEnv(seed=0)
+        motion = state.get("motion") or motion or DEFAULT_MOTION
+        env = MimicEnv(seed=0, clips=(motion,))
     else:
         env = G1Env(seed=0, push=False)
     deployed = Deployed(model, env, walk).eval()
@@ -85,10 +89,12 @@ def export(checkpoint: Path, policy_id: str, out: Path, task: str = "stand") -> 
         "mjcf": MJCF,
         "obs_dim": obs_size(task),
         "nu": NU,
-        # Standing learns from pushes, not from people; walking from the clips it imitates.
+        "task": task,
+        # Standing learns from pushes, not from people; imitation from the clip it imitates.
         "trained_on": [m.id for m in env.motions] if walk else [],
-        # Imitation: how far ahead the observation shows the reference (imitate.MimicEnv.observe).
-        **({"lookahead_s": list(LOOKAHEAD_S)} if walk else {}),
+        # Imitation: the clip it follows, and how far ahead the observation shows it
+        # (imitate.MimicEnv.observe).
+        **({"motion": env.motions[0].id, "lookahead_s": list(LOOKAHEAD_S)} if walk else {}),
         "steps": int(state["step"]),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
@@ -102,9 +108,10 @@ def main() -> None:
     p.add_argument("checkpoint", type=Path)
     p.add_argument("--id", required=True, help="policy id, e.g. g1-stand")
     p.add_argument("--out", type=Path, default=OUT)
-    p.add_argument("--task", choices=["stand", "walk"], default="stand")
+    p.add_argument("--task", choices=["stand", "mimic", "walk"], help="only for checkpoints that do not say it")
+    p.add_argument("--motion", help="only for mimic checkpoints that do not say which clip they imitate")
     args = p.parse_args()
-    export(args.checkpoint, args.id, args.out, args.task)
+    export(args.checkpoint, args.id, args.out, "mimic" if args.task == "walk" else args.task, args.motion)
 
 
 if __name__ == "__main__":

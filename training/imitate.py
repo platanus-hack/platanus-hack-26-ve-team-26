@@ -22,6 +22,7 @@ import numpy as np
 from .env import ACTION_SCALE, DECIMATION, NU, G1Env, gravity_in_body
 
 MOTIONS = Path(__file__).resolve().parent.parent / "physics" / "motions"
+DEFAULT_MOTION = "clip_2026-10-23_caminar-perfil_01"  # the walk, when no --motion is given
 CONTROL_DT = DECIMATION * 0.004  # 20 ms
 
 # A reference pelvis more than 0.6 m away, or a fall, ends the episode: past that the robot is
@@ -119,12 +120,18 @@ def smooth(x: np.ndarray, window: int) -> np.ndarray:
     return np.stack([np.convolve(padded[:, j], kernel, mode="valid") for j in range(x.shape[1])], axis=1)
 
 
-def load_motions(model: mujoco.MjModel, names: list[str]) -> list[Motion]:
-    return [Motion(MOTIONS / f"{n}.json", model) for n in names]
+def motion_path(motion: str) -> Path:
+    """A RobotMotion file: any path ending in .json (a user's clip, written with retarget --out), or
+    the clip id of a preloaded one in physics/motions/."""
+    return Path(motion) if motion.endswith(".json") else MOTIONS / f"{motion}.json"
+
+
+def load_motions(model: mujoco.MjModel, motions: list[str]) -> list[Motion]:
+    return [Motion(motion_path(m), model) for m in motions]
 
 
 class MimicEnv(G1Env):
-    def __init__(self, seed: int = 0, clips: tuple[str, ...] = ("clip_2026-10-23_caminar-perfil_01",), push: bool = False):
+    def __init__(self, seed: int = 0, clips: tuple[str, ...] = (DEFAULT_MOTION,), push: bool = False):
         super().__init__(seed=seed, push=push)
         self.motions = load_motions(self.model, list(clips))
         self.feet_ids = [self.model.body(n).id for n in FEET]
