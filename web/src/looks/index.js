@@ -6,7 +6,7 @@
 // the wind's currents, which follow the physics' wind in every world.
 import { dressCity } from '../landing/city.js';
 import { hideViewerFloor } from './common.js';
-import { createCurrents } from './currents.js';
+import { createCurrents, windNow } from './currents.js';
 import { dressMeadow } from './meadow.js';
 import { dressRocks } from './rocks.js';
 import { dressWet } from './wet.js';
@@ -40,12 +40,14 @@ const LOOKS = { plano: dressSidewalk, piedras: dressRocks, resbaloso: dressWet, 
 
 /**
  * Dresses the viewer for the robot's current world and place.
+ * @param options.wind  () => { dir, mps }: the wind the grass and the currents show. By default the
+ *   physics' own (windNow); a replay passes the wind each recorded episode had.
  * @returns {{ update(dt: number): void, undo(): void }} update every frame; undo before the next
  */
-export function dressWorld(view) {
+export function dressWorld(view, { wind = () => windNow(view) } = {}) {
   const worldId = view.world()?.id ?? 'plano';
-  const look = view.scene() ? null : LOOKS[worldId]?.(view);
-  const currents = createCurrents(view);
+  const look = view.scene() ? null : LOOKS[worldId]?.(view, wind);
+  const currents = createCurrents(view, wind);
   return {
     update(dt) {
       look?.update(dt);

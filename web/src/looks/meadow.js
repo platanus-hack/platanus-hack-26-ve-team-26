@@ -134,7 +134,8 @@ function flag(uniforms) {
   return { group, cloth: mesh };
 }
 
-export function dressMeadow(view) {
+/** @param wind  () => { dir, mps }, what the grass, flag and turbines follow (windNow by default) */
+export function dressMeadow(view, wind = () => windNow(view)) {
   const { renderer } = view.viewer;
   const group = new THREE.Group();
   group.name = 'look-meadow';
@@ -198,7 +199,7 @@ export function dressMeadow(view) {
   let lean = 0;
   return {
     update(dt) {
-      const { dir, mps } = windNow(view);
+      const { dir, mps } = wind();
       uniforms.uTime.value += dt;
       lean += (Math.min(MAX_LEAN, mps * LEAN_PER_MPS) - lean) * Math.min(1, dt * 2);
       uniforms.uLean.value = lean;

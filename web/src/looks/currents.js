@@ -1,6 +1,7 @@
 // The wind made visible: thin streaks of air that flow past the robot, curling a little, in the
 // direction and at the speed of the wind the physics is applying (sim.wind and the "Viento"
-// slider), in any world. No wind, no streaks.
+// slider), in any world, or of another wind given as `wind` (a replay, which has no dynamics).
+// No wind, no streaks.
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { random, SMALL_SCREEN } from './common.js';
@@ -20,7 +21,8 @@ export function windNow(view) {
   return { dir: n > 1e-6 ? new THREE.Vector2(fx / n, -fy / n) : new THREE.Vector2(0, -1), mps: n > 1e-6 ? mps : 0 };
 }
 
-export function createCurrents(view) {
+/** @param wind  () => { dir, mps }, the wind to show; the physics' own (windNow) by default */
+export function createCurrents(view, wind = () => windNow(view)) {
   // A streak: two crossed ribbons along x, so it reads from the side and from above. Unit length.
   const ribbon = (rotate) => {
     const g = new THREE.PlaneGeometry(1, 0.018, 8, 1);
@@ -88,7 +90,7 @@ export function createCurrents(view) {
   return {
     update(dt) {
       time += dt;
-      const { dir, mps } = windNow(view);
+      const { dir, mps } = wind();
       strength += ((mps > 0.5 ? Math.min(1, mps / 12) : 0) - strength) * Math.min(1, dt * 2.5);
       mesh.visible = strength > 0.01;
       if (!mesh.visible) return;
