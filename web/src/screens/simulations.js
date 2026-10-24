@@ -1,6 +1,7 @@
 // Ver simulaciones: the gallery of preloaded clips and the stage with the person and the robot.
 import physicsAssets from '../physics-assets.js';
 import { mountGallery } from '../gallery.js';
+import { FINAL_LEVEL, LEVELS } from '../policies.js';
 import { robotPaneHTML } from '../robot-pane.js';
 import { mountStage } from '../stage.js';
 
@@ -32,7 +33,7 @@ export function mount(root, { dots }, [clipId] = []) {
               <canvas id="human"></canvas>
               <p class="pane-label" id="human-label">Persona</p>
             </section>
-            ${robotPaneHTML('Robot · de pie, todavía aprendiendo')}
+            ${robotPaneHTML('Robot')}
           </div>
           <div id="controls">
             <label>Ver
@@ -40,6 +41,11 @@ export function mount(root, { dots }, [clipId] = []) {
                 <option value="both" selected>Los dos</option>
                 <option value="human">Persona</option>
                 <option value="robot">Robot</option>
+              </select>
+            </label>
+            <label>Robot entrenado con
+              <select id="policy">
+                ${LEVELS.map(({ id, label }) => `<option value="${id}"${id === FINAL_LEVEL ? ' selected' : ''}>${label}</option>`).join('')}
               </select>
             </label>
             <button id="play" class="primary" type="button">Pausa</button>
