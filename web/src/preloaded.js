@@ -22,10 +22,23 @@ export const preloaded = list
   })
   .map((item) => ({ ...item, url: urlById.get(item.clip) }));
 
+/**
+ * Clips made on this visit (uploaded videos), shown first in the gallery. Kept in memory only:
+ * the server keeps them too, and a reload starts the gallery fresh.
+ * @type {(Preloaded & { data: import('./contract.js').PoseClip })[]}
+ */
+export const userClips = [];
+
+export function addUserClip(clip, title) {
+  if (userClips.some((item) => item.clip === clip.id)) return;
+  userClips.unshift({ clip: clip.id, title, credit: 'Tu video', url: null, data: clip });
+}
+
 const cache = new Map();
 
 /** @returns {Promise<import('./contract.js').PoseClip>} */
 export function fetchClip(item) {
+  if (item.data) return Promise.resolve(item.data);
   if (!cache.has(item.url)) {
     cache.set(
       item.url,

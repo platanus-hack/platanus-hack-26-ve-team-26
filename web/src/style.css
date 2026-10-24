@@ -441,7 +441,7 @@ select:disabled {
   grid-template-columns: 1fr;
 }
 
-#stage[data-show='human'] #robot-pane,
+#stage[data-show='human'] .robot-pane,
 #stage[data-show='robot'] #human-pane {
   display: none;
 }
@@ -465,12 +465,12 @@ select:disabled {
 
 /* Until the robot arrives its canvas stays invisible and the waving dot robot, drawn on the
    page canvas behind, shows through. */
-#robot-pane #view {
+.robot-pane .robot-canvas {
   opacity: 0;
   transition: opacity 0.6s ease;
 }
 
-#robot-pane.ready #view {
+.robot-pane.ready .robot-canvas {
   opacity: 1;
 }
 
@@ -486,7 +486,7 @@ select:disabled {
   transition: opacity 0.4s;
 }
 
-#robot-pane.ready .robot-loading {
+.robot-pane.ready .robot-loading {
   opacity: 0;
 }
 
@@ -498,18 +498,34 @@ select:disabled {
   overflow: hidden;
 }
 
-#robot-progress {
+.robot-progress {
   width: 0;
   height: 100%;
   background: var(--accent);
   transition: width 0.2s;
 }
 
-#robot-status {
+.robot-status {
   margin: 0;
   color: var(--muted);
   font-size: 15px;
   text-align: center;
+}
+
+/* Over the robot, bottom right: always on screen, whatever the page height (Ale's pitch beat). */
+.push {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  border-color: transparent;
+  background: var(--ink);
+  color: #ffffff;
+  box-shadow: 0 10px 24px -10px rgb(16 27 45 / 0.6);
+}
+
+.push:disabled {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .pane-label {
@@ -590,12 +606,326 @@ select:disabled {
   font-size: 14px;
 }
 
+/* Links that look like buttons. */
+.button {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 22px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--ink);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.button.primary {
+  border-color: transparent;
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.error {
+  color: var(--error);
+}
+
+/* Home without the video server: two choices, centered. */
+.choices.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(800px, 100%);
+}
+
+/* Live */
+
+.live-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  height: min(64vh, 640px);
+  margin-top: 20px;
+}
+
+.camera-pane {
+  background: var(--surface);
+}
+
+/* The camera and its skeleton show as a mirror, the way people expect to see themselves. */
+.camera-pane video,
+.camera-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform: scaleX(-1);
+}
+
+.camera-pane video {
+  opacity: 0;
+  background: #0b1322;
+  transition: opacity 0.4s;
+}
+
+.camera-on .camera-pane video {
+  opacity: 1;
+}
+
+.camera-off {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  padding: 24px;
+  transition: opacity 0.3s;
+}
+
+.camera-on .camera-off {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.live-bar {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin-top: 16px;
+  text-align: center;
+}
+
+.camera-toggle {
+  min-height: 60px;
+  padding: 0 32px;
+  font-size: 19px;
+}
+
+.live-status {
+  min-height: 1.5em;
+  margin: 0;
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.live-warning {
+  margin: 0;
+  padding: 8px 16px;
+  border-radius: 12px;
+  background: #fff4e5;
+  color: #8a4b00;
+}
+
+/* Upload */
+
+.upload-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 32px;
+  align-items: center;
+  margin-top: 12px;
+}
+
+.upload-panel {
+  padding: 28px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  backdrop-filter: blur(14px);
+  box-shadow: var(--shadow);
+}
+
+.upload-panel h2 {
+  margin: 0 0 14px;
+  font-size: 28px;
+}
+
+/* Only the block of the current step shows. */
+.upload [data-show] {
+  display: none;
+}
+
+.upload[data-step='checking'] [data-show='checking'],
+.upload[data-step='pick'] [data-show='pick'],
+.upload[data-step='uploading'] [data-show='uploading'],
+.upload[data-step='processing'] [data-show='processing'],
+.upload[data-step='done'] [data-show='done'],
+.upload[data-step='error'] [data-show='error'],
+.upload[data-step='off'] [data-show='off'] {
+  display: block;
+}
+
+.tips {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 20px;
+  padding-left: 22px;
+}
+
+.dropzone {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 36px 20px;
+  border: 2px dashed #b8c7e0;
+  border-radius: 20px;
+  background: rgb(255 255 255 / 0.6);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.dropzone:hover,
+.dropzone.over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.dropzone strong {
+  padding: 14px 28px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-size: 19px;
+}
+
+.dropzone span {
+  color: var(--muted);
+}
+
+.pick-error {
+  min-height: 1.5em;
+  margin: 12px 0 0;
+}
+
+.track.big {
+  height: 10px;
+  border-radius: 5px;
+}
+
+.bar {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  transition: width 0.3s;
+}
+
+.upload-percent {
+  margin: 8px 0 16px;
+  font: 600 22px/1 var(--title);
+}
+
+.stages {
+  display: grid;
+  gap: 10px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+  counter-reset: stage;
+}
+
+.stages li {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: center;
+  color: var(--muted);
+  font-size: 19px;
+}
+
+.stages li::before {
+  counter-increment: stage;
+  content: counter(stage);
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--muted);
+  font: 700 16px/1 var(--title);
+}
+
+.stages li.current {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.stages li.current::before {
+  background: var(--accent);
+  color: #ffffff;
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.stages li.done::before {
+  content: '✓';
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 8px rgb(76 124 243 / 0.15);
+  }
+}
+
+.queue {
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.chooser {
+  margin-top: 18px;
+}
+
+.frame {
+  position: relative;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.frame img {
+  display: block;
+  width: 100%;
+}
+
+.frame svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.frame rect {
+  fill: rgb(255 255 255 / 0.08);
+  stroke: #ffffff;
+  stroke-width: 0.4%;
+  stroke-dasharray: 2% 1%;
+}
+
+.frame rect.selected {
+  fill: rgb(76 124 243 / 0.18);
+  stroke: var(--accent);
+  stroke-width: 0.7%;
+  stroke-dasharray: none;
+}
+
 /* Tablets and phones: one column, the most important thing first. */
 @media (max-width: 900px) {
   .choices,
+  .choices.two,
   .intro-grid,
+  .upload-grid,
   .sims-grid {
     grid-template-columns: 1fr;
+  }
+
+  .upload-grid .intro-scene {
+    display: none; /* on small screens the upload steps come first */
   }
 
   .choice-scene {
@@ -669,10 +999,11 @@ select:disabled {
     font-size: 16px;
   }
 
-  #stage {
+  #stage,
+  .live-grid {
     grid-template-columns: 1fr;
     grid-template-rows: 1fr 1fr;
-    height: 76vh;
+    height: 70vh;
   }
 
   #stage[data-show='human'],

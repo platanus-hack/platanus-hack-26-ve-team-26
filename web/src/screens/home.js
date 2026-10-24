@@ -52,7 +52,7 @@ function tiltWithPointer(card, view) {
   });
 }
 
-export function mount(root, { dots }) {
+export function mount(root, { dots, api }) {
   root.innerHTML = `
     <section class="home">
       <header class="hero">
@@ -88,5 +88,20 @@ export function mount(root, { dots }) {
     tiltWithPointer(card, view);
     return view;
   });
-  return () => views.forEach((view) => dots.removeView(view));
+  // Without the video server, "Subir" goes away and the other two remain (the agreed fallback).
+  let gone = false;
+  api.checked.then((ok) => {
+    if (ok || gone) return;
+    const index = CHOICES.findIndex((choice) => choice.route === 'subir');
+    const card = nav.children[index];
+    dots.removeView(views[index]);
+    views.splice(index, 1);
+    card.remove();
+    nav.querySelectorAll('.step').forEach((step, i) => (step.textContent = i + 1));
+    nav.classList.add('two');
+  });
+  return () => {
+    gone = true;
+    views.forEach((view) => dots.removeView(view));
+  };
 }

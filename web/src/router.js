@@ -1,5 +1,5 @@
-// Hash routes (#/, #/en-vivo, #/subir, #/simulaciones): they work on any static host, with no
-// server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
+// Hash routes (#/, #/en-vivo, #/subir, #/simulaciones, #/simulaciones/<clip id>): they work on
+// any static host, with no server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
 // does not wait for MuJoCo, the robot or MediaPipe.
 import * as home from './screens/home.js';
 
@@ -23,14 +23,14 @@ export function prefetch(name) {
 
 /**
  * @param app      element the screens render into
- * @param context  shared with every screen: { dots, store }
+ * @param context  shared with every screen: { dots, store, api }
  */
 export function startRouter(app, context) {
   let unmount = null;
   let navigation = 0;
 
   async function show() {
-    const name = location.hash.replace(/^#\/?/, '');
+    const [name = '', ...params] = location.hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
     const load = ROUTES[name] ?? ROUTES[''];
     const mine = ++navigation;
     app.classList.add('leaving');
@@ -47,7 +47,7 @@ export function startRouter(app, context) {
     if (mine !== navigation) return; // another link was clicked meanwhile
     unmount?.();
     app.replaceChildren();
-    unmount = screen.mount(app, context);
+    unmount = screen.mount(app, context, params);
     document.title = screen.title ? `${screen.title} · Tridi` : 'Tridi';
     window.scrollTo(0, 0);
     app.classList.remove('leaving', 'loading');

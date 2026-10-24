@@ -4,7 +4,8 @@ import '@fontsource-variable/nunito';
 import './style.css';
 import { DotStage } from './dots/stage.js';
 import { startRouter } from './router.js';
+import { createApi } from './api.js';
 import { createStore } from './state.js';
 
 const dots = new DotStage(document.getElementById('scene'));
-startRouter(document.getElementById('app'), { dots, store: createStore() });
+startRouter(document.getElementById('app'), { dots, store: createStore(), api: createApi() });
