@@ -33,10 +33,10 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web en JavaScript y three.js sin framework ([decisión](decisiones/2026-10-23-web-sin-framework.md)): al abrir se ve el esqueleto del clip "Caminar" de Juan junto al G1 de `physics/`, con galería de precargadas (dos clips reales y uno sintético), controles compartidos y selector humano, robot o ambos. Funciona en escritorio y en celular. M0 a M2 hechos, más W3.2 y W3.3.
+- **Funciona:** plan en [`../web/TAREAS.md`](../web/TAREAS.md). Web rediseñada ([decisión](decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)): menú con tres opciones, cada una con un robot de puntos que forma su cara con hover, tarjetas 3D que se inclinan con el cursor y un fondo que reacciona a él. Rutas por hash y carga por etapas: el menú solo baja three.js, y MuJoCo y el G1 se precargan al acercarse a "Ver simulaciones". Simulaciones (galería, persona y G1 en paleta clara) funciona; En vivo y Subir solo explican los pasos.
 - **En curso:** —
-- **Bloqueado por:** nada. El deploy de Vercel publica `physics/`: falta que Pastor pase la raíz a `web/`.
-- **Sigue:** M4 (cámara en vivo, con `data/live/` de Juan) y M5 y M6 (subida y progreso, con la API del contrato).
+- **Bloqueado por:** nada. Pastor: la raíz de Vercel sigue en `physics/`.
+- **Sigue:** conectar En vivo (M4, con `tridi-live` y `view.mimic`) y Subir (M5 y M6, con la API del servidor de video).
 
 ---
 

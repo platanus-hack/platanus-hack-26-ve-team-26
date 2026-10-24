@@ -17,7 +17,7 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M1. Layout y estados
 
-- [x] **W1.1 Pantalla única.** HTML y CSS a mano. El visor ocupa casi toda la pantalla; al costado, un panel con tres pestañas: Capturar, Subir y Galería. Los botones principales se ven sin hacer scroll, también en el proyector.
+- [x] **W1.1 Pantalla única.** Primera versión: visor y panel con pestañas. La reemplazó el menú de M8.
 - [x] **W1.2 Máquina de estados.** `idle → capturando | subiendo → procesando → en cola → listo`, y `error` desde cualquiera. Un objeto de estado con suscriptores en JS plano, para que cada panel sepa qué mostrar (`web/src/state.js`); una transición inválida lanza un error.
 
 ## M2. Galería de precargadas (lo que se ve siempre)
@@ -25,6 +25,17 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 - [x] **W2.1 Manifiesto.** `web/src/preloaded.json` (formato en [`../docs/contrato.md`](../docs/contrato.md)). Los clips se toman de `data/clips/` y `web/clips/` al compilar. Faltan las políticas, cuando existan.
 - [x] **W2.2 Tarjetas.** Título, duración, fps, % de frames detectados y crédito del video; un click la carga en el visor.
 - [x] **W2.3 Arranque.** Al abrir la página se reproduce la primera de la lista, en loop. El esqueleto pesa KB y aparece antes que el robot (30 MB).
+
+## M8. Rediseño: menú 3D y carga por etapas
+
+Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con mucho three.js, colores fríos con blanco y tipografía suave ([decisión](../docs/decisiones/2026-10-24-ui-menu-y-carga-por-etapas.md)).
+
+- [x] **W8.1 Menú principal.** "Tridi" arriba al centro y tres opciones grandes, numeradas y con palabras simples: Entrena a Tridi en vivo, Sube un video, Ver simulaciones. En celular entran las tres sin scroll.
+- [x] **W8.2 Robots de puntos.** Uno por opción: bailando, sentado viendo un video y mirando el teléfono (un recap de lo que hizo). Con hover (o por turnos en pantallas táctiles), los puntos se juntan y forman la cara del robot. Un solo canvas WebGL para todo (`web/src/dots/`).
+- [x] **W8.3 Rutas y carga por etapas.** `#/`, `#/en-vivo`, `#/subir`, `#/simulaciones`. El menú solo carga three.js (144 KB comprimidos); cada pantalla es un pedazo aparte, y MuJoCo y el robot (30 MB) se precargan cuando el cursor llega a su tarjeta.
+- [x] **W8.4 Nunca colgado.** Mientras baja el G1, en su panel saluda un robot de puntos con una barra de progreso; si una pantalla tarda, aparece "Cargando…"; si no se puede descargar, una pantalla explica qué hacer.
+- [x] **W8.5 Tarjetas 3D y entorno vivo.** Las tarjetas son placas de vidrio con grosor que se inclinan con el cursor, y la cámara de su robot gira con ellas. Los puntos del fondo se apartan del cursor, una luz suave lo sigue y los robots lo miran.
+- [ ] **W8.6 Pantallas En vivo y Subir.** Hoy explican los pasos con su robot; falta conectarlas (M4 y M5).
 
 ## M3. Visor de la simulación (junto con Pastor)
 
