@@ -99,6 +99,7 @@ export function mount(root, { api }) {
             <button class="again" type="button">Grabar otro</button>
           </div>
         </div>
+        <label class="hands-toggle" ${SMALL_SCREEN ? 'hidden' : ''}><input type="checkbox"> Seguir las palmas de cerca (a 1 o 1,5 m de la cámara)</label>
         <p class="live-status" aria-live="polite"></p>
         <p class="live-warning" hidden></p>
         <p class="phone-note" hidden></p>
@@ -237,6 +238,9 @@ export function mount(root, { api }) {
       drawSkeleton = capture.drawSkeleton;
       const session = await capture.createLiveCapture(video, {
         model: SMALL_SCREEN ? 'lite' : 'full',
+        // MediaPipe's hand model on top of the pose: steadier palms up close, ~11 ms more a frame,
+        // so laptops only (data/live createLiveCapture `hands`).
+        hands: !SMALL_SCREEN && handsBox.checked,
         onProgress: ({ stage, done }) =>
           say(stage === 'model' ? (done ? 'Listo. Ahora acepta el permiso de la cámara.' : 'Preparando la cámara…') : 'Esperando el permiso de la cámara…'),
         onPose,
@@ -329,6 +333,11 @@ export function mount(root, { api }) {
   button.onclick = () => (live && !isPhone() ? stop() : start());
   phoneButton.onclick = () => (isPhone() ? stopPhone() : startPhone());
   $('.record-toggle').onclick = saveRecording;
+  // The hand model is chosen when the camera opens: changing it with the camera on reopens it.
+  const handsBox = $('.hands-toggle input');
+  handsBox.onchange = () => {
+    if (live && !isPhone()) start();
+  };
   $('.again').onclick = () => (live ? startRecording() : start());
 
   return () => {

@@ -174,6 +174,34 @@ console.log('wave: left upper arm out, forearm up, palm toward the camera');
   expect(off < PALM_TOLERANCE, `palm ${off.toFixed(0)} degrees from the camera`);
 }
 
+console.log('hand model (21 points a hand) wins over the pose\'s 4 hand points');
+{
+  // The pose's hand points say palms back; the hand model says palms forward: the model is steadier.
+  const back = person({ left: { palm: v(-1, 0, 0) }, right: { palm: v(-1, 0, 0) } });
+  const forward = person({ left: { palm: FWD }, right: { palm: FWD } });
+  // The hand model's points for each hand: wrist (0), index knuckle (5), pinky knuckle (17), around
+  // the hand's own center like MediaPipe's; the rest unused here.
+  const handModel = (k) => {
+    const pts = Array.from({ length: 21 }, () => ({ x: 0, y: 0, z: 0 }));
+    const c = forward[15 + k];
+    const at = (i) => ({ x: forward[i].x - c.x, y: forward[i].y - c.y, z: forward[i].z - c.z });
+    pts[0] = at(15 + k);
+    pts[5] = at(19 + k);
+    pts[17] = at(17 + k);
+    return pts;
+  };
+  const tracker = createPoseTracker({ smooth: false });
+  const retargeter = createRetargeter(mujoco, sim.model, { mirror: false, live: true });
+  let out;
+  for (let f = 0; f < 6; f++) out = retargeter.solve(tracker.update(back, back, f / 30), { hands: { left: handModel(0), right: handModel(1) } });
+  retargeter.delete();
+  sim.puppet(out.qpos);
+  for (const side of ['left', 'right']) {
+    const off = degrees(hand(side).palm, FWD);
+    expect(off < PALM_TOLERANCE, `${side} palm ${off.toFixed(0)} degrees from the camera, as the hand model says`);
+  }
+}
+
 console.log('facing the camera, right arm hidden behind the back: it is not mirrored from the left');
 {
   const tracker = createPoseTracker({ smooth: false });

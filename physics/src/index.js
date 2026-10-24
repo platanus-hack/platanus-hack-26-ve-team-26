@@ -318,6 +318,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * With the pose's `camera` (where the hips are from the camera) the robot also goes where the
      * person goes: it walks across the floor with its planted foot still, and leaves it in a jump
      * (root.js). Without it, it still walks by its feet, but cannot jump.
+     * With the pose's `hands` (data/live's hand model, { left, right } of 21 world points) the
+     * wrists read the hands from them.
      * @returns { tracked, residual, airborne, fixes } residual is the worst distance (m) between a
      *   limb and where the person put it; above ~0.08 the G1 cannot do that move. airborne: in a
      *   jump. fixes: what the robot added that the person did not do ('mirrored arm', and the parts
@@ -336,7 +338,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
         clearance = { model, clear: model.createLive() };
       }
       const points = tracker.update(pose.world, pose.landmarks, pose.t);
-      const { qpos, tracked, residual, mirroredArm } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw() });
+      const { qpos, tracked, residual, mirroredArm } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw(), hands: pose.hands });
       // The path is made from the filtered pose, the one drawn: made from the raw one, the planted
       // foot would slide by whatever the filter holds back.
       // Leveled before the path: root.js puts the leveled feet back on the floor.

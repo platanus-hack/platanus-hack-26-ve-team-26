@@ -956,6 +956,17 @@ select:disabled {
   font-weight: 700;
 }
 
+.hands-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+}
+.hands-toggle[hidden] {
+  display: none;
+}
 .live-debug {
   margin: 0;
   font: 12px var(--mono);

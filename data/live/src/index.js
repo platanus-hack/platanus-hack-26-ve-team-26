@@ -1,6 +1,6 @@
 // Public API of data/live for the web app: live camera -> MediaPipe pose every frame -> PoseClip.
 // The same PoseClip that data/extract.py makes from an uploaded video, with source "camera".
-import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { FilesetResolver, HandLandmarker, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { createBoneGuard } from './bones.js';
 import { createFacingGuard } from './facing.js';
 import { PoseFilter } from './oneeuro.js';
@@ -20,6 +20,12 @@ export { IMAGE_FPS, PHONE_SILENCE_S, closePhoneSession, createImageGrabber, crea
 const WASM_URL = 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@1.1.1/wasm';
 const MODEL_URL = (variant) =>
   `https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_${variant}/float16/latest/pose_landmarker_${variant}.task`;
+
+const HAND_MODEL_URL = 'https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task';
+// A hand found by the hand model belongs to the pose's wrist nearest to its own wrist, if within
+// this share of the image's height (~7 cm at 2 m from a laptop webcam). Not by its handedness
+// label: on a selfie camera it is reversed and sometimes jumps (docs/investigacion/2026-10-24-manos-y-dedos-en-vivo.md).
+const HAND_TO_WRIST = 0.08;
 
 // "full" keeps 30 fps on a laptop GPU and is clearly steadier than "lite" on legs; phones should
 // pass "lite" (half the work). "heavy" is for offline video only (data/lift.py).
@@ -43,15 +49,19 @@ export class CameraError extends Error {}
  * @param options.smooth      true (default): every point goes through a causal One Euro filter
  *   (src/oneeuro.js) before onPose and the recording, so the robot copying the person does not shake
  *   with MediaPipe's per-frame noise. false gives MediaPipe's raw output.
+ * @param options.hands       true: also run MediaPipe's hand model (7.8 MB more, ~11 ms a frame on
+ *   an M2), so the robot's wrists follow the palm closely. Worth it with the person ~1-1.5 m from
+ *   the camera: with the whole body in frame the hands are ~30 px and it rarely finds them.
  * @param options.onProgress  ({ stage: 'model' | 'camera', done: boolean }) while loading
  * @param options.onPose      ({ landmarks, world, visible, t }) every processed frame: `landmarks`
  *   are 33 points normalized to the video (for drawSkeleton), `world` 33 points in meters
  *   (hip-centered, MediaPipe axes), `visible` false when no body or the upper body (shoulders, elbows, wrists) is too occluded, `camera` where
  *   the hips are from the camera ([x, y, z] m, MediaPipe camera axes; cameraTranslation) or null;
- *   null if no body.
+ *   `hands` ({ left, right }: the person's hands, 21 world points each in meters around the hand's
+ *   center, MediaPipe axes, or null) only with options.hands; null if no body.
  * @returns { startRecording, stopRecording, isRecording, fps, stop }
  */
-export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMode = 'user', stream, smooth = true, onProgress, onPose } = {}) {
+export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMode = 'user', stream, smooth = true, hands = false, onProgress, onPose } = {}) {
   onProgress?.({ stage: 'model', done: false });
   const vision = await FilesetResolver.forVisionTasks(WASM_URL);
   const landmarker = await PoseLandmarker.createFromOptions(vision, {
@@ -59,6 +69,13 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
     runningMode: 'VIDEO',
     numPoses: 1,
   });
+  const handLandmarker = hands
+    ? await HandLandmarker.createFromOptions(vision, {
+      baseOptions: { modelAssetPath: HAND_MODEL_URL, delegate: 'GPU' },
+      runningMode: 'VIDEO',
+      numHands: 2,
+    })
+    : null;
   onProgress?.({ stage: 'model', done: true });
 
   onProgress?.({ stage: 'camera', done: false });
@@ -66,12 +83,14 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
   // over plain http on a LAN address has no navigator.mediaDevices at all.
   if (!stream && !navigator.mediaDevices?.getUserMedia) {
     landmarker.close();
+    handLandmarker?.close();
     throw new CameraError('El navegador no deja usar la cámara en esta dirección: hace falta abrir la página por HTTPS.');
   }
   try {
     stream ??= await navigator.mediaDevices.getUserMedia({ video: { ...CAMERA, facingMode }, audio: false });
   } catch (e) {
     landmarker.close();
+    handLandmarker?.close();
     const denied = e?.name === 'NotAllowedError' || e?.name === 'SecurityError';
     throw new CameraError(
       denied
@@ -122,7 +141,8 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
         const visible = isSeen((i) => vis[i]);
         const w = video.videoWidth;
         const h = video.videoHeight;
-        onPose?.({ landmarks, world, visible, t: now / 1000, camera: cameraTranslation(world, landmarks, w, h) });
+        const handsSeen = handLandmarker ? matchHands(handLandmarker.detectForVideo(video, now), landmarks, w / h) : undefined;
+        onPose?.({ landmarks, world, visible, t: now / 1000, camera: cameraTranslation(world, landmarks, w, h), hands: handsSeen });
         samples?.push({
           t: (now - recordStart) / 1000,
           world: world.map((p) => [p.x, p.y, p.z]),
@@ -159,19 +179,27 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
       stream.getTracks().forEach((t) => t.stop());
       video.srcObject = null;
       landmarker.close();
+      handLandmarker?.close();
     },
   };
 }
 
-/** The frame's points through the One Euro filter, in MediaPipe's own shape ({ x, y, z, visibility }). */
-function smoothed(filter, t, world, landmarks) {
-  const out = filter.filter(
-    t,
-    world.map((p) => [p.x, p.y, p.z]),
-    landmarks.map((p) => [p.x, p.y, p.z]),
-  );
-  return [
-    out.world.map(([x, y, z], i) => ({ ...world[i], x, y, z })),
-    out.image.map(([x, y, z], i) => ({ ...landmarks[i], x, y, z })),
-  ];
+/**
+ * The hand model's hands given to the pose's wrists: { left, right } of the person, each the hand's
+ * 21 world points or null. Each hand goes to its nearest wrist only (two hands together in a clap
+ * stay apart), the closest one when two compete. `aspect` (width / height) makes image distances square.
+ */
+function matchHands(result, landmarks, aspect) {
+  const out = { left: null, right: null };
+  const best = { left: HAND_TO_WRIST, right: HAND_TO_WRIST };
+  result.landmarks.forEach((hand, i) => {
+    const near = [['left', 15], ['right', 16]]
+      .map(([side, wrist]) => ({ side, d: Math.hypot((hand[0].x - landmarks[wrist].x) * aspect, hand[0].y - landmarks[wrist].y) }))
+      .sort((a, b) => a.d - b.d)[0];
+    if (near.d < best[near.side]) {
+      best[near.side] = near.d;
+      out[near.side] = result.worldLandmarks[i];
+    }
+  });
+  return out;
 }

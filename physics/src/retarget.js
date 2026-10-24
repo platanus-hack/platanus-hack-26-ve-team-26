@@ -12,7 +12,8 @@
 //   arms/legs the direction of the upper and lower segment, in the torso (arms) or hip (legs) frame
 //   feet      kept flat on the floor
 //   wrists   live only (options.live): how the hand bends off the forearm and which way its palm
-//             faces, from the pose's wrist, index, pinky and thumb points
+//             faces, from the pose's wrist, index, pinky and thumb points, or from MediaPipe's
+//             hand model when the camera runs it (solve's `hands`: 21 points a hand)
 // What is not: head (the G1 has no neck), fingers (the G1 model here has none).
 // Whatever the camera does not see (legs of someone sitting at a desk) stays in the stand pose.
 import * as THREE from 'three';
@@ -200,6 +201,14 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
   const palmTarget = new THREE.Vector3();
   const palmNow = new THREE.Vector3();
   const across = new THREE.Vector3();
+  const knuckles = new THREE.Vector3();
+  // The hand model's 21 points per robot side, in robot axes (only their differences are used: the
+  // model puts each hand's origin at its own center).
+  const handPoints = { left: Array.from({ length: 21 }, () => new THREE.Vector3()), right: Array.from({ length: 21 }, () => new THREE.Vector3()) };
+  // Hand model indices: the wrist, and the index and pinky knuckles, the palm's corners.
+  const HAND_WRIST = 0;
+  const HAND_INDEX = 5;
+  const HAND_PINKY = 17;
   let palmWeight = 0; // how much the palm counts in this hand's solve (0 when it was not read)
   const bend = new THREE.Quaternion();
   const NO_TURN = new THREE.Quaternion();
@@ -300,6 +309,9 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
 
   /**
    * @param pose { points, visible } from createPoseTracker
+   * @param options.hands  { left, right }: MediaPipe hand model world landmarks (21 {x, y, z}) of
+   *   the person's left and right hand, or null; when given, the wrist reads the hand from them
+   *   instead of the pose's 4 hand points (live only)
    * @param options.travelYaw  heading (rad, about the vertical) the person is travelling in, when
    *   known. It replaces the heading read from the hips if both point the same way (within 90
    *   degrees): seen from the side, the hip line runs along the depth axis, which is MediaPipe's
@@ -310,7 +322,7 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
    *   false when the shoulders were not seen and the previous pose was kept; mirroredArm: true when
    *   one arm was not seen and copies the other's swing (in profile).
    */
-  function solve({ points, visible: V }, { travelYaw } = {}) {
+  function solve({ points, visible: V }, { travelYaw, hands } = {}) {
     Q = data.qpos;
     XPOS = data.xpos;
     XQUAT = data.xquat;
@@ -320,6 +332,15 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
     if (!V[L.shoulder] || !V[R.shoulder]) return { qpos: Q.slice(), residual: 0, tracked: false };
     for (let i = 0; i < 33; i++) S[i].set(points[i].x, mirror ? -points[i].y : points[i].y, points[i].z);
     const hipsSeen = V[L.hip] && V[R.hip];
+    // The person's hands as the robot's sides see them (swapped and flipped when mirroring), in
+    // robot axes as pose.js puts the pose's points: x = -z, y = x, z = -y.
+    const handOf = {};
+    for (const robotSide of ['left', 'right']) {
+      const person = hands?.[mirror ? OTHER[robotSide] : robotSide];
+      if (!person) continue;
+      handOf[robotSide] = handPoints[robotSide];
+      person.forEach((p, i) => handPoints[robotSide][i].set(-p.z, mirror ? -p.x : p.x, -p.y));
+    }
 
     // Pelvis: heading from the hips (or the shoulders when the hips are out of frame), upright.
     const heading = hipsSeen ? frame(hHip, dir.subVectors(S[L.hip], S[R.hip]), UP) : null;
@@ -398,11 +419,17 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
         target.copy(pelvisQ).multiply(rest[c.name]);
         solveJoints(c.foot.joints, () => orientationCost(c.foot, target));
       }
-      if (c.hand && live && V[h.index] && V[h.pinky]) {
+      const H = handOf[c.side];
+      if (c.hand && live && (H || (V[h.index] && V[h.pinky]))) {
+        // The hand's wrist, knuckles and the two sides of its width: from the hand model when
+        // there is one (its 21 points are far steadier than the pose's 4), else from the pose.
+        const handWrist = H ? H[HAND_WRIST] : S[h.wrist];
+        if (H) knuckles.addVectors(H[HAND_INDEX], H[HAND_PINKY]).multiplyScalar(0.5);
+        else knuckles.copy(mid(h.index, h.pinky));
         // The person's bend: the turn from their forearm (elbow to wrist) to their hand (wrist to
         // knuckles), put on the robot's forearm as it ended up.
         dir.subVectors(S[h.wrist], S[h.elbow]).normalize();
-        handTarget.subVectors(mid(h.index, h.pinky), S[h.wrist]).normalize();
+        handTarget.subVectors(knuckles, handWrist).normalize();
         bend.setFromUnitVectors(dir, handTarget).slerp(NO_TURN, 1 - handTrust);
         fk();
         position(c.midId, a);
@@ -411,8 +438,9 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
         // The person's palm: across the hand from the pinky to the index and thumb, crossed with
         // its length, signed so it faces the thighs with the arms hanging (left: length x across).
         const sign = c.side === 'left' ? 1 : -1;
-        const length = dir.subVectors(mid(h.index, h.pinky), S[h.wrist]);
-        across.subVectors(V[h.thumb] ? mid(h.index, h.thumb) : S[h.index], S[h.pinky]);
+        const length = dir.subVectors(knuckles, handWrist);
+        if (H) across.subVectors(H[HAND_INDEX], H[HAND_PINKY]);
+        else across.subVectors(V[h.thumb] ? mid(h.index, h.thumb) : S[h.index], S[h.pinky]);
         palmTarget.crossVectors(length, across).multiplyScalar(sign);
         palmWeight = 0;
         if (palmTarget.length() > MIN_HAND_WIDTH * length.lengthSq()) {
