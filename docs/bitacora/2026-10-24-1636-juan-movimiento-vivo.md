@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: cerrada
+estado: en curso
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
@@ -60,6 +60,15 @@ Juan: que la caminata se vea más natural, y que en vivo el robot vaya adonde va
 - **Solo en lo que se ve:** `physics/motions/` no cambia, porque son las referencias con las que se entrenaron las políticas (y Pastor sigue entrenando con ellas).
 - **Medido:** torso en promedio a 0,1° (caminar), 0,3° (correr) y 0,3° (jacks) en vez de 6,0, 9,0 y 5,6; en vivo, 0,1°. Pruebas en `check-smooth` y `check-root`; todo `npm run check` pasa. En el navegador, al final de Capture el robot de frente va derecho.
 - En el árbol hay cambios de `web/` que no son de esta sesión (una marca nueva: `brand.js`, `index.html`, `style.css`…): no se tocaron ni se commitearon.
+
+## Manos fuera de las piernas, pies separados
+
+- **Lo que quedaba (Juan):** en Capture se veía todavía algo torcido, y las manos atravesaban las piernas.
+- **Medido en la caminata mostrada:** la mano a 0,2 cm del eje del muslo en la referencia (dentro de la pierna en 237 de 356 cuadros); los tobillos llegaban a 6,5 cm de lado a lado (pies que se tocan, piernas que parecen cruzadas; correr 5,9 cm).
+- **`physics/src/clearance.js`:** donde haría falta, primero las caderas abren (los tobillos giran al revés para que las suelas sigan planas) hasta 12 cm entre tobillos, y después los hombros abren hasta que la mano y la muñeca queden a 11 cm del eje de cada muslo y a 15 cm del eje pelvis-torso (antes una mano cruzaba delante de la pelvis). Hasta 10° por cadera y 30° por hombro. La apertura nunca se queda corta y cambia a 86°/s como máximo: en un clip empieza antes del contacto; en vivo, abre al instante y cierra a ese ritmo. Un promedio suave que la seguía llegaba tarde y dejaba la mano adentro en 49 cuadros.
+- Como `level.js`, solo en lo que se ve (`smoothForDisplay` y `mimic`); `physics/motions/` no cambia.
+- **Comprobado:** `check-smooth` mide en los tres clips manos a ≥11 cm de los muslos y tobillos a ≥12 cm; todo `npm run check` pasa. En el navegador, al final de Capture, el robot camina derecho, con los brazos al costado y las piernas sin cruzarse.
+- La investigación de manos y dedos en vivo está en [`../investigacion/2026-10-24-manos-y-dedos-en-vivo.md`](../investigacion/2026-10-24-manos-y-dedos-en-vivo.md).
 
 ## Sigue
 
