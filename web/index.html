@@ -11,20 +11,32 @@
       <p>De video humano a un robot simulado que aprende a moverse solo.</p>
     </header>
 
-    <main id="stage">
-      <canvas id="view"></canvas>
-      <div id="loading">
-        <div class="track"><div id="progress-bar"></div></div>
-        <p id="progress-text">Cargando MuJoCo y el robot…</p>
-      </div>
+    <main id="stage" data-show="both">
+      <section class="pane" id="human-pane">
+        <canvas id="human"></canvas>
+        <p class="pane-label" id="human-label">Humano</p>
+      </section>
+      <section class="pane" id="robot-pane">
+        <canvas id="view"></canvas>
+        <div id="loading">
+          <div class="track"><div id="progress-bar"></div></div>
+          <p id="progress-text">Cargando MuJoCo y el robot…</p>
+        </div>
+        <p class="pane-label">Robot G1 · de pie, todavía sin política</p>
+      </section>
       <div id="controls">
-        <button id="play" disabled>Pausa</button>
-        <select id="speed" disabled aria-label="Velocidad">
+        <select id="show" aria-label="Qué ver">
+          <option value="both" selected>Ambos</option>
+          <option value="human">Humano</option>
+          <option value="robot">Robot</option>
+        </select>
+        <button id="play">Pausa</button>
+        <select id="speed" aria-label="Velocidad">
           <option value="0.25">x0,25</option>
           <option value="0.5">x0,5</option>
           <option value="1" selected>x1</option>
         </select>
-        <button id="reset" class="secondary" disabled>Reiniciar</button>
+        <button id="reset" class="secondary">Reiniciar</button>
         <button id="push" class="secondary" disabled>Empujar</button>
       </div>
       <p id="stats"></p>

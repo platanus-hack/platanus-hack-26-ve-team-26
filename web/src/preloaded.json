@@ -1,0 +1,17 @@
+[
+  {
+    "clip": "clip_2026-10-23_caminar-perfil_01",
+    "title": "Caminar",
+    "credit": "Video: Mixkit 4855, hombre caminando de perfil"
+  },
+  {
+    "clip": "clip_2026-10-23_correr-perfil_01",
+    "title": "Correr",
+    "credit": "Video: Mixkit 4831, mujer corriendo en un parque"
+  },
+  {
+    "clip": "clip_synthetic_march_01",
+    "title": "Marcha sintética",
+    "credit": "Generada por código, para pruebas"
+  }
+]

@@ -100,6 +100,6 @@ const clip = {
   quality: { valid_ratio: 1 },
 }
 
-const out = new URL('../public/preloaded/clip_synthetic_march_01.json', import.meta.url)
+const out = new URL('../clips/clip_synthetic_march_01.json', import.meta.url)
 writeFileSync(out, JSON.stringify(clip))
 console.log(`wrote ${frames.length} frames to ${out.pathname}`)

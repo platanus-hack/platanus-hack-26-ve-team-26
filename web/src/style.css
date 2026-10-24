@@ -82,16 +82,47 @@ select:disabled {
 #stage {
   grid-area: stage;
   position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
   min-height: 0;
   overflow: hidden;
+  background: var(--line);
 }
 
-#view {
+#stage[data-show='human'],
+#stage[data-show='robot'] {
+  grid-template-columns: 1fr;
+}
+
+#stage[data-show='human'] #robot-pane,
+#stage[data-show='robot'] #human-pane {
+  display: none;
+}
+
+.pane {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+.pane canvas {
   position: absolute;
   inset: 0;
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.pane-label {
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  pointer-events: none;
 }
 
 #loading {
@@ -200,9 +231,33 @@ h2 {
 }
 
 #gallery {
+  display: grid;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.card {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  font-weight: 400;
+  text-align: left;
+}
+
+.card[aria-current='true'] {
+  border-color: var(--accent);
+}
+
+.card .meta,
+.card .credit {
+  color: var(--muted);
+  font-size: 12px;
 }
 
 #phase {
@@ -224,20 +279,43 @@ h2 {
 /* Phones: the stage on top, the panel below. The stage keeps most of the screen. */
 @media (max-width: 720px) {
   body {
-    grid-template: 'top' auto 'stage' 58vh 'panel' 1fr / 1fr;
+    grid-template: 'top' auto 'stage' 64vh 'panel' 1fr / 1fr;
     height: auto;
     min-height: 100%;
+  }
+
+  /* Side by side would make each figure tiny: stack human over robot. */
+  #stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr auto;
+  }
+
+  #stage[data-show='human'],
+  #stage[data-show='robot'] {
+    grid-template-rows: 1fr auto;
+  }
+
+  /* Over the canvas the controls would cover half of a small pane: they get their own row. */
+  #controls,
+  #stats {
+    position: static;
+    transform: none;
+  }
+
+  #controls {
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 0;
+    background: var(--panel);
+  }
+
+  #stats {
+    display: none;
   }
 
   #panel {
     border-left: 0;
     border-top: 1px solid var(--line);
-  }
-
-  #controls {
-    bottom: 30px;
-    gap: 6px;
-    padding: 6px;
   }
 
   button,
