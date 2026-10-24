@@ -49,18 +49,21 @@ Lo produce el retargeting en `physics/`. Ángulos de cada articulación del robo
 ```jsonc
 {
   "clip_id": "clip_2026-10-24_pastor-corre_01",
-  "robot": "humanoid",                     // nombre del modelo MJCF en physics/
+  "robot": "unitree_g1",                   // carpeta del modelo en physics/models/
   "fps": 30,
-  "qpos": [[...], ...]                     // [frames, nq]
+  "qpos": [[...], ...]                     // [frames, 36]
 }
 ```
+
+Cada fila de `qpos` sigue el orden de MuJoCo para el G1: posición de la pelvis en metros (`x, y, z`, con z hacia arriba), su orientación como cuaternión (`w, x, y, z`) y los ángulos de las 29 articulaciones en radianes, en el orden en que aparecen en `g1_mjx.xml` (de la pierna izquierda a la muñeca derecha).
 
 ## `Policy`: el modelo entrenado
 
 Lo produce `training/`. Lo corre la web con onnxruntime-web junto a MuJoCo WASM.
 
 - `policy.onnx`: entrada = observación del robot (`[obs_dim]`), salida = acción (`[nu]`, objetivos de los motores).
-- `policy.json`: `{ "id", "robot", "obs_dim", "nu", "trained_on": [clip_ids], "steps", "created_at" }`.
+- `policy.json`: `{ "id", "robot", "mjcf", "obs_dim", "nu", "trained_on": [clip_ids], "steps", "created_at" }`.
+- `mjcf` es la escena con que se entrenó, relativa a `physics/models/` (por ejemplo `"unitree_g1/scene_mjx.xml"`). Una política solo funciona sobre ese modelo, así que la web carga esa escena antes de correrla.
 
 ## Simulaciones precargadas
 
