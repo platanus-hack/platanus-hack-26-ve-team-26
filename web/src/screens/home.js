@@ -199,6 +199,7 @@ export function mount(root) {
             <li><b>&lt; 1 ms</b><span><span class="only-wide">lo que tarda en decidir</span><span class="only-narrow">en decidir</span></span></li>
           </ul>
           <p class="policy-note">Con ella van los datos del movimiento, probados en cuatro mundos.</p>
+          <a class="btn btn-signal btn-small policy-data" href="#/entrega" data-warm="entrega">Ver los datos entrenados →</a>
         </div>
       </div>
     </section>

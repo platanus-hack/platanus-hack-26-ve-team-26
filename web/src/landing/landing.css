@@ -928,6 +928,11 @@ html.is-landing.lenis body {
   font-size: 14px;
 }
 
+/* The way into what the policy delivers (#/entrega): stays on phones, where the note above hides. */
+.policy-data {
+  margin-top: 16px;
+}
+
 /* Closing: the page closes over the film */
 
 .closing {
