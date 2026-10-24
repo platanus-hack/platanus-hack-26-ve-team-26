@@ -33,12 +33,14 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Gym sin transición por scroll (pedido de César: seguía sintiéndose raro): la sección mide una pantalla y las etapas tienen su propio reloj (5, 7 y 9 s, en bucle; cada visita empieza sin entrenar) o se eligen con un click. Las tarjetas de "Probar" del cierre pasaron a ser tarjetas de verdad: ícono SVG propio, detalle, botón y reacción al mouse.
 - Gym, los pasos ("no se lee claramente el tema de los pasos"): la lista de tres filas pasó a un medidor: número grande de pasos que se anima entre etapas, eje de 0 a 40 M con las paradas en su posición real (0, 25 % y 100 %) y la barra hasta la actual, detalle solo de la etapa actual, y la explicación de qué es un paso con cifras de `training/README.md` (50 decisiones por segundo, 64 robots en paralelo; 40 M pasos ≈ 222 horas de práctica). El texto de Gym empieza debajo de la barra superior y la curva se achicó, porque el bloque ya no entraba centrado.
 - Simulaciones: controles rehechos en dos grupos (Reproducción y Condiciones) porque se pisaban y en celular desbordaban (550 px de ancho en una pantalla de 390); deslizadores de condiciones (agarre 0,2–1,2, viento 0–20 m/s, peso y motores ±20 %) sobre `view.setConditions`, que se agregó a `physics/` en su propio commit y sobrevive a un cambio de lugar. Siguiente: modelos 3D para los lugares de SIM-6 (pendiente de autorizar la descarga de los paquetes).
+- Entornos visuales (con permiso de César para descargar): tres paquetes de Kenney (Furniture Kit, Survival Kit, City Kit Roads; CC0, 9,6 MB entre los tres) y solo 12 modelos copiados al repo (256 KB, con sus `License.txt` y `web/public/models/README.md`). `web/src/props.js` los pone sobre los objetos de los lugares, escalados a la caja o cilindro de la física (lo que se ve es lo que choca), y dibuja un piso por lugar. La calle de la landing pasó a `dressFloor`, reutilizable, y en la vereda su bordillo coincide con el cordón de la física. Poly Haven no hizo falta: los pisos se dibujan por código y no suman descargas.
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- Lugares: cocina, depósito y vereda con sus modelos y pisos, sin errores ni modelos que fallen al cargar; al volver a En vivo el piso es el de siempre.
 - Controles: sin desborde en 390 px; el viento a 12 m/s muestra 43 N; elegir Piso resbaloso deja el agarre en 0,35; `npm run check` de `physics/` pasa entero (siete pruebas).
 - Gym con la página quieta: las etapas avanzan solas y vuelven a empezar; el click en la tercera la muestra. Tarjetas en 1280 y 375 px, sin desborde.
 - Landing en 1280×800 y 375×812: la calle se ve bajo el robot en todas las tomas, el paso de Capture a Gym no deja franjas, las tres etapas cambian el checkpoint del robot y la curva, sin errores en la consola ni desborde.
@@ -48,6 +50,9 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- Los GLB del Survival Kit y del City Kit Roads leen la textura `Textures/colormap.png` de afuera: hubo que copiarla junto a cada uno.
+- La primera calle de la vereda quedaba con el cordón de la física cruzando las losas: se alineó el bordillo de la textura con el borde del cordón.
 
 - La primera textura de la calle salía casi blanca: la landing ilumina fuerte al robot (luz en la cámara y exposición 1,35) y lavaba el texto del hero. Se bajaron los tonos a la mitad.
 - En celular, las tres etapas y la curva tapaban al robot: ahí solo se ve la etapa activa.

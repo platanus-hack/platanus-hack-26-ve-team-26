@@ -77,18 +77,33 @@ function drawStreet() {
  * Dresses the viewer's floor as a street and hides its grid.
  * @returns a function that puts the floor back as it was
  */
-export function dressStreet(scene, renderer) {
+export function dressStreet(scene, renderer, { curbX = null } = {}) {
+  // By default x = 0 is the middle of the near sidewalk. With `curbX` (the inner edge of a real
+  // curb, e.g. the sidewalk place's), the far curb of the texture lands there instead, with the
+  // road beyond it and the sidewalk on this side.
+  const metersAtOrigin = curbX === null ? 0 : LAYOUT[3].from - curbX;
+  return dressFloor(scene, renderer, drawStreet(), PERIOD_M, (metersAtOrigin - LAYOUT[0].from) / PERIOD_M);
+}
+
+/**
+ * Puts a drawn texture on the viewer's floor (a square plane) and hides its grid.
+ * @param canvas   the texture, one period of `periodM` meters across
+ * @param originU  where x = 0 falls in the texture, as a share of its width
+ * @returns a function that puts the floor back as it was
+ */
+export function dressFloor(scene, renderer, canvas, periodM, originU = 0) {
   const grid = scene.children.find((object) => object.isGridHelper);
   const ground = scene.children.find((object) => object.isMesh && object.geometry?.type === 'PlaneGeometry');
   if (!ground) return () => {};
-  const texture = new THREE.CanvasTexture(drawStreet());
+  const PERIOD_M = periodM;
+  const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = texture.wrapT = THREE.RepeatWrapping;
   texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
   const span = ground.geometry.parameters.width; // the floor is a square this many meters across
   texture.repeat.set(span / PERIOD_M, span / PERIOD_M);
-  // The floor's u = 0.5 is x = 0; shift the texture so x = 0 falls in the middle of the sidewalk.
-  texture.offset.x = (-LAYOUT[0].from / PERIOD_M - (span / PERIOD_M) * 0.5) % 1;
+  // The floor's u = 0.5 is x = 0; shift the texture so x = 0 falls at `originU` of it.
+  texture.offset.x = (originU - (span / PERIOD_M) * 0.5) % 1;
   const before = ground.material;
   ground.material = new THREE.MeshStandardMaterial({ map: texture, roughness: 0.92 });
   const gridWasVisible = grid?.visible;

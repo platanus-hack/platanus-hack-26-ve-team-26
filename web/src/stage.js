@@ -16,6 +16,7 @@ import { SCENES, WORLDS } from 'tridi-physics';
 
 import { savedMotion } from './motions.js';
 import { FINAL_LEVEL, IMITATIONS, imitationOf, levelLabel, policyUrls } from './policies.js';
+import { dressPlace, setFloor } from './props.js';
 import { mountRobotPane } from './robot-pane.js';
 import { SkeletonView } from './skeleton.js';
 
@@ -139,6 +140,7 @@ export function mountStage(root, dots) {
     setRobotLabel('Cambiando de mundo…');
     try {
       await view.setWorld(WORLDS.find((world) => world.id === id));
+      await dressPlace(view); // a new world rebuilds the drawn geoms: dress the place again
     } catch (error) {
       console.error(error);
       setRobotLabel('No se pudo cambiar de mundo.');
@@ -162,6 +164,8 @@ export function mountStage(root, dots) {
     setRobotLabel('Armando el lugar…');
     try {
       await view.setScene(SCENES.find((scene) => scene.id === id) ?? null);
+      await dressPlace(view); // real models over the place's boxes and cylinders
+      setFloor(view, id); // and its floor: tiles, concrete or sidewalk
     } catch (error) {
       console.error(error);
       setRobotLabel('No se pudo armar el lugar.');
@@ -259,6 +263,7 @@ export function mountStage(root, dots) {
       const view = robot.view;
       // The app shares one robot: the next screen starts on flat, empty ground. One rebuild at a time.
       if (view) {
+        setFloor(view, null); // the viewer's own floor again
         const flat = view.world() && view.world().id !== 'plano' ? view.setWorld(WORLDS.find((world) => world.id === 'plano')) : Promise.resolve();
         flat.then(() => view.scene() && view.setScene(null));
       }
