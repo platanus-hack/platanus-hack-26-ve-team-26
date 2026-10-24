@@ -32,7 +32,31 @@ try {
 }
 ```
 
-La web pone el `<video>` (y un `<canvas>` encima para `drawSkeleton`, con el tamaño en píxeles del video). Con la opción `stream` se le puede pasar otro `MediaStream` en vez de la cámara, por ejemplo `videoDeArchivo.captureStream()`: así se probó sin webcam.
+La web pone el `<video>` (y un `<canvas>` encima para `drawSkeleton`, con el tamaño en píxeles del video). Con la opción `stream` se le puede pasar otro `MediaStream` en vez de la cámara, por ejemplo `videoDeArchivo.captureStream()`: así se probó sin webcam. `facingMode: 'environment'` pide la cámara trasera de un teléfono (para filmar a otra persona); por defecto es `'user'`.
+
+## El teléfono como cámara (En vivo)
+
+Para filmar a alguien de pie sin mover la Mac ([contrato](../../docs/contrato.md#el-teléfono-como-cámara-propuesta-de-juan-2026-10-24)). En la Mac, En vivo → "Usar el teléfono como cámara" abre una sesión en el servidor de video y muestra un QR; el teléfono lo escanea, abre `#/camara/<sesión>` (con el `?api=` del túnel), pide su cámara trasera y manda las poses; la Mac las recibe y las trata **igual que las de su webcam**: el robot copia y Grabar guarda el mismo `PoseClip`. El servidor solo las pasa de un lado al otro, en memoria ([`../relay.py`](../relay.py)): no guarda ni video ni poses.
+
+```js
+import { openPhoneSession, phonePageUrl, createPhoneCapture, createPhoneSender, closePhoneSession } from 'tridi-live';
+
+// En la Mac (web/src/screens/live.js): misma interfaz que createLiveCapture, más source, size() y onStatus.
+const { sessionId } = await openPhoneSession(base);
+const url = phonePageUrl('https://tridi-alpha.vercel.app/', base, sessionId); // lo que va en el QR
+const live = createPhoneCapture(base, sessionId, { onPose, onStatus: ({ state }) => {} });
+live.startRecording(); live.stopRecording(); live.fps(); live.stop(); // stop() cierra la sesión y el teléfono lo ve
+
+// En el teléfono (web/src/screens/phone.js): la misma captura, cámara trasera, y cada pose se manda.
+const sender = createPhoneSender(base, sessionId, { onStatus: ({ state, fps, watchedS }) => {} });
+const cam = await createLiveCapture(video, { model: 'lite', facingMode: 'environment', onPose: (pose) => sender.push(pose, video.videoWidth, video.videoHeight) });
+```
+
+- **Estados.** De la Mac: `waiting` (el QR en pantalla), `streaming`, `lost` (5 s sin cuadros: un corte del túnel dura 1 o 2 s, un teléfono bloqueado no vuelve) y `ended` (el teléfono o el servidor cerraron la sesión). Del teléfono: `sending`, `unwatched` (la Mac no pide hace 5 s), `offline` (el servidor no contesta; los cuadros esperan al próximo intento, hasta 1 s) y `ended`.
+- **El filtro One Euro corre una sola vez, en el teléfono** (dentro de `createLiveCapture`); la Mac reproduce los cuadros tal cual. Como llegan en ráfagas de ~3 cada 100 ms, `createPhoneCapture` los reproduce a su hora (el reloj del teléfono más el mayor retraso visto en los últimos 2 s): el robot se mueve a 30 cuadros por segundo y no a saltos de 10.
+- **Latencia esperable: 150 a 300 ms** de la persona al robot: la espera del lote (50 ms en promedio), dos pasos por el túnel y la reproducción. Alcanza para que el robot copie; no para un juego de reflejos.
+- **HTTPS.** La cámara solo existe en páginas seguras: por eso el QR apunta al deploy (`tridi-alpha.vercel.app`) aunque la Mac esté en `localhost:5173`, y el servidor tiene que ser el túnel (`?api=` de `data/serve.sh`), nunca `127.0.0.1`. Sin servidor, el botón solo dice por qué y la webcam sigue igual.
+- **Probarlo sin navegador:** con el servidor corriendo, `npm run check-relay`: un teléfono falso camina 4 s a 1,2 m/s por el relay real, la Mac falsa graba y el clip recupera esa velocidad; después el teléfono se calla y la Mac lo nota a los 5 s.
 
 ## Subir videos al servidor (César, W5 y W6)
 
@@ -72,7 +96,9 @@ Los errores del servidor llegan como `UploadError` con el mensaje en español. F
 | `src/draw.js` | El esqueleto sobre el video, mismos colores que `data.overlay` |
 | `src/api.js` | Dónde está el servidor: `?api=` o la última URL guardada, y si responde |
 | `src/upload.js` | Cliente del servidor de video: subida por partes con reintentos, progreso, elegir sujeto |
+| `src/relay.js` | El teléfono como cámara: el teléfono manda las poses en lotes de 100 ms, la Mac las recibe con *long polling* y las reproduce con la misma interfaz que la webcam |
 | `scripts/check.mjs` | Prueba sin navegador |
+| `scripts/check-relay.mjs` | Las dos mitades del relay contra el servidor real, sin navegador |
 
 ## Números medidos (Mac M2, 23 de octubre)
 
