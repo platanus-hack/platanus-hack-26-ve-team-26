@@ -61,6 +61,6 @@ En [`clips/`](clips), de videos de [Mixkit](https://mixkit.co) (licencia libre d
 | Clip | Video | Calidad |
 | --- | --- | --- |
 | `clip_2026-10-23_caminar-perfil_01` | Mixkit 4855, Young man walking listening to music | 100% válido, 11.8 s, 0.71 m/s |
-| `clip_2026-10-23_correr-perfil_01` | Mixkit 4831, View of a park while a girl runs across | 97% válido, 3.8 s, 3.6 m/s |
+| `clip_2026-10-23_correr-perfil_01` | Mixkit 4831, View of a park while a girl runs across | 97% válido, 3.8 s, 2.6 m/s |
 
 Prueba de selección con varias personas: Mixkit 4519, Students walking in a university: 5 personas de espaldas, los 5 ids se mantienen todo el video y el sujeto automático es el del centro; con `--click` se sigue a otra.

@@ -70,9 +70,11 @@ Los errores del servidor llegan como `UploadError` con el mensaje en español. F
 | Procesamiento en el navegador, modelo `full` con GPU | 30 fps (el ritmo del video) |
 | Mismo video de caminata, mismos landmarks, JS vs Python | 0,77 vs 0,71 m/s |
 | Caminata de perfil en vivo (video como cámara) | 100% válidos, 1,0 m/s |
+| Lo mismo el 24 de octubre, primeros 8 s del video | 30 fps, 100% válidos, 1,14 m/s (Python con el modelo `heavy` da 0,74 m/s en esos 8 s) |
 
 ## Límites conocidos
 
+- **Personas lejos o chicas no se ven:** sin el recorte de YOLO, MediaPipe busca en la imagen entera. El video de la corredora (26 px de ancho al entrar) da 0 cuadros en vivo y 97% en `extract.py`. Para la webcam del stand no importa: la persona está cerca.
 - **Una sola persona:** en vivo no hay YOLO ni ByteTrack; MediaPipe sigue al cuerpo más claro. Con varias personas en cuadro puede elegir a cualquiera.
 - **Bajo ~20 fps el avance sale mal:** la trayectoria sigue al pie apoyado cuadro a cuadro y con huecos pierde pasos. Pasa con la pestaña oculta o en celulares lentos con `full`; `fps()` sirve para avisarlo.
 - Los mismos límites de [`../README.md`](../README.md): grabar de perfil y con el cuerpo entero en cuadro.
