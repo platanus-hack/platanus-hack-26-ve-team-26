@@ -82,6 +82,11 @@ La web es un producto para empresas de robots humanoides: profesional, sobria, c
 - [x] **W9.3 Consola.** Mismo estilo en las tres pantallas; los robots de puntos quedan en gris, sin cara, como una nube de datos que se arma en robot (pantalla de carga y espera del G1). Salieron el fondo de puntos, la luz del cursor y las tarjetas inclinables. Cámara, Subir y Simulaciones con el mismo estilo, como la parte "producto" de la landing. Las funciones no cambian.
 - [x] **W9.4 Cifras.** Cada número enlaza a su README: ~40 s por 10 s de video (`data/`), 3,2 cm (`physics/`), 73 min, 40 M pasos, 4 de 4 empujones y la escalera (`training/`). Sin logos ni empresas como clientes. Cada número de la web sale de un README del repo y respeta "Lo que NO podemos decir" de `docs/pitch/diferencia.md`. Sin logos ni nombres de empresas como clientes.
 
+## M11. Producto (plan de `docs/plan-producto.md`)
+
+- [~] **WEB-1.** Ver W4.3.
+- [x] **SIM-3 (lado web).** Selector "Mundo" en Simulaciones: plano, piedras, resbaloso y viento (`physics/worlds/`, `view.setWorld`). Al salir de la pantalla el robot vuelve al piso plano, porque la app comparte un solo robot.
+
 ## M7. Pulido para la demo
 
 - [ ] **W7.1 Modo demo.** Loop automático por las precargadas para la pantalla del stand.

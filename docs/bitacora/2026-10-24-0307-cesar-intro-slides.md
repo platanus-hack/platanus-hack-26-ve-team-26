@@ -26,17 +26,22 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Cuarta vuelta, con lo que recolectaron Pastor y Juan: el pitch del producto (`docs/pitch/pitch-producto.md`, `8078d4c`) y el plan técnico (`docs/plan-producto.md`). La slide 1 abre con "La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento" y dice "Convierte video en datos de entrenamiento para robots". Bajo el robot, tres cifras medidas (4 de 4 empujones de 250 N, 73 min, red de 265 KB). La etiqueta del robot dice "movimiento de un video", y la slide 2 aclara que la caminata aprendida y los datos corregidos siguen en desarrollo, según la tabla de qué es verdad hoy del pitch. La tarjeta de Subir dice que el video se borra.
 - `AGENTS.md` (commit aparte, archivo del equipo): describe el producto con el pitch nuevo y pide revisar la tabla de qué es verdad hoy antes de escribir textos.
 - WEB-1 (plan del producto): la cámara de En vivo graba desde que se enciende, con contador hasta 30 s, "Parar y guardar" y guardado al apagarla o salir. El clip va a la galería como "Tu cámara · hh:mm" y se abre en Simulaciones, donde el robot lo repite (movimiento calculado en el navegador). El resultado tiene su propio bloque, porque la línea de estado se reescribe cada segundo. Falta mandarlo al servidor (`POST /clips`, SRV-1).
+- SIM-3 (mundos), en la carpeta de Pastor con commits propios: `physics/worlds/` (plano, piedras, resbaloso, viento) con el formato de "Mundos" del contrato que propuso Pastor (`9d2bab0`); `sim.applyWorld` (fricción en los pares de contacto con el piso, masas e inercias con `mj_setConst`, `kp`/`kv` y topes de torque, viento como fuerza en el torso por arrastre: 10 m/s ≈ 30 N); escena de piedras generada (`npm run make-stones-scene`: mapa de alturas de 161×161 celdas de 5 cm, piedras de hasta 3 cm, semilla fija) que el visor ahora dibuja; `view.setWorld` en `index.js` (con otra escena recarga el modelo y la política); `check-worlds` dentro de `npm run check`. En la web, selector "Mundo" en Simulaciones.
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- SIM-3: `npm run check` de `physics/` pasa entero (check, retarget, policy, worlds). Cada mundo carga y sus parámetros llegan a MuJoCo. La política de hoy (entrenada en plano) aguanta 10 s de pie con los valores del medio de los cuatro mundos; con 40 N de viento se cayó a los 3,5 s. En el navegador: el selector cambia de mundo, el terreno de piedras se ve, el robot retoma el clip, Empujar funciona en Viento, y al volver al inicio el robot está en plano.
 - WEB-1 con la cámara falsa de Chrome (sin persona): empieza a grabar al encender, el contador avanza, Parar muestra "No se vio a nadie lo suficiente" con "Grabar otro", y la segunda grabación se detiene sola en 0:30. **No se probó con una persona real**: el camino que guarda el clip falta verlo con una webcam.
 - Robot de la slide 1, con Chrome sin GPU: empieza caminando, a los 9 s corre, el empujón cambia la etiqueta a "se recupera solo" y luego retoma el movimiento. Sin desborde en 390 px.
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- La primera versión de los mundos usaba otros nombres (`name`, viento en N, `push_newtons`); en medio llegó la propuesta de contrato de Pastor con `title`, `wind_mps` y `push_n`, y se alineó a ella.
+- Para dibujar las piedras hubo que confirmar el orden de las filas del mapa de alturas: con `mj_ray` sobre la piedra más alta, la fila 0 está en −y.
 
 - El aviso de grabación fallida se mostraba en la línea de estado y la reescribía el mensaje de cada segundo ("No te veo…"): ahora va en su propio bloque.
 
@@ -58,6 +63,9 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - La vuelta al estilo claro contradice la decisión "innegociable" de Juan; se registró como decisión de César enlazando la suya, sin editarla.
 
 ## Sigue
+
+- Pastor: revisar SIM-3 en `physics/` (es su carpeta).
+- Quien tome ENT-3: el lector de `physics/worlds/` en Python para `training/env.py`, aplicando lo mismo que `sim.applyWorld` (misma fórmula de viento).
 
 - César: probar WEB-1 con una webcam real (guardar un clip y verlo en Simulaciones). Mandar el clip al servidor cuando Juan tenga `POST /clips` (SRV-1).
 
