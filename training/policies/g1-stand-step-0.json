@@ -1,0 +1,10 @@
+{
+  "id": "g1-stand-step-0",
+  "robot": "unitree_g1",
+  "mjcf": "unitree_g1/scene_mjx.xml",
+  "obs_dim": 93,
+  "nu": 29,
+  "trained_on": [],
+  "steps": 0,
+  "created_at": "2026-10-24T05:05:37+00:00"
+}

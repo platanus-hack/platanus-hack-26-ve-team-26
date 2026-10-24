@@ -34,7 +34,6 @@ def run(model: ActorCritic | None, seed: int) -> tuple[float, int]:
                 env.push_now(PUSH_N, angle)
             if k == second * 50 + 100:  # still up 2 s after the push
                 survived += 1
-        env.push_enabled = env.push_left > 0
         if model is None:
             action = np.zeros(29)  # no policy: hold the standing targets, like physics/ today
         else:

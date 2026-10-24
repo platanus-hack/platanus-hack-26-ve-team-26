@@ -165,9 +165,8 @@ class G1Env:
 
     def _push(self) -> None:
         f = self.data.xfrc_applied
-        if not self.push_enabled:
-            return
-        if self.push_left == 0 and self.steps >= self.next_push:
+        # Random pushes only when enabled; a push_now() push runs its 0.1 s either way.
+        if self.push_enabled and self.push_left == 0 and self.steps >= self.next_push:
             angle = self.rng.uniform(0, 2 * np.pi)
             self.push_force = self.rng.uniform(0, PUSH_MAX_N) * np.array([np.cos(angle), np.sin(angle), 0])
             self.push_left = PUSH_STEPS
