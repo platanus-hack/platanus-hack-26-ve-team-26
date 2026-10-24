@@ -193,7 +193,7 @@ export function mount(root, { api }) {
       </div>
     </section>
 
-    <section class="chapter policy" id="policy" data-shot="policy" data-mode="stand" data-level="g1-stand-quiet">
+    <section class="chapter policy" id="policy" data-shot="policy" data-mode="stand">
       <div class="sticky">
         <div class="caption policy-caption panel">
           <p class="product">Tridi Policy</p>
@@ -209,7 +209,7 @@ export function mount(root, { api }) {
       </div>
     </section>
 
-    <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand" data-level="g1-stand-quiet">
+    <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand">
       <div class="closing-inner">
         <p class="product">Para equipos de humanoides</p>
         <p class="lede">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
