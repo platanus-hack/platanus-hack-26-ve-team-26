@@ -2,6 +2,10 @@
 
 Video (o `.zip` de videos) → se elige y se sigue a un sujeto → su pose 3D por frame → `PoseClip` como dice [`../docs/contrato.md`](../docs/contrato.md). Dueño: Juan.
 
+La cámara en vivo (el mismo `PoseClip`, en el navegador) está en [`live/`](live).
+
+**Espejo para deploy:** [`juanevillam/tridi-data`](https://github.com/juanevillam/tridi-data) copia `main` del repo del equipo; no se commitea ahí. Tras cada ship: `ALLOW_MAIN_PUSH=1 git push mirror origin/main:main` (el remoto `mirror` apunta a ese repo; la variable salta el hook que bloquea pushes a `main`, que aquí no aplica porque se copia `main` tal cual). Hoy no se despliega nada desde ahí: el servidor de videos va a correr en la Mac de Juan con un túnel.
+
 ## Uso
 
 Requiere [uv](https://docs.astral.sh/uv/) (`brew install uv`). La primera corrida instala Python 3.12 y las dependencias, y baja los modelos a `data/models/` (no se versionan).

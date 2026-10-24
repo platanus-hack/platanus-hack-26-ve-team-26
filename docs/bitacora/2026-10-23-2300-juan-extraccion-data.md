@@ -6,7 +6,7 @@ inicio: 2026-10-23 23:00
 estado: en curso
 ---
 
-# Fase 1 de data/: video → PoseClip
+# data/: video → PoseClip (fase 1) y cámara en vivo (fase 2)
 
 ## Objetivo
 
@@ -39,9 +39,18 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - Frames malos se interpolan y llevan visibilidad 0 en el JSON, en vez de cortar el clip.
 - Para los clips nuestros (precargadas buenas y la demo): grabar de perfil, cámara fija o paneando, cuerpo entero en cuadro. César: vale la pena decirlo en la UI de subida.
 
+## Fase 2: cámara en vivo (`data/live/`)
+
+- Deploy: Pastor ya tenía el espejo `torpass/tridi`. Juan pidió uno propio: [`juanevillam/tridi-data`](https://github.com/juanevillam/tridi-data), con `main` copiado. Nada se despliega desde ahí por ahora; el servidor de videos va a correr en la Mac de Juan con un túnel. El hook `pre-push` bloquea cualquier push a `main`, también al espejo: se usa `ALLOW_MAIN_PUSH=1` (anotado en `data/README.md`).
+- `data/live/`: paquete JS como `physics/` (Vite, sin framework). `createLiveCapture(video, opts)` para César, `buildPoseClip` (mismos pasos que `lift.py`, remuestreado a 30 fps), `drawSkeleton`, página demo y `npm run check`.
+- Funcionó: `npm run check` (persona sintética a 1,2 m/s → 1,18 m/s, el cuadro espejado se descarta). En el navegador, con un video como cámara: 30 fps con el modelo `full`, 100% válidos, 1,0 m/s caminando. Con los mismos landmarks, JS da 0,77 m/s y Python 0,71: paridad.
+- No funcionó al principio: 0,10 m/s en el navegador. Causa: saltar a otro punto del video cortaba el stream (10 muestras en 5 s), y la integración por pie apoyado pierde pasos con huecos. También el pane del navegador oculto pausa `requestAnimationFrame`. Se agregó `fps()` y la demo avisa bajo 20 fps.
+- Límite: en vivo no hay tracker; con varias personas MediaPipe elige a cualquiera (en la prueba del grupo, al de la derecha).
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.
 - Grabar a Pastor/César caminando y corriendo de perfil con el teléfono (focal conocida) para precargadas propias.
-- Fase 2: módulo JS con MediaPipe en el navegador que emita el mismo `PoseClip` para `web/`.
+- César: integrar `createLiveCapture` en W4 (ver `data/live/README.md`).
+- Juan: servidor de videos (FastAPI en la Mac + túnel) para W5/W6, y probar la demo con la webcam real.
 - Shipeado a `main` como `14045b3`. Al rebasear entró el G1 de Pastor; su pregunta de la traslación de la pelvis quedó respondida en [`../preguntas-abiertas.md`](../preguntas-abiertas.md): ya viene en el `PoseClip`. Ojo Pastor: el contrato usa y arriba, MuJoCo z arriba.

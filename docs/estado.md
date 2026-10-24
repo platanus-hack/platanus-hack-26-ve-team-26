@@ -21,10 +21,10 @@ Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, rend
 
 Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` limpio.
 
-- **Funciona:** `python -m data.extract <video|zip> [--click x,y]` saca el `PoseClip` (JSON + `.npz`) de un sujeto entre varias personas; `data.overlay` lo comprueba sobre el video. Precargadas `caminar-perfil` y `correr-perfil` en `data/clips/`. Uso y límites en [`../data/README.md`](../data/README.md).
+- **Funciona:** `python -m data.extract <video|zip> [--click x,y]` saca el `PoseClip` (JSON + `.npz`) de un sujeto entre varias personas; `data.overlay` lo comprueba sobre el video. Precargadas `caminar-perfil` y `correr-perfil` en `data/clips/`. Uso y límites en [`../data/README.md`](../data/README.md). Cámara en vivo en el navegador: `createLiveCapture` en [`../data/live/`](../data/live/README.md), mismo `PoseClip`, 30 fps. Espejo propio `juanevillam/tridi-data`.
 - **En curso:** —
 - **Bloqueado por:** —
-- **Sigue:** fase 2, cámara en vivo en JS para `web/`. Grabar precargadas propias de perfil. Límite clave: de frente el avance sale ≈ 0, hay que grabar de perfil.
+- **Sigue:** servidor de videos subidos (FastAPI en la Mac de Juan + túnel) para W5/W6 de César. Grabar precargadas propias de perfil. Límite clave: de frente el avance sale ≈ 0, hay que grabar de perfil.
 
 ---
 
