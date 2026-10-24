@@ -10,7 +10,7 @@ Hoy el G1 hace dos cosas: se sostiene de pie con sus motores y se cae si lo empu
 cd physics
 npm install
 npm run dev      # http://localhost:5173: el G1 de pie, con "Cámara", "Empujar" y "Reiniciar"
-npm run check    # en Node: la física (de pie 10 s, se cae al empujarlo) y el retargeting (poses sintéticas y el clip real de caminata de data/)
+npm run check    # en Node: la física, el retargeting (poses sintéticas y el clip real de caminata) y la política entrenada de training/
 npm run build    # dist/ estático, listo para desplegar
 ```
 
@@ -30,6 +30,8 @@ view.mimic(pose);   // copiar a una persona, un cuadro de cámara por llamada (v
 view.playClip(motion); // reproducir un RobotMotion (ver "Un clip completo"); reset() lo rebobina
 view.clipTime();    // en qué segundo va, para sincronizar lo que se dibuja al lado
 view.stop();        // soltar el clip o la cámara y volver al robot físico, de pie
+await view.loadPolicy(onnxUrl, jsonUrl); // una política entrenada (training/policies/): el robot se equilibra solo
+view.clearPolicy(); // quitarla y volver a los motores rígidos
 view.dispose(); // al desmontar: corta el ciclo y libera WebGL y la memoria de MuJoCo
 ```
 
@@ -62,6 +64,36 @@ Lo que la cámara no ve se queda en la pose de pie: una persona sentada frente a
 **Espejo.** Por defecto el robot se mueve como tu reflejo: levantas la mano derecha y sube el brazo que queda del mismo lado de la pantalla, que es el izquierdo del robot (y la vista previa de la cámara también está espejada). Con `createSimView(canvas, { mirror: false })` el robot copia lado con lado, que es lo que van a querer los clips.
 
 **Ejes.** MediaPipe: x a la derecha de la imagen, y hacia abajo, z alejándose de la cámara. Robot (MuJoCo): x adelante, y a su izquierda, z arriba. Una persona de frente a la cámara mira hacia +x del robot. Se verificó con el clip real de caminata de `data/`: el rumbo sale a 90° (hacia donde avanza) y se mueve el brazo del lado que la cámara ve.
+
+## Una política entrenada: `view.loadPolicy`
+
+```js
+await view.loadPolicy('/policies/g1-stand.onnx', '/policies/g1-stand.json'); // o los bytes y el objeto
+view.push(); // el robot se tambalea y se recupera, o no
+view.reset(); // de pie otra vez
+```
+
+`training/` (Juan) deja en [`../training/policies/`](../training/policies) un `.onnx` y su `.json` por checkpoint. `loadPolicy` los corre con onnxruntime-web: **cada 20 ms** (5 pasos de física de 4 ms) arma la observación de 93 números, le pregunta a la red y escribe sus 29 salidas en `data.ctrl`. Para que se vea la escalera del pitch basta con cargar otro checkpoint (el mismo robot sin entrenar, a medias y entrenado).
+
+| Archivo | Qué hace |
+| --- | --- |
+| `src/policy.js` | Arma la observación como `training/env.py` (`observe`) y aplica la salida. No usa nada del navegador: recibe `ort`, y por eso `npm run check` la prueba en Node |
+| `src/ort.js` | Carga onnxruntime-web **solo cuando se pide una política**, con su WebAssembly (14 MB, 3,7 MB comprimido) servido por nuestro build y con un solo hilo (varios hilos exigen cabeceras de aislamiento que Vercel no manda; la red mide 265 KB y decide en menos de un milisegundo) |
+
+**La política necesita su propio modelo del G1.** Se entrenó sobre `scene_mjx.xml` (motores blandos, paso de 4 ms) y sobre el modelo rígido que se muestra por defecto se caería. `loadPolicy` lee `mjcf` de `policy.json` y cambia el robot a esa escena; `clearPolicy()` vuelve a la rígida. Eso hizo que `sim.advance` sea **asíncrono** (la inferencia de onnxruntime-web siempre devuelve una promesa), y que el visor tenga `rebuild()`.
+
+**Cómo se verificó que la observación está bien armada:** si estuviera mal, la red recibiría números sin sentido y el robot se caería aunque todo "corriera". `npm run check` carga las políticas de `training/policies/` en Node, con el mismo WASM de MuJoCo y el mismo onnxruntime-web, y comprueba lo que Juan midió en Python:
+
+| Prueba | Resultado |
+| --- | --- |
+| `g1-stand` sin empujones | Se sostiene los 20 s, pelvis a 0,78 m |
+| Empujón de 150 N (de frente, izquierda, atrás y derecha) | Aguanta los cuatro (Juan: los cuatro) |
+| Empujón de 250 N, el del botón | Aguanta 3 de 4 (Juan: 2,2 de 4 de media) |
+| `g1-stand-step-0`, sin entrenar | Se cae a los 1,2 s (Juan: 1,1 s): la prueba sí puede fallar |
+
+En el navegador, lo mismo: 150 N aguantado desde los cuatro lados.
+
+**Riesgo para el pitch: el botón empuja con 250 N, y a esa fuerza todavía se cae desde algunas direcciones** (en las pruebas, desde la izquierda). Con 150 N aguanta siempre. Si el momento central de la demo tiene que salir bien, o se entrena más, o el botón empuja menos (`PUSH_NEWTONS` en `src/sim.js`).
 
 ## Un clip completo: `RobotMotion`
 
@@ -128,9 +160,10 @@ Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos c
 | `src/motion.js` | Un `PoseClip` completo → `RobotMotion`, con el recorrido y el rumbo de la pelvis |
 | `scripts/retarget-clip.mjs` | `npm run retarget`: lo anterior sobre archivos |
 | `motions/` | Los `RobotMotion` de los clips de `data/clips/` |
-| `src/index.js` | `createSimView`: carga, ciclo de física y dibujo, controles y `mimic` |
+| `src/policy.js`, `src/ort.js` | La política entrenada (arriba) |
+| `src/index.js` | `createSimView`: carga, ciclo de física y dibujo, controles, `mimic`, `playClip` y `loadPolicy` |
 | `src/main.js`, `index.html` | La página de desarrollo, con el botón de la cámara (usa `data/live`) |
-| `scripts/check.mjs`, `scripts/check-retarget.mjs` | Pruebas sin navegador con el mismo WASM: la física, y el retargeting con poses sintéticas y con el clip real de caminata |
+| `scripts/check.mjs`, `check-retarget.mjs`, `check-policy.mjs` | Pruebas sin navegador con el mismo WASM: la física; el retargeting con poses sintéticas y el clip real de caminata; y la política entrenada |
 | `models/unitree_g1/` | El G1 de MuJoCo Menagerie, sin cambios ([README](models/unitree_g1/README.md)) |
 
 - **De pie sin política:** los actuadores del G1 son de posición (`kp=500` en `g1.xml`): cada motor lleva su articulación al ángulo que dice `ctrl`. Poner `ctrl` igual a la pose `stand` hace que el robot la sostenga, como una estatua rígida. No se equilibra: con un empujón se cae.
@@ -145,7 +178,7 @@ Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos c
 | G1 en WASM (Node), un núcleo | 25.000 pasos/s, 50 veces más rápido que el tiempo real |
 | G1 nativo (Python), un núcleo | 44.700 pasos/s con `g1.xml`, 60.000 con `g1_mjx.xml` (cápsulas) |
 | En el navegador | 500 pasos/s a x1,00 del tiempo real, 60 cuadros por segundo |
-| Descarga | 30 MB: WASM 10,7 MB (2,7 MB comprimido) y mallas 19 MB |
+| Descarga | 30 MB: WASM 10,7 MB (2,7 MB comprimido) y mallas 19 MB; y solo si se carga una política, 14 MB más de onnxruntime-web (3,7 MB comprimido) |
 
 ## Límites conocidos
 
