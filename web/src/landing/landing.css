@@ -103,7 +103,77 @@ html.is-landing.lenis body {
     /* Darker since the landing's street is lit and full of shops: the words sit over a busy picture. */
     linear-gradient(90deg, rgb(10 10 9 / calc(0.78 * var(--wash-left))), rgb(10 10 9 / calc(0.42 * var(--wash-left))) 34%, transparent 56%),
     linear-gradient(270deg, rgb(10 10 9 / calc(0.78 * var(--wash-right))), rgb(10 10 9 / calc(0.42 * var(--wash-right))) 34%, transparent 56%),
-    linear-gradient(transparent 55%, rgb(10 10 9 / calc(0.8 * var(--wash-floor))) 85%);
+    linear-gradient(transparent 30%, rgb(10 10 9 / calc(0.82 * var(--wash-floor))) 66%); /* phones: the hero's title starts at a third of the screen */
+}
+
+/* The film's frame: viewfinder corners and the simulation's own readout (home.js updateReadout),
+   so the street reads as a simulation. Under the shade, which covers it with the rest of the film
+   at the close. */
+.film-hud {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+.film.ready ~ .film-hud {
+  opacity: 1;
+}
+
+.corner {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border: 0 solid rgb(239 237 232 / 0.4);
+}
+
+.corner.tl {
+  top: 84px;
+  left: 16px;
+  border-width: 1px 0 0 1px;
+}
+
+.corner.tr {
+  top: 84px;
+  right: 16px;
+  border-width: 1px 1px 0 0;
+}
+
+.corner.bl {
+  bottom: 16px;
+  left: 16px;
+  border-width: 0 0 1px 1px;
+}
+
+.corner.br {
+  right: 16px;
+  bottom: 16px;
+  border-width: 0 1px 1px 0;
+}
+
+.sim-readout {
+  position: absolute;
+  top: 88px;
+  right: var(--gutter);
+  display: flex;
+  gap: 16px;
+  padding: 8px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(10 10 9 / 0.55);
+  font: 500 11px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--fg-2);
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.6);
+}
+
+.sim-readout b {
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
 }
 
 .boot {
@@ -219,23 +289,27 @@ html.is-landing.lenis body {
 
 .topbar {
   position: fixed;
-  inset: 0 0 auto;
+  inset: 12px var(--gutter) auto;
   z-index: 20;
   display: flex;
   align-items: center;
   gap: 32px;
-  padding: 16px var(--gutter);
-  border-bottom: 1px solid transparent; /* the hairline of .solid, held so the bar never grows 1 px */
-  transition: background-color 0.3s, border-color 0.3s;
+  padding: 8px 8px 8px 18px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  /* Detached from the edges and always on its own dark glass: over the hero the street behind it
+     is bright (shop windows, the sky), and the words and the button need the same ground there
+     as everywhere else. */
+  background: rgb(10 10 9 / 0.62);
+  backdrop-filter: blur(16px) saturate(1.2);
+  box-shadow: 0 16px 40px -20px rgb(0 0 0 / 0.8);
+  transition: background-color 0.3s;
 }
 
-/* Past the hero the chapters scroll under the bar (home.js), in the same light ink as its own
-   words: a dark ground and the landing's hairline, the glass of .btn and .state made denser.
-   0.8 keeps the 12 px nav readable even over a full white glyph before the blur. */
+/* Past the hero the chapters' words scroll under the bar (home.js): a denser ground keeps the
+   12 px nav readable even over a full white glyph before the blur. */
 .topbar.solid {
-  border-bottom-color: var(--line);
-  background: rgb(10 10 9 / 0.8);
-  backdrop-filter: blur(16px);
+  background: rgb(10 10 9 / 0.82);
 }
 
 .wordmark {
@@ -278,7 +352,7 @@ html.is-landing.lenis body {
 }
 
 .topnav a {
-  color: var(--fg-2);
+  color: var(--fg);
   text-decoration: none;
   transition: color 0.2s;
 }
@@ -356,12 +430,16 @@ html.is-landing.lenis body {
 
 .hero-live {
   position: absolute;
-  top: 84px;
+  top: 88px;
   left: var(--gutter);
+  padding: 8px 14px 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(10 10 9 / 0.55);
   font: 500 11px/1 var(--mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--fg-2);
+  color: var(--fg);
 }
 
 .hero-caption {
@@ -369,21 +447,75 @@ html.is-landing.lenis body {
   bottom: clamp(40px, 9vh, 96px);
 }
 
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 22px !important;
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg) !important;
+}
+
+.eyebrow::before {
+  content: '';
+  width: 28px;
+  height: 1px;
+  background: var(--signal);
+}
+
 .hero-caption h1 {
   font-size: clamp(40px, 5.6vw, 92px);
   line-height: 0.92;
+  text-shadow: 0 2px 30px rgb(0 0 0 / 0.35);
 }
 
-.hero-caption p {
+/* The second line in the signal: what the robot learns from. */
+.hero-caption h1 em {
+  display: block;
+  font-style: normal;
+  color: var(--signal);
+}
+
+.hero-lede {
   margin-top: 22px !important;
   font-size: clamp(16px, 1.25vw, 19px);
+  color: var(--fg) !important;
+  text-shadow: 0 1px 16px rgb(0 0 0 / 0.5);
+}
+
+/* The product in three steps, read in one glance. */
+.hero-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 22px !important;
+}
+
+.hero-steps li {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgb(10 10 9 / 0.55);
+  font: 500 12px/1 var(--mono);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hero-steps b {
+  font-weight: 500;
+  color: var(--signal);
 }
 
 .cta-row {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 28px;
+  margin-top: 24px;
 }
 
 .hud {
@@ -398,16 +530,18 @@ html.is-landing.lenis body {
   text-transform: uppercase;
 }
 
-.state {
+/* .landing .state, not .state: `.landing p` resets padding and outranks a lone class, which left
+   the pill with its words touching its border. */
+.landing .state {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   border: 1px solid var(--line);
-  border-radius: 6px;
-  background: rgb(10 10 9 / 0.45);
+  border-radius: 999px;
+  background: rgb(10 10 9 / 0.62);
   backdrop-filter: blur(10px);
-  color: var(--fg-2);
+  color: var(--fg);
 }
 
 .state i {
@@ -417,7 +551,7 @@ html.is-landing.lenis body {
   background: #6fcf8a; /* green: standing, all good */
 }
 
-.state[data-state='push'] {
+.landing .state[data-state='push'] {
   border-color: var(--signal);
   color: var(--signal);
 }
@@ -428,8 +562,9 @@ html.is-landing.lenis body {
   box-shadow: 0 0 10px var(--signal);
 }
 
-.tally {
-  color: var(--dim);
+.landing .tally {
+  padding-right: 14px;
+  color: var(--fg-2);
 }
 
 /* On phones the words sit low, so the push button also lives in the HUD. */
@@ -541,155 +676,222 @@ html.is-landing.lenis body {
   height: 400svh; /* the panel sticks for three screens, one per stage (home.js gymStage, gymGate) */
 }
 
-.gym-hint {
-  margin-top: 6px !important;
-  font: 500 10px/1.4 var(--mono);
-  text-transform: uppercase;
-  color: var(--dim);
+/* Gym and Policy: their words sit on a dark card, since the street behind them is busy. No
+   backdrop blur: one this size filters the whole film under it again every frame. */
+.panel {
+  padding: 26px 28px 24px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgb(10 10 9 / 0.76);
+  box-shadow: 0 30px 80px -30px rgb(0 0 0 / 0.8);
+}
+
+.panel h2 {
+  font-size: clamp(24px, 2.3vw, 36px);
 }
 
 .gym-caption {
   left: var(--gutter);
-  top: 88px; /* under the top bar: the steps meter makes the caption too tall to center */
-  width: min(36vw, 520px);
+  top: 84px; /* under the top bar: the steps meter makes the card too tall to center */
+  width: min(36vw, 500px);
 }
 
 .gym-text {
-  margin-top: 16px !important;
+  margin-top: 12px !important;
+  font-size: 15px;
 }
 
-/* The steps: a big count of the stage on screen and an axis from 0 to 40 M with the three stops
-   at their real positions; the bar fills up to the current one (home.js showGymStage). */
+.gym-hint {
+  margin-top: 4px !important;
+  font: 500 10px/1.4 var(--mono);
+  text-transform: uppercase;
+  color: var(--dim) !important;
+}
+
+/* The steps: a big count of the stage on screen, what a step is, the real 0 to 40 M scale with
+   the three checkpoints on it, and the three as buttons (home.js showGymStage). */
 .steps-meter {
   display: grid;
-  gap: 18px;
-  margin-top: 22px;
+  gap: 14px;
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
 }
 
 .steps-now {
   display: flex;
-  align-items: baseline;
-  gap: 12px;
+  align-items: center;
+  gap: 14px;
   margin: 0 !important;
 }
 
 .steps-now b {
-  font: 500 clamp(48px, 5.4vw, 84px)/0.9 var(--display);
+  font: 500 clamp(44px, 4.4vw, 68px)/0.9 var(--display);
   letter-spacing: -0.04em;
   font-variant-numeric: tabular-nums;
   color: var(--signal);
 }
 
 .steps-now span {
-  font: 500 12px/1.2 var(--mono);
+  font: 500 11px/1.25 var(--mono);
   text-transform: uppercase;
-  color: var(--dim);
+  color: var(--fg-2);
+}
+
+.steps-explain {
+  margin: 0 !important;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--fg-2) !important;
 }
 
 .steps-axis {
+  display: grid;
+  gap: 10px;
+}
+
+.axis-track {
   position: relative;
-  height: 64px;
-  margin: 0 12px;
+  height: 10px;
+  margin: 0 5px;
 }
 
 .axis-line {
   position: absolute;
   left: 0;
   right: 0;
-  top: 7px;
+  top: 4px;
   height: 2px;
-  background: var(--line-dark);
+  border-radius: 2px;
+  background: var(--line);
 }
 
 .axis-fill {
   position: absolute;
   inset: 0 auto 0 0;
   width: 0;
+  border-radius: 2px;
   background: var(--signal);
   transition: width 0.9s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.axis-stop {
+.axis-tick {
   position: absolute;
   left: var(--at);
   top: 0;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--dim);
-  transform: translateX(-50%);
-  cursor: pointer;
-}
-
-.axis-dot {
-  width: 16px;
-  height: 16px;
+  width: 10px;
+  height: 10px;
   border: 2px solid var(--fg-2);
   border-radius: 50%;
-  background: var(--scene);
-  transition: background 0.3s, border-color 0.3s, transform 0.3s;
+  background: #0a0a09;
+  transform: translateX(-50%);
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
 
-.axis-stop.past .axis-dot,
-.axis-stop.on .axis-dot {
+.axis-tick.past,
+.axis-tick.on {
   border-color: var(--signal);
   background: var(--signal);
 }
 
-.axis-stop.on .axis-dot {
-  transform: scale(1.35);
+.axis-tick.on {
+  box-shadow: 0 0 0 4px rgb(255 79 26 / 0.25);
+}
+
+/* The three checkpoints as a segmented control. */
+.axis-stops {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgb(239 237 232 / 0.03);
+}
+
+.axis-stop {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  min-height: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--fg-2);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.25s, color 0.25s;
+}
+
+.axis-stop:hover {
+  background: rgb(239 237 232 / 0.07);
+  color: var(--fg);
+}
+
+.axis-stop.on {
+  background: var(--signal);
+  color: #0a0a09;
 }
 
 .axis-label {
-  font: 500 12px/1 var(--mono);
+  white-space: nowrap;
+  font: 500 10px/1 var(--mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.8;
 }
 
 .axis-verdict {
-  font: 500 13px/1 var(--display);
+  font: 500 15px/1.1 var(--display);
   white-space: nowrap;
-}
-
-.axis-stop.on .axis-label,
-.axis-stop.on .axis-verdict {
-  color: var(--signal);
 }
 
 .stage-detail {
   display: grid;
-  gap: 4px;
+  gap: 6px;
   padding: 12px 14px;
   border-left: 3px solid var(--signal);
-  background: rgb(238 236 231 / 0.04);
+  border-radius: 0 8px 8px 0;
+  background: rgb(239 237 232 / 0.05);
 }
 
 .stage-verdict {
-  font: 500 clamp(20px, 1.8vw, 26px)/1.1 var(--display);
+  font: 500 clamp(19px, 1.6vw, 24px)/1.1 var(--display);
   letter-spacing: -0.02em;
   color: var(--signal);
 }
 
 .stage-text {
   font-size: 15px;
+  line-height: 1.4;
 }
 
 .stage-numbers {
-  font: 500 11px/1.4 var(--mono);
-  text-transform: uppercase;
-  color: var(--dim);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
 }
 
-.steps-explain {
-  margin: 0 !important;
-  font-size: 13px;
-  color: var(--dim);
+.stage-numbers span {
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 500 11px/1 var(--mono);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.stage-numbers b {
+  font-weight: 500;
+  color: var(--fg);
 }
 
 .gym-status {
-  margin-top: 14px !important;
+  display: flex;
+  align-items: center;
+  margin-top: 16px !important;
   font: 500 11px/1.5 var(--mono);
   text-transform: uppercase;
   color: var(--signal) !important;
@@ -698,8 +900,9 @@ html.is-landing.lenis body {
 .chart-fig {
   display: grid;
   gap: 6px;
-  width: 78%; /* a supporting detail now: the axis above already shows the progress */
-  margin-top: 16px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
 }
 
 .chart-fig figcaption {
@@ -712,6 +915,7 @@ html.is-landing.lenis body {
   display: block;
   width: 100%;
   height: auto;
+  max-height: 110px;
 }
 
 .chart .grid line {
@@ -731,6 +935,13 @@ html.is-landing.lenis body {
   stroke-dashoffset: 0;
 }
 
+/* A laptop screen (900 px tall and less) has no room for the log under the meter. */
+@media (max-height: 940px) {
+  .gym .chart-fig {
+    display: none;
+  }
+}
+
 /* Policy: the whole robot the network moves, the numbers beside it */
 
 .policy {
@@ -740,13 +951,13 @@ html.is-landing.lenis body {
 .policy-caption {
   right: var(--gutter);
   top: 50%;
-  width: min(36vw, 520px);
+  width: min(36vw, 500px);
   transform: translateY(-50%);
 }
 
 .specs {
   display: grid;
-  margin-top: 28px !important;
+  margin-top: 22px !important;
 }
 
 .specs li {
@@ -766,12 +977,14 @@ html.is-landing.lenis body {
 
 .specs span {
   font-size: 15px;
-  color: var(--fg-2);
+  color: var(--fg);
 }
 
 .policy-note {
-  margin-top: 20px !important;
-  font-size: 15px;
+  margin-top: 18px !important;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 14px;
 }
 
 /* Closing: the page closes over the film */
@@ -1092,6 +1305,10 @@ html.is-landing.lenis body {
 }
 
 @media (max-width: 860px) {
+  .film-hud {
+    display: none; /* the phone's screen is all robot and words already */
+  }
+
   .hero-caption,
   .capture-caption,
   .gym-caption,
@@ -1114,8 +1331,19 @@ html.is-landing.lenis body {
   }
 
   .gym .chart-fig,
-  .steps-explain {
+  .steps-explain,
+  .gym-caption h2,
+  .gym-hint {
     display: none;
+  }
+
+  .panel {
+    padding: 16px 18px;
+  }
+
+  .steps-meter {
+    margin-top: 12px;
+    padding-top: 12px;
   }
 
   .hero-caption .cta-row .hero-push {
@@ -1123,8 +1351,12 @@ html.is-landing.lenis body {
   }
 
   .hud {
-    top: 112px;
+    top: 136px; /* under the "Simulación en vivo" pill */
     bottom: auto;
+  }
+
+  .axis-stop {
+    padding: 9px 8px;
   }
 
 

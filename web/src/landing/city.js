@@ -60,7 +60,6 @@ const FOG = { color: 0x1b1d24, near: 14, far: 95 };
 const WALL_SHADE = 0.2;
 const GLASS_SWATCH = { x: [11 / 16, 12 / 16], y: [1 / 4, 2 / 4] }; // as a share of the colormap
 const WINDOW_LIGHT = { color: 0xffa451, intensity: 0.75 };
-const WARM = 0xffc58a; // the street lights' sodium-ish white
 
 const loader = new GLTFLoader();
 const cache = new Map();
@@ -580,16 +579,8 @@ export function dressCity(scene, renderer) {
       if (isClear(tx, z - toward * 0.25, 1.4)) tree(b, tx, z - toward * 0.25, rand);
     }
   }
-  // Two of them really light the street near the robot; the rest only glow (point lights cost).
-  const lamps = [
-    [-12, CURB_Z + 0.45 - 1.4],
-    [15, FAR_CURB_Z - 0.45 + 1.4],
-  ];
-  for (const [x, z] of lamps) {
-    const light = new THREE.PointLight(WARM, 60, 22, 1.6);
-    light.position.set(x, 5.6, z);
-    add(light);
-  }
+  // No point lights: each one costs every pixel of every lit surface, every frame, and the film
+  // fills the screen. The lamps glow and their light is painted on the floor (the pools).
 
   // Parked cars: the far lane all along, the near lane away from the cameras.
   let colorTurn = 0;
@@ -661,9 +652,6 @@ export function dressCity(scene, renderer) {
     chair(b, tx - 0.55, tz, -Math.PI / 2);
     chair(b, tx + 0.55, tz, Math.PI / 2);
   }
-  const cafeLight = new THREE.PointLight(WARM, 25, 9, 1.6);
-  cafeLight.position.set(cafe.x, 2.4, cafe.z - 1.2);
-  add(cafeLight);
   lightPool(cafe.x, 0.012, cafe.z - 1.6, 4.2);
 
   // Benches, bins and a hydrant along the sidewalks.

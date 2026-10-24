@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import '../landing/landing.css';
 import curve from '../landing/training-curve.json';
 import { dressCity } from '../landing/city.js';
+import { dressTelemetry } from '../landing/telemetry.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
 // The walk being trained (training/): its step count feeds the roadmap, so the page follows the
@@ -43,13 +44,17 @@ const AFTER_PUSH_S = 5; // after a push in the hero, the robot stands this long 
 const GYM_STAGES = [
   { level: 'g1-stand-step-0', steps: 0, verdict: 'No sirve', up: '1,1 s', pushes: '0 de 4', text: 'Sin práctica se cae en un segundo.' },
   { level: 'g1-stand-step-10000000', steps: 10e6, verdict: 'Más o menos', up: '9,6 s', pushes: '1 de 4', text: 'Ya se para, pero un empujón lo tumba casi siempre.' },
-  { level: 'g1-stand', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Aguanta de pie y se recupera de los empujones.' },
+  // More steps only help a harder test from here: with 350 N it holds 1.2 of 4 (training/README.md).
+  { level: 'g1-stand', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Pasa la prueba entera. Más práctica serviría para empujones más fuertes: con 350 N aguanta 1 de 4.' },
 ];
 // What a step is, for the Gym's explanation (training/README.md): the policy decides 50 times a
 // second, and training runs 64 simulated robots at once.
 const DECISIONS_PER_S = 50;
 const PARALLEL_ROBOTS = 64;
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+// The film fills the whole screen, so on a retina screen a pixel ratio of 2 drew four times the
+// pixels of 1: 1.5 keeps the robot sharp and draws 44 % fewer pixels than 2, every frame.
+const FILM_PIXEL_RATIO = 1.5;
 const narrow = () => innerWidth < 860;
 
 // The shots. The camera orbits the robot's pelvis: azimuth 0 looks at the robot from the front
@@ -86,6 +91,10 @@ export function mount(root, { api }) {
         <div class="boot-track"><i class="boot-bar"></i></div>
       </div>
     </div>
+    <div class="film-hud" aria-hidden="true">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <p class="sim-readout"><span data-sim="rates">MuJoCo</span><span>t <b data-sim="time">0,0</b> s</span><span>contactos <b data-sim="contacts">0</b></span></p>
+    </div>
     <div class="film-shade" aria-hidden="true"></div>
     <div class="film-wash" aria-hidden="true"></div>
 
@@ -103,10 +112,16 @@ export function mount(root, { api }) {
     </header>
 
     <section class="chapter hero" id="inicio" data-shot="hero" data-mode="stand">
-      <div class="hero-live"><i class="live-dot"></i>En vivo · Unitree G1 · MuJoCo</div>
+      <div class="hero-live"><i class="live-dot"></i>Simulación en vivo · Unitree G1 · MuJoCo</div>
       <div class="caption hero-caption">
-        <h1>Robots que aprenden de un video</h1>
-        <p>Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual, practicando en física real hasta no caerse.</p>
+        <p class="eyebrow">Physical AI para humanoides</p>
+        <h1>Robots que aprenden <em>de un video</em></h1>
+        <p class="hero-lede">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual, practicando en física real hasta no caerse.</p>
+        <ol class="hero-steps" aria-label="Cómo funciona">
+          <li><b>01</b>Video de celular</li>
+          <li><b>02</b>Esqueleto 3D</li>
+          <li><b>03</b>Robot que practica</li>
+        </ol>
         <div class="cta-row">
           <button class="btn btn-signal hero-push" type="button" disabled>Empújalo <kbd>espacio</kbd></button>
           <a class="btn btn-ghost" href="#capture">Cómo aprende</a>
@@ -142,32 +157,37 @@ export function mount(root, { api }) {
 
     <section class="chapter gym" id="gym" data-shot="gym" data-mode="gym" data-hold="0.8">
       <div class="sticky">
-        <div class="caption gym-caption">
+        <div class="caption gym-caption panel">
           <p class="product">Tridi Gym</p>
-          <p class="gym-text">Nadie le escribe cómo pararse: lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada ${num(GYM_PUSH_EVERY_S, 1)} segundos.</p>
+          <h2>Practica hasta no caerse</h2>
+          <p class="gym-text">Nadie le programa cómo pararse: lo intenta en física simulada, se cae y vuelve a intentarlo. Cada ${num(GYM_PUSH_EVERY_S, 1)} s lo empujamos para ver qué aprendió.</p>
           <div class="steps-meter">
-            <p class="steps-now"><b data-gym="steps">0</b><span>pasos de práctica</span></p>
+            <p class="steps-now"><b data-gym="steps">0</b><span>pasos de<br>práctica</span></p>
+            <p class="steps-explain">Un paso es una decisión del robot: cómo mover sus 29 motores durante 1/${DECISIONS_PER_S} de segundo. ${GYM_STAGES.at(-1).steps / 1e6} millones son unas ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, que ${PARALLEL_ROBOTS} robots simulados a la vez hacen en ${curve.minutes} minutos de laptop.</p>
             <div class="steps-axis">
-              <i class="axis-line" aria-hidden="true"><i class="axis-fill"></i></i>
+              <div class="axis-track" aria-hidden="true">
+                <i class="axis-line"><i class="axis-fill"></i></i>
+                ${GYM_STAGES.map((stage) => `<i class="axis-tick" style="--at: ${(100 * stage.steps) / GYM_STAGES.at(-1).steps}%"></i>`).join('')}
+              </div>
+              <div class="axis-stops" role="group" aria-label="Etapas del entrenamiento">
               ${GYM_STAGES.map((stage, i) => `
-              <button class="axis-stop" type="button" data-stage="${i}" style="--at: ${(100 * stage.steps) / GYM_STAGES.at(-1).steps}%">
-                <i class="axis-dot" aria-hidden="true"></i>
-                <span class="axis-label">${stage.steps ? `${stage.steps / 1e6} M` : '0'}</span>
-                <span class="axis-verdict">${stage.verdict}</span>
-              </button>`).join('')}
+                <button class="axis-stop" type="button" data-stage="${i}" style="--at: ${(100 * stage.steps) / GYM_STAGES.at(-1).steps}%">
+                  <span class="axis-label">${stage.steps ? `${stage.steps / 1e6} M` : '0'} pasos</span>
+                  <span class="axis-verdict">${stage.verdict}</span>
+                </button>`).join('')}
+              </div>
             </div>
             <div class="stage-detail">
               <b class="stage-verdict" data-gym="verdict"></b>
               <span class="stage-text" data-gym="text"></span>
               <span class="stage-numbers" data-gym="numbers"></span>
             </div>
-            <p class="steps-explain">Un paso es una decisión del robot: toma ${DECISIONS_PER_S} por segundo. ${GYM_STAGES.at(-1).steps / 1e6} millones son unas ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, repartidas entre ${PARALLEL_ROBOTS} robots simulados a la vez, en ${curve.minutes} minutos de laptop.</p>
           </div>
-          <p class="gym-status"><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></p>
-          <p class="gym-hint">Baja para entrenarlo · toca un punto del eje para ir a esa etapa</p>
+          <p class="gym-status"><i class="live-dot"></i><span><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></span></p>
+          <p class="gym-hint">Baja para entrenarlo · toca una etapa para ir a ella</p>
           <figure class="chart-fig">
-            <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a cerca de 20 s al final"></svg>
-            <figcaption>Segundos de pie por intento · ${curve.minutes} minutos en una laptop · log real</figcaption>
+            <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a unos 15 s, con empujones más fuertes en la segunda mitad"></svg>
+            <figcaption>Segundos de pie por intento durante el entrenamiento · log real</figcaption>
           </figure>
         </div>
       </div>
@@ -175,7 +195,7 @@ export function mount(root, { api }) {
 
     <section class="chapter policy" id="policy" data-shot="policy" data-mode="stand">
       <div class="sticky">
-        <div class="caption policy-caption">
+        <div class="caption policy-caption panel">
           <p class="product">Tridi Policy</p>
           <h2>Lo que entregamos cabe en un correo</h2>
           <ul class="specs">
@@ -268,7 +288,9 @@ export function mount(root, { api }) {
 
   // ---- Smooth scroll, and GSAP's scroll triggers driven by it ----
   // gymGate (Gym, below) sees every wheel step first, so a fast scroll stops at each stage.
-  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.09, virtualScroll: (data) => gymGate(data) });
+  // lerp 0.15 settles a wheel step in about a quarter of a second: 0.09 glided for twice that and
+  // the page felt heavy.
+  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.15, virtualScroll: (data) => gymGate(data) });
   const tick = (time) => lenis?.raf(time * 1000);
   if (lenis) {
     lenis.on('scroll', ScrollTrigger.update);
@@ -306,18 +328,24 @@ export function mount(root, { api }) {
   let lights = []; // the landing's extra lights
   let key = null; // the one of them that rides with the camera
   let undressCity = () => {}; // takes the street, the sky and the buildings out again
+  let telemetry = null; // the physics drawn into the scene (landing/telemetry.js)
 
   // The camera eases toward the shot of the chapter on screen, blending between neighbours.
   const shot = { ...SHOTS.hero };
   const chapters = $$('.chapter');
+  // Where the chapters and the Gym's stages are, measured once and again on resize (measure(),
+  // below). Reading offsetTop every frame made the browser lay the page out again every frame,
+  // right after GSAP and the wash had written their styles.
+  const layout = { tops: [], gymTop: 0, gymStep: 1 };
+  const chapterAt = (y) => chapters[layout.tops.findLastIndex((top) => top <= y)] ?? chapters[0];
   function targetShot() {
     const mid = scrollY + innerHeight * 0.5;
     let from = chapters[0];
     let to = chapters[0];
     let t = 0;
     for (let i = 0; i < chapters.length; i++) {
-      const top = chapters[i].offsetTop;
-      const next = chapters[i + 1]?.offsetTop ?? Infinity;
+      const top = layout.tops[i];
+      const next = layout.tops[i + 1] ?? Infinity;
       if (mid >= top && mid < next) {
         from = chapters[i];
         to = chapters[i + 1] ?? chapters[i];
@@ -464,10 +492,7 @@ export function mount(root, { api }) {
       if (token === modeToken && (previous !== 'gym' || fallen)) view.stop();
     }
   }
-  const modeAt = () => {
-    const mid = scrollY + innerHeight * 0.5;
-    return chapters.findLast((c) => c.offsetTop <= mid)?.dataset.mode ?? 'stand';
-  };
+  const modeAt = () => chapterAt(scrollY + innerHeight * 0.5).dataset.mode ?? 'stand';
 
   // Hero: the robot stands on its own with the trained policy; a push shows it catching itself.
   const hero = { pushes: 0, falls: 0, pushedAt: 0, fallen: false };
@@ -517,12 +542,22 @@ export function mount(root, { api }) {
   const GYM_SHOWN_FALL_S = 0.4; // after a fall, a moment on the floor before the scroll is let go
   const GYM_SHOWN_PUSH_S = 0.8; // after a push, time to see it stagger and catch itself (or not)
   // A stop never keeps the scroll longer, even if a checkpoint is slow to load: longer reads as
-  // stuck, which is why the Gym once ran on its own clock instead of the scroll.
-  const GYM_HOLD_MAX_S = 2.5;
+  // stuck (2.5 s did), which is why the Gym once ran on its own clock instead of the scroll. And
+  // each stop holds once per visit: coming back to a stage scrolls straight through it.
+  const GYM_HOLD_MAX_S = 1.2;
   const STOP_PX = 4; // Lenis lands on fractional pixels: this close to a stop is on it
-  const gymStep = () => (gymEl.offsetHeight - gymPanel.offsetHeight) / GYM_STAGES.length;
-  const gymStops = () => GYM_STAGES.map((_, i) => gymEl.offsetTop + (i + 0.5) * gymStep());
-  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - gymEl.offsetTop) / gymStep())));
+  const held = new Set(); // the stops that already held the scroll
+  const gymStops = () => GYM_STAGES.map((_, i) => layout.gymTop + (i + 0.5) * layout.gymStep);
+  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - layout.gymTop) / layout.gymStep)));
+  function measure() {
+    layout.tops = chapters.map((chapter) => chapter.offsetTop);
+    layout.gymTop = gymEl.offsetTop;
+    layout.gymStep = (gymEl.offsetHeight - gymPanel.offsetHeight) / GYM_STAGES.length;
+  }
+  measure();
+  const layoutObserver = new ResizeObserver(measure);
+  layoutObserver.observe(root.querySelector('.landing'));
+  cleanups.push(() => layoutObserver.disconnect());
   const gymLevel = () => GYM_STAGES[gymStage()].level;
   const gymShown = (stage) => level === GYM_STAGES[stage].level && gym.shownAt > 0 && performance.now() >= gym.shownAt;
   const gate = { stop: -1, since: 0 };
@@ -541,9 +576,10 @@ export function mount(root, { api }) {
       return false;
     }
     const next = stops.findIndex((stop) => from < stop - STOP_PX && stop <= from + data.deltaY);
-    if (next < 0 || gymShown(next)) return true;
+    if (next < 0 || gymShown(next) || held.has(next)) return true;
     data.deltaY = stops[next] - from; // Lenis reads the delta after this callback: land on the stop
     Object.assign(gate, { stop: next, since: performance.now() });
+    held.add(next);
     return true;
   }
   $$('.axis-stop').forEach((stop, i) =>
@@ -559,14 +595,16 @@ export function mount(root, { api }) {
     if (stage === shownStage) return;
     shownStage = stage;
     const current = GYM_STAGES[stage];
-    $$('.axis-stop').forEach((stop, i) => {
-      stop.classList.toggle('on', i === stage);
-      stop.classList.toggle('past', i < stage);
-    });
+    for (const selector of ['.axis-stop', '.axis-tick']) {
+      $$(selector).forEach((stop, i) => {
+        stop.classList.toggle('on', i === stage);
+        stop.classList.toggle('past', i < stage);
+      });
+    }
     $('.axis-fill').style.width = $$('.axis-stop')[stage].style.getPropertyValue('--at');
     $('[data-gym="verdict"]').textContent = current.verdict;
     $('[data-gym="text"]').textContent = current.text;
-    $('[data-gym="numbers"]').textContent = `${current.up} de pie · ${current.pushes} empujones`;
+    $('[data-gym="numbers"]').innerHTML = `<span><b>${current.up}</b> de pie, de 20 s</span><span><b>${current.pushes}</b> empujones de ${PUSH_N} N</span>`;
     // The big number counts up (or back) to this stage's steps.
     const shown = { value: Number($('[data-gym="steps"]').dataset.value ?? 0) };
     gsap.to(shown, {
@@ -589,6 +627,7 @@ export function mount(root, { api }) {
     const [x, y] = view.sim.bodyPosition('pelvis');
     marks?.ring.position.set(x, marks.ring.position.y, -y);
     const t = view.sim.data.time;
+    $('[data-gym="status"]').textContent = 'el robot real, con ese entrenamiento'; // not the last checkpoint's fall
     // The first push comes at GYM_FIRST_PUSH_S, then every GYM_PUSH_EVERY_S.
     Object.assign(gym, { since: t || 1e-6, lastPush: t - (GYM_PUSH_EVERY_S - GYM_FIRST_PUSH_S), fallen: false });
   }
@@ -637,23 +676,38 @@ export function mount(root, { api }) {
   // The hero's title sits low on the left, over the café of the street (landing/city.js).
   const WASH = { hero: [0.85, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
   const wash = { left: 0, right: 0, floor: 0 };
+  const washed = { left: '', right: '', floor: '' }; // what the veil has now: write only changes
   function updateWash() {
-    const mid = scrollY + innerHeight * 0.5;
-    const chapter = chapters.findLast((c) => c.offsetTop <= mid) ?? chapters[0];
+    const chapter = chapterAt(scrollY + innerHeight * 0.5);
     const [left, right] = WASH[chapter.dataset.shot] ?? [0, 0];
     const goal = narrow() ? { left: 0, right: 0, floor: chapter.dataset.shot === 'close' ? 0 : 1 } : { left, right, floor: 0 };
     const k = reducedMotion ? 1 : 0.08;
-    for (const side of Object.keys(wash)) wash[side] += (goal[side] - wash[side]) * k;
-    washEl.style.setProperty('--wash-left', wash.left.toFixed(3));
-    washEl.style.setProperty('--wash-right', wash.right.toFixed(3));
-    washEl.style.setProperty('--wash-floor', wash.floor.toFixed(3));
+    for (const side of Object.keys(wash)) {
+      wash[side] += (goal[side] - wash[side]) * k;
+      const value = wash[side].toFixed(3);
+      if (value !== washed[side]) washEl.style.setProperty(`--wash-${side}`, (washed[side] = value));
+    }
+  }
+
+  // The simulation's own readout, in the corner of the film: its clock and its contacts. Ten
+  // times a second is enough to read and keeps the page from rewriting text every frame.
+  const READOUT_EVERY_MS = 100;
+  let readAt = 0;
+  function updateReadout(now) {
+    if (now - readAt < READOUT_EVERY_MS) return;
+    readAt = now;
+    $('[data-sim="time"]').textContent = num(view.sim.data.time, 1);
+    $('[data-sim="contacts"]').textContent = view.sim.data.ncon;
   }
 
   // ---- Every frame ----
-  let frameId = requestAnimationFrame(function frame() {
+  let frameId = requestAnimationFrame(function frame(now) {
     updateWash();
     updateMarks();
     if (view) {
+      // The walk of Capture is a puppet, with no physics to show.
+      telemetry?.update(mode !== 'walk', { com: chapterAt(scrollY + innerHeight * 0.5).dataset.shot !== 'hero' });
+      updateReadout(now);
       directCamera(view);
       setMode(modeAt());
       if (mode === 'walk') {
@@ -695,11 +749,16 @@ export function mount(root, { api }) {
       const sky = new THREE.HemisphereLight(0xffffff, 0x3a3833, 1.4);
       lights = [key, rim, sky];
       saved.exposure = view.viewer.renderer.toneMappingExposure;
+      saved.pixelRatio = view.viewer.renderer.getPixelRatio();
+      view.viewer.renderer.setPixelRatio(Math.min(devicePixelRatio, FILM_PIXEL_RATIO));
+      view.viewer.resize();
       view.viewer.renderer.toneMappingExposure = 1.35;
       lights.forEach((light) => view.viewer.scene.add(light));
       // A city street at dusk around the robot instead of the grid, while the landing has it.
       undressCity = dressCity(view.viewer.scene, view.viewer.renderer);
       marks = makeMarks(view.viewer.scene);
+      telemetry = dressTelemetry(view);
+      $('[data-sim="rates"]').textContent = `MuJoCo · física ${Math.round(1 / view.sim.model.opt.timestep)} Hz · política ${DECISIONS_PER_S} Hz`;
       film.classList.add('ready');
       $$('.hero-push').forEach((button) => (button.disabled = false));
     },
@@ -768,7 +827,7 @@ export function mount(root, { api }) {
   // so it also works with reduced motion, where the GSAP context below creates nothing.
   const topbar = $('.topbar');
   const barObserver = new IntersectionObserver(([entry]) => topbar.classList.toggle('solid', !entry.isIntersecting), {
-    rootMargin: `-${topbar.offsetHeight}px 0px 0px 0px`,
+    rootMargin: `-${Math.round(topbar.getBoundingClientRect().bottom)}px 0px 0px 0px`, // the bar floats below the top
   });
   barObserver.observe($('.hero'));
 
@@ -810,7 +869,10 @@ export function mount(root, { api }) {
       view.viewer.followTau = 0; // the app screens follow the robot rigidly
       lights.forEach((light) => view.viewer.scene.remove(light));
       view.viewer.renderer.toneMappingExposure = saved.exposure;
+      view.viewer.renderer.setPixelRatio(saved.pixelRatio);
+      view.viewer.resize();
       undressCity();
+      telemetry?.dispose();
       if (marks) {
         view.viewer.scene.remove(marks.arrow, marks.ring);
         [marks.arrow, marks.ring].forEach((group) => group.traverse((o) => o.geometry?.dispose()));

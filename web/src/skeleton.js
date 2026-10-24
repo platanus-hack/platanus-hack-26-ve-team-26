@@ -3,16 +3,22 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// MediaPipe Pose bones between the 33 landmarks. The face keeps only nose-to-ears: eyes and
-// mouth are a few centimeters apart and read as noise at full-body scale.
+// MediaPipe Pose bones between the 33 landmarks. The face has none: its 11 points (nose, eyes,
+// ears, mouth) are a few centimeters apart and, drawn as joints and bones, read as a blob at
+// full-body scale. pose() draws a head and a neck in their place.
 const BONES = [
   [11, 12], [11, 23], [12, 24], [23, 24], // torso
   [11, 13], [13, 15], [15, 17], [15, 19], [15, 21], [17, 19], // left arm and hand
   [12, 14], [14, 16], [16, 18], [16, 20], [16, 22], [18, 20], // right arm and hand
   [23, 25], [25, 27], [27, 29], [27, 31], [29, 31], // left leg and foot
   [24, 26], [26, 28], [28, 30], [28, 32], [30, 32], // right leg and foot
-  [0, 7], [0, 8], // head
 ];
+const FACE_POINTS = new Set([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+const NOSE = 0;
+const EARS = [7, 8];
+const SHOULDERS = [11, 12];
+const HEAD_RADIUS = 0.09; // meters: an adult head is about 18 cm across, ear to ear
+const HEAD_FORWARD = 0.25; // the head's center, from between the ears a quarter of the way to the nose
 const FOOT_JOINTS = [27, 28, 29, 30, 31, 32];
 // MediaPipe's own drawing utilities skip landmarks under this visibility.
 const MIN_VISIBILITY = 0.5;
@@ -71,12 +77,15 @@ export class SkeletonView {
     // three.js culls an InstancedMesh by a bounding sphere computed once, around the first
     // matrices (the origin); a clip that walks a few meters away would vanish. Never cull it.
     this.bones.frustumCulled = this.joints.frustumCulled = false;
+    this.head = new THREE.Mesh(new THREE.SphereGeometry(HEAD_RADIUS, 24, 16), material);
+    this.neck = new THREE.Mesh(new THREE.CylinderGeometry(BONE_RADIUS, BONE_RADIUS, 1, 8), material);
+    this.head.frustumCulled = this.neck.frustumCulled = false;
     // Per-instance brightness (pose() dims the estimated arm). Set once here so the material is
     // compiled with instance colors from the first frame.
     this.tint = new THREE.Color(1, 1, 1);
     for (let i = 0; i < BONES.length; i++) this.bones.setColorAt(i, this.tint);
     for (let i = 0; i < 33; i++) this.joints.setColorAt(i, this.tint);
-    this.body.add(this.bones, this.joints);
+    this.body.add(this.bones, this.joints, this.head, this.neck);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
     this.camera.position.set(2.6, 1.5, 2.6);
@@ -138,7 +147,7 @@ export class SkeletonView {
     const seen = (i) => (ARM_POINTS.has(i) ? FADED + (1 - FADED) * THREE.MathUtils.smoothstep(joints[i][3], ESTIMATED, SEEN) : 1);
 
     joints.forEach((joint, i) => {
-      this.joints.setMatrixAt(i, drawn(i) ? m.makeTranslation(joint[0], joint[1], joint[2]) : HIDDEN);
+      this.joints.setMatrixAt(i, drawn(i) && !FACE_POINTS.has(i) ? m.makeTranslation(joint[0], joint[1], joint[2]) : HIDDEN);
       this.joints.setColorAt(i, this.tint.setScalar(seen(i)));
     });
     BONES.forEach(([from, to], i) => {
@@ -154,6 +163,21 @@ export class SkeletonView {
       m.compose(a.add(b).multiplyScalar(0.5), q, s.set(1, length, 1));
       this.bones.setMatrixAt(i, m);
     });
+    // The head: a sphere between the ears, nudged toward the nose, and a neck down to between the
+    // shoulders. Drawn when the camera saw any of the nose or the ears.
+    const { head, neck } = this;
+    head.visible = neck.visible = [NOSE, ...EARS].some((i) => joints[i][3] >= MIN_VISIBILITY);
+    if (head.visible) {
+      a.fromArray(joints[EARS[0]]).add(b.fromArray(joints[EARS[1]])).multiplyScalar(0.5);
+      a.lerp(b.fromArray(joints[NOSE]), HEAD_FORWARD);
+      head.position.copy(a);
+      b.fromArray(joints[SHOULDERS[0]]).add(dir.fromArray(joints[SHOULDERS[1]])).multiplyScalar(0.5);
+      dir.subVectors(a, b);
+      const length = Math.max(0, dir.length() - HEAD_RADIUS);
+      neck.quaternion.setFromUnitVectors(this.up, dir.normalize());
+      neck.position.copy(b).addScaledVector(dir, length / 2);
+      neck.scale.set(1, length, 1);
+    }
     this.joints.instanceMatrix.needsUpdate = true;
     this.bones.instanceMatrix.needsUpdate = true;
     this.joints.instanceColor.needsUpdate = true;
