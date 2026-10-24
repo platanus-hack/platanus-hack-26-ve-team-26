@@ -286,18 +286,22 @@ export function mount(root, { api }) {
 
   // Where to start: no server, an upload in progress from before, or a fresh pick.
   // Off: says which server it tried, and can ask again (the tunnel may just have been slow).
-  $('.server-url').textContent = api.url ? `Servidor: ${api.url}` : 'No hay un servidor configurado: abre la web con el link que imprime data/serve.sh (lleva ?api=).';
+  // api.url is final once the server was looked for (data/serve.sh publishes where it is).
+  const showServer = () =>
+    ($('.server-url').textContent = api.url ? `Servidor: ${api.url}` : 'El servidor de videos no está encendido ahora.');
   $('.retry').onclick = async () => {
     $('.retry').disabled = true;
     $('.retry').textContent = 'Probando…';
     const ok = await api.recheck();
     $('.retry').disabled = false;
     $('.retry').textContent = 'Reintentar';
+    showServer();
     if (!gone && ok) show('pick');
   };
 
   api.checked.then((ok) => {
     if (gone) return;
+    showServer();
     if (!ok) return show('off');
     if (session?.error) return fail(session.error);
     if (session?.jobId) return follow();
