@@ -43,7 +43,7 @@ export function prefetch(name) {
 
 /**
  * @param app      element the screens render into
- * @param context  shared with every screen: { dots, store, api }
+ * @param context  shared with every screen: { store, api }
  */
 export function startRouter(app, context) {
   let unmount = null;

@@ -294,6 +294,11 @@ html.is-delivery body::before {
   color: var(--fg-2);
 }
 
+.dl-boot .loader {
+  justify-self: center;
+  margin-bottom: 8px;
+}
+
 .dl-boot .dl-meter b {
   width: 0;
   transition: width 0.3s;

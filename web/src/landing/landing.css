@@ -192,6 +192,10 @@ html.is-landing.lenis body {
   transition: opacity 0.4s;
 }
 
+.boot .loader {
+  margin-bottom: 8px;
+}
+
 .boot b {
   font-weight: 500;
   color: var(--signal);

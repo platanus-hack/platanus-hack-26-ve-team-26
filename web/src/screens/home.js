@@ -8,6 +8,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 import '../landing/landing.css';
+import { loader } from '../loader.js';
 import { dressCity } from '../landing/city.js';
 import { dressTelemetry } from '../landing/telemetry.js';
 import { savedMotion } from '../motions.js';
@@ -87,6 +88,7 @@ export function mount(root, { api }) {
   <div class="landing">
     <div class="film" aria-hidden="true">
       <div class="boot">
+        ${loader('small')}
         <p>mujoco.wasm <b class="boot-files">0/39</b></p>
         <p class="boot-line">cargando el mundo de física</p>
         <div class="boot-track"><i class="boot-bar"></i></div>

@@ -44,6 +44,9 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Flashazos negros al hacer scroll en el celular (landing): el canvas del robot (`.film`, fijo con `inset: 0`) seguía el alto visible, que crece cuando la barra de direcciones se esconde al bajar; el `ResizeObserver` del visor llamaba a `setSize`, que borra el canvas, y el siguiente dibujo llegaba un cuadro tarde. Arreglo: `.film` mide `100lvh` (el alto con las barras escondidas) y el visor redibuja en el acto al cambiar de tamaño (`physics/src/viewer.js`, commit propio). No se pudo reproducir en Chrome sin pantalla (la captura fuerza un cuadro nuevo, también en producción): falta confirmarlo en un teléfono.
 - Landing en celular (César: "arrastro el dedo y nada, parece que se queda pegada"): las secciones con tramos fijos por scroll (Gym 5 pantallas, Capture 2, Policy 2,6) miden una pantalla en anchos de celular, y unas flechas fijas llevan a la sección anterior o siguiente; dentro de Gym, cada toque pasa una etapa (en celular la etapa ya no sale del scroll). La página pasó de 12,1 a 5,5 pantallas de alto en 390 px.
 
+- Un solo loader con marca (`web/src/loader.js`): el logo de Tridi gira como moneda dentro de un arco lima que da vueltas. Reemplaza el cubo 3D del panel del robot, y se suma a la carga de la landing (`.boot`), a la de Entrega (`.dl-boot`) y al aviso "Cargando…" entre pantallas. Solo CSS, así que aparece antes que WebGL; con movimiento reducido el logo queda quieto.
+- Fuera los puntitos: se borró `web/src/dots/` (el campo de puntos detrás de las pantallas de la app, que ya no usaba ninguna pantalla) y el `<canvas id="scene">`. El fondo queda en el brillo lima fijo de `body::before`.
+
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
@@ -101,3 +104,5 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - César: probar WEB-1 con una webcam real (guardar un clip y verlo en Simulaciones). Mandar el clip al servidor cuando Juan tenga `POST /clips` (SRV-1).
 
 - Pastor: pasar la raíz de Vercel a `web/`.
+
+- César: ver el loader nuevo en el celular y decir si se sube a main.

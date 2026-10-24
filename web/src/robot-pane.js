@@ -1,8 +1,8 @@
 // A pane showing the app's one G1 (robot-host.js), shared by the simulations and live screens.
-// While the robot is still loading, a wireframe cube turns over a floor grid in its place (the
-// scene being built, in the brand's signal color) with a progress bar; "Empujar" floats over the
-// pane so it is always on screen without scrolling (the pitch's key moment), and draws the push's
-// arrow in the scene, as the landing does.
+// While the robot is still loading, the brand's loader (loader.js) turns in its place with a
+// progress bar; "Empujar" floats over the pane so it is always on screen without scrolling (the
+// pitch's key moment), and draws the push's arrow in the scene, as the landing does.
+import { loader } from './loader.js';
 import { createPushArrow } from './push-arrow.js';
 import { attachRobot, onRobotProgress, robotView } from './robot-host.js';
 
@@ -11,10 +11,7 @@ export function robotPaneHTML(label) {
   return `
     <section class="pane robot-pane">
       <div class="robot-loading">
-        <div class="loader-3d" aria-hidden="true">
-          <div class="loader-floor"></div>
-          <div class="loader-cube">${['front', 'back', 'left', 'right', 'top', 'bottom'].map((face) => `<i class="${face}"></i>`).join('')}</div>
-        </div>
+        ${loader()}
         <div class="track"><div class="robot-progress"></div></div>
         <p class="robot-status">Preparando el mundo de física…</p>
       </div>

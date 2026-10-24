@@ -11,6 +11,7 @@ import * as THREE from 'three';
 import { WORLDS } from 'tridi-physics';
 
 import { dressWorld } from '../looks/index.js';
+import { loader } from '../loader.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import './delivery.css';
 
@@ -231,7 +232,7 @@ function showDelivery(root, { manifest: m, source, url }, signal) {
         <section class="dl-win dl-sim" aria-label="Repetición en 3D">
           <div class="dl-bar"><span>repetición — g1 · mujoco</span><span class="dl-sim-info">dataset ${DATASET_HZ} → 25 Hz</span></div>
           <div class="dl-view">
-            <div class="dl-boot"><i class="dl-meter"><b class="dl-boot-fill"></b></i><span class="dl-boot-text">Preparando el mundo de física…</span></div>
+            <div class="dl-boot">${loader()}<i class="dl-meter"><b class="dl-boot-fill"></b></i><span class="dl-boot-text">Preparando el mundo de física…</span></div>
             <p class="dl-hud dl-hud-left"><span class="dl-hud-ep">—</span><span class="dl-hud-state"></span></p>
             <p class="dl-hud dl-hud-right"><span class="dl-feet" title="Pie apoyado: el piso lo empuja hacia arriba"><i data-foot="left"></i>izq <i data-foot="right"></i>der</span><span class="dl-hud-t">0,00 s</span></p>
             <p class="dl-hud dl-hud-note"><span>Poses del dataset, cuadro a cuadro: lo que hizo el robot con física en la prueba</span></p>
