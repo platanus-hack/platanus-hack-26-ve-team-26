@@ -26,9 +26,12 @@ Primera fase de `training/`: entorno de RL legible sobre `scene_mjx.xml`, una po
 
 - Segunda vuelta `stand-v2`: continúa la v1 con empujones de 100 a 350 N (20 M pasos más, 34,5 min). Ahora aguanta los 4 empujones de 250 N en los 5 arranques y 20 s de pie; con 300 N, 3,2 de 4. Reemplaza a `training/policies/g1-stand.onnx` (mismo nombre: el `loadPolicy` de Pastor no cambia).
 
+- Imitación (`training/imitate.py`, `--task walk`): el G1 sigue un `RobotMotion` de Pastor (caminar de perfil), con acción residual sobre la referencia, arranque en un instante al azar del clip y la recompensa de DeepMimic. `evaluate_walk.py` mide cuántos segundos del clip sigue; `export.py --task walk` exporta (observación de 126 números).
+
 ## Qué no funcionó
 
 - La primera evaluación decía que todo se caía a los 4,4 s, hasta con 50 N. Era un bug de la evaluación, no de la política: con los empujones al azar apagados, `_push()` salía sin limpiar la fuerza y el empujón quedaba aplicado para siempre. Arreglado en `env.py`; el entrenamiento no lo tenía, porque ahí los empujones siempre están prendidos.
+- `walk-v1` no aprendió (episodios de 0,8 s tras 10 M pasos): la pelvis de la referencia salta hasta 4 m/s entre cuadros y lanzaba al robot en cada arranque, y la referencia quedaba en el aire o enterrada para los pies del modelo de entrenamiento. Arreglo: referencia suavizada en 0,3 s y pies apoyados en el piso al arrancar (contando solo contactos con el piso). `walk-v2` en curso: mejora lento (0,5 → 0,9 s en 5 M).
 - MPS más lento que CPU para esta red (10.100 vs 11.200 pasos/s): se queda CPU por defecto.
 
 ## Decisiones
