@@ -204,6 +204,12 @@ export function mount(root, { api }) {
     note('');
     try {
       await api.checked;
+      // The page may have opened before data/serve.sh started (or before it restarted on a new
+      // tunnel): look for the server again instead of trusting what was found on load.
+      if (!api.ok) {
+        say('Buscando el servidor de videos…');
+        await api.recheck();
+      }
       if (!api.ok) return say('Para usar el teléfono hace falta el servidor de videos, y ahora no está encendido.', true);
       if (LOCAL_API.test(api.url)) return say('El teléfono no puede llegar a un servidor en esta máquina: abre la web con el enlace de data/serve.sh (?api=<túnel>).', true);
       returnToWebcam = !!live && !isPhone();

@@ -67,13 +67,14 @@ export async function publishedApiUrl(gist = SERVER_GIST) {
 }
 
 /**
- * Like resolveApiUrl, but finds the server on its own: ?api= in the page address, else the last one
- * seen on this browser if it still answers, else the one data/serve.sh published, else `fallback`.
+ * Like resolveApiUrl, but finds the server on its own: ?api= in the page address if it answers, else
+ * the last one seen on this browser if it still answers, else the one data/serve.sh published, else `fallback`.
  * null if there is none.
  */
 export async function findApiUrl({ fallback = null } = {}) {
   const fromQuery = valid(new URLSearchParams(location.search).get('api') ?? '');
-  if (fromQuery) {
+  // An old link keeps a tunnel that died with its serve.sh: if it does not answer, look on.
+  if (fromQuery && (await checkApi(fromQuery))) {
     remember(fromQuery);
     return fromQuery;
   }
@@ -89,7 +90,7 @@ export async function findApiUrl({ fallback = null } = {}) {
     remember(published);
     return published;
   }
-  return fallback ?? stored;
+  return fromQuery ?? fallback ?? stored;
 }
 
 /** true if the server answers /health: show the "Subir" tab only then, and the gallery otherwise. */
