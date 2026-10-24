@@ -75,3 +75,31 @@ Pedido de Pastor: que un clip propio (grabado o subido) se pueda entrenar desde 
 - **César:** revisar W12.2 y W12.3 en `web/TAREAS.md` (lo hice yo en su carpeta) y pasar la caja al estilo de W12.1 si hace falta.
 - Falta de WEB-2: cargar el robot del usuario en cada checkpoint mientras entrena. WEB-3: el robot del usuario con su política en Simulaciones.
 - Probarlo con el servidor real de Juan y su túnel (`data/serve.sh`) y una grabación propia de cámara.
+
+## Parte 4: que cada mundo se vea como un lugar
+
+Pedido de Pastor: los mundos de Simulaciones con el nivel de la landing, primero lo visual y después la interacción. Piedras como terreno rocoso, viento con corrientes visibles, piso resbaloso recién limpiado y el plano como una acera.
+
+- **`web/src/looks/`** (carpeta de César): `dressWorld(view)` elige el entorno por el mundo de la física, y `stage.js` lo rehace al cambiar de mundo o de lugar y lo saca al salir de la pantalla. Todo dibujado por código (sin imágenes), y nada choca con el robot.
+  - Plano: la ciudad de la landing (`dressCity`), girada 90° porque acá la caminata va por -z.
+  - Piedras: grava con relieve, las piedras de la física (el campo de alturas) pintadas como roca y recortadas donde el piso es plano, rocas instanciadas fuera del camino y cerros al fondo, con cielo de tarde polvoriento.
+  - Resbaloso: vestíbulo con baldosas, columnas, ventanas y luces de techo; el agua del trapeado es un `Reflector` con una máscara de trazos, así refleja al robot y las ventanas solo donde está mojado. Cartel amarillo de piso mojado y balde con trapeador.
+  - Viento: pradera dorada con 24 000 hojas de pasto (9000 en celular) que se doblan en ráfagas en la dirección del viento, una bandera y ocho molinos que giran con la velocidad.
+  - Corrientes (en cualquier mundo y lugar): volutas que viajan con la dirección y la fuerza de `sim.wind`, más largas con más viento, al 45 % de la velocidad real para que se puedan seguir con la vista.
+
+### Qué funcionó
+
+- En el navegador: los cuatro mundos a 60 cuadros por segundo en escritorio; al elegir un lugar queda solo el viento; al salir a la landing la escena vuelve a como estaba (exposición, niebla, cielo, piso). A 375 px de ancho, sin scroll horizontal. `vite build` pasa.
+
+### Qué no funcionó
+
+- Primera versión de las piedras lavada y blanca: los colores por vértice se escribieron como si fueran sRGB y three los toma lineales. Ahora se eligen en sRGB y se convierten.
+- La grilla del visor seguía dibujada: se buscaba con `isGridHelper`, que `GridHelper` no tiene. El mismo error está en `props.js` y `landing/city.js` (anotado en W12.5 para César).
+- Las corrientes parecían rayos láser: más cortas, en forma de S y con la cola que se desvanece.
+- Los molinos no se veían: a 85 m y 46 m de alto quedaban sobre el cuadro y en la niebla. Ahora a la mitad de tamaño, alrededor y a menos de 100 m (el alcance de la cámara).
+
+### Sigue
+
+- César: revisar W12.5 y la grilla de `props.js` y `city.js`.
+- No medido en un celular real (la ventana de prueba estaba oculta y no dibuja a ritmo).
+- Después, la interacción: que el viento mueva objetos sueltos, salpicaduras al pisar el agua, piedras que ruedan.
