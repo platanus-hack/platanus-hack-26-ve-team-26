@@ -35,7 +35,7 @@ Rules and template in [`docs/bitacora/README.md`](docs/bitacora/README.md).
 | Juan | @juanevillam | Data extraction: camera and video to a clean pose clip of one subject | `data/` |
 | César | @cisorm | User experience of the simulation (web app) | `web/` |
 | Ale | @alehernandezt | Strategy, pitch and script (does not code) | `docs/` |
-| TBD | | Policy training | `training/` |
+| Pastor, then Juan | @torpass | Policy training (Juan joins with the first `PoseClip`) | `training/` |
 
 ## Submission files (from the organizers)
 
