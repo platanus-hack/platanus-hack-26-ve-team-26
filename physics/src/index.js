@@ -7,11 +7,16 @@ import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { createRobotPoseFilter } from './filters.js';
 import { RobotView } from './viewer.js';
+import { placeXml, SCENE_ORDER } from './scenes.js';
 import { middleValues, sceneFile as worldScene, WORLD_ORDER } from './worlds.js';
 
 // physics/worlds/*.json, in display order.
 const WORLD_FILES = import.meta.glob('../worlds/*.json', { eager: true, import: 'default' });
 export const WORLDS = Object.values(WORLD_FILES).sort((a, b) => WORLD_ORDER.indexOf(a.id) - WORLD_ORDER.indexOf(b.id));
+
+// physics/scenes/*.json: places with furniture and loose objects (a kitchen, a warehouse, a sidewalk).
+const SCENE_FILES = import.meta.glob('../scenes/*.json', { eager: true, import: 'default' });
+export const SCENES = Object.values(SCENE_FILES).sort((a, b) => SCENE_ORDER.indexOf(a.id) - SCENE_ORDER.indexOf(b.id));
 
 // The real-time ratio passed to onStats is averaged over this window so it reads steadily.
 const STATS_WINDOW_S = 1;
@@ -38,7 +43,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   // The RobotMotion being played, if any: { motion, duration, loop }, and where it is (s).
   let clip = null;
   let clipTime = 0;
-  const row = new Float64Array(sim.model.nq); // the pose being shown
+  const row = new Float64Array(sim.model.nq); // the pose being shown (the robot alone: 36 values)
   let frameId = 0;
   let last = performance.now();
   let stats = { wall: 0, sim: 0 };
@@ -100,7 +105,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   function swapScene(sceneFile, keyName) {
     sim.policy?.dispose();
     clip = null;
-    sim.load(sceneFile, keyName);
+    baseScene = sceneFile;
+    sim.load(place ? placeFile(sceneFile) : sceneFile, keyName);
     if (world) sim.applyWorld(middleValues(world)); // a new model starts from its own values
     view.rebuild();
   }
@@ -109,6 +115,30 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   // bytes and metadata, so changing to a world with another scene can bring the policy back.
   let world = null;
   let lastPolicy = null;
+  // The place the robot is in (physics/scenes, or one detected in a video), null for an empty floor;
+  // and the scene file under it (the policy's, or a world's), which the place is added to.
+  let place = null;
+  let baseScene = sim.sceneFile;
+
+  // The MJCF of `base` with the current place in it, generated once per place and base and kept
+  // with the model files, where the Simulation loads it from.
+  function placeFile(base) {
+    const name = `place_${place.id}_${base}`;
+    if (!sim.files[name]) {
+      const text = (file) => new TextDecoder().decode(sim.files[file]);
+      const baseXml = text(base);
+      const robot = baseXml.match(/<include file="([^"]+)"/)?.[1];
+      sim.files[name] = new TextEncoder().encode(placeXml(baseXml, robot ? text(robot) : '', place));
+    }
+    return name;
+  }
+
+  // After a new model: the last policy again, on it.
+  async function restorePolicy() {
+    if (!lastPolicy) return;
+    const { loadOrt } = await import('./ort.js');
+    sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta, { motion: lastPolicy.motion });
+  }
 
   // Ends a clip or a camera copy and returns to the physical robot, standing.
   function stop() {
@@ -146,8 +176,10 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * @param options.loop  start over at the end (default), or hold the last frame
      */
     playClip(motion, { loop = true } = {}) {
-      if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== sim.model.nq) {
-        throw new Error(`This RobotMotion is not for the ${sim.model.nq}-value G1 (robot: ${motion.robot}).`);
+      // The robot's own values (36), not the model's: a place with loose objects adds 7 per object.
+      const robotValues = kinematicModel().nq;
+      if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== robotValues) {
+        throw new Error(`This RobotMotion is not for the ${robotValues}-value G1 (robot: ${motion.robot}).`);
       }
       clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion), duration: motionDuration(motion), loop };
       clipTime = 0;
@@ -189,8 +221,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       const sceneFile = world ? worldScene(world) : meta.mjcf.slice(meta.mjcf.indexOf('/') + 1);
       const { loadOrt } = await import('./ort.js');
       const ort = await loadOrt();
-      const previous = { sceneFile: sim.sceneFile, keyName: sim.keyName };
-      if (sim.sceneFile !== sceneFile) swapScene(sceneFile, 'home');
+      const previous = { sceneFile: baseScene, keyName: sim.keyName };
+      if (baseScene !== sceneFile) swapScene(sceneFile, 'home');
       else stop();
       try {
         const policy = await createPolicy(ort, sim, bytes, meta, { motion });
@@ -199,7 +231,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
         lastPolicy = { bytes, meta, motion };
         sim.reset();
       } catch (error) {
-        if (sim.sceneFile !== previous.sceneFile) swapScene(previous.sceneFile, previous.keyName);
+        if (baseScene !== previous.sceneFile) swapScene(previous.sceneFile, previous.keyName);
         throw error;
       }
     },
@@ -216,12 +248,9 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      */
     async setWorld(next) {
       world = next;
-      if (sim.sceneFile !== worldScene(next)) {
+      if (baseScene !== worldScene(next)) {
         swapScene(worldScene(next), 'home');
-        if (lastPolicy) {
-          const { loadOrt } = await import('./ort.js');
-          sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta, { motion: lastPolicy.motion });
-        }
+        await restorePolicy();
       } else {
         stop();
         sim.applyWorld(middleValues(next));
@@ -230,6 +259,20 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     },
     /** The world the robot is in, or null. */
     world: () => world,
+    /**
+     * Puts the robot in a place (an entry of SCENES, or a scene data/ detected in a video; format
+     * in docs/contrato.md): its furniture is solid, and its loose objects can be pushed and knocked
+     * over. null takes it away. It combines with the world (a slippery kitchen). Rebuilds the model
+     * (a moment) and brings the policy back. Ends a clip or a camera copy.
+     */
+    async setScene(next) {
+      place = next;
+      swapScene(baseScene, sim.keyName);
+      await restorePolicy();
+      sim.reset();
+    },
+    /** The place the robot is in, or null. */
+    scene: () => place,
     /**
      * Makes the G1 copy a person, one camera frame at a time. Pass what createLiveCapture's
      * onPose gives. A null pose or one too occluded keeps the last pose. reset() ends it.
@@ -241,7 +284,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       clip = null;
       tracker ??= createPoseTracker();
       retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
-      smoother ??= createRobotPoseFilter(sim.model.nq); // the robot's own jitter (filters.js)
+      smoother ??= createRobotPoseFilter(kinematicModel().nq); // the robot's own values, not a place's objects
       const { qpos, tracked, residual } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t));
       if (tracked) sim.puppet(smoother.filter(qpos, pose.t));
       return { tracked, residual };

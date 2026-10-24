@@ -1,0 +1,16 @@
+{
+  "id": "deposito",
+  "title": "Depósito",
+  "why": "Un depósito: estantes de 2 m, un palet en el piso, cajas de cartón de 2 kg y un barril de 15 kg que se pueden empujar. Es el lugar típico donde se piensa un humanoide trabajando. Todo queda fuera del pasillo de los clips precargados (x de -1,4 a 2,4 m, y de -0,5 a 8,5 m).",
+  "objects": [
+    { "label": "estante", "kind": "box", "size": [0.5, 2.4, 2.0], "pos": [-2.2, 1.2], "yaw": 0 },
+    { "label": "estante", "kind": "box", "size": [0.5, 2.4, 2.0], "pos": [-2.2, 4.0], "yaw": 0 },
+    { "label": "estante", "kind": "box", "size": [0.5, 2.4, 2.0], "pos": [2.9, 2.6], "yaw": 0 },
+    { "label": "palet", "kind": "box", "size": [1.0, 1.2, 0.15], "pos": [-1.2, -1.6], "yaw": 0 },
+    { "label": "caja", "kind": "box", "size": [0.4, 0.4, 0.4], "pos": [-1.55, 0.4], "yaw": 0.2, "movable": true, "mass": 2 },
+    { "label": "caja", "kind": "box", "size": [0.4, 0.4, 0.4], "pos": [-1.55, 2.7], "yaw": -0.1, "movable": true, "mass": 2 },
+    { "label": "caja", "kind": "box", "size": [0.4, 0.4, 0.4], "pos": [1.6, -0.9], "yaw": 0.4, "movable": true, "mass": 2 },
+    { "label": "caja", "kind": "box", "size": [0.4, 0.4, 0.4], "pos": [2.5, 4.8], "yaw": 0, "movable": true, "mass": 2 },
+    { "label": "barril", "kind": "cylinder", "size": [0.6, 0.6, 0.9], "pos": [2.5, 0.6], "yaw": 0, "movable": true, "mass": 15 }
+  ]
+}

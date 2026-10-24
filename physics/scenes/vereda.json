@@ -1,0 +1,13 @@
+{
+  "id": "vereda",
+  "title": "Vereda",
+  "why": "Una vereda: el cordón de 15 cm que la separa de la calle, un banco, postes de luz, una maceta y un tacho de 8 kg que se puede empujar. El cordón corre a lo largo del recorrido, a 1,7 m del inicio, fuera del pasillo de los clips precargados (x de -1,4 a 2,4 m).",
+  "objects": [
+    { "label": "cordon", "kind": "box", "size": [0.3, 14.0, 0.15], "pos": [-1.75, 3.0], "yaw": 0 },
+    { "label": "banco", "kind": "box", "size": [0.5, 1.6, 0.45], "pos": [2.7, 1.5], "yaw": 0 },
+    { "label": "poste", "kind": "cylinder", "size": [0.12, 0.12, 3.0], "pos": [2.7, 4.2], "yaw": 0 },
+    { "label": "poste", "kind": "cylinder", "size": [0.12, 0.12, 3.0], "pos": [2.7, -1.5], "yaw": 0 },
+    { "label": "maceta", "kind": "box", "size": [0.6, 0.6, 0.5], "pos": [2.7, 6.5], "yaw": 0 },
+    { "label": "tacho", "kind": "cylinder", "size": [0.45, 0.45, 0.9], "pos": [1.5, -0.9], "yaw": 0, "movable": true, "mass": 8 }
+  ]
+}

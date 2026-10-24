@@ -122,6 +122,25 @@ Una política con `task: "mimic"` (de `training/imitate.py`) aprendió a hacer *
 | Con la limpieza rota a propósito (articulaciones suavizadas 0,2 s en vez de 0,1) | Falla: 0,21 de diferencia. La prueba sí puede fallar |
 | Desde la primera pose, con la física del navegador | Sigue el clip 1,3 s de 11,8, lo mismo que mide Python: `g1-walk` todavía no camina (ver `training/`) |
 
+## Lugares: `view.setScene(scene)`
+
+```js
+import { SCENES } from 'tridi-physics'; // cocina, depósito, vereda (physics/scenes/*.json)
+await view.setScene(SCENES.find((s) => s.id === 'cocina')); // null la saca
+```
+
+Un lugar es una lista de objetos (cajas y cilindros con tamaño, posición, rumbo y si se pueden mover; formato en [`../docs/contrato.md`](../docs/contrato.md), "Escenas"). `src/scenes.js` genera el MJCF sobre la escena actual: los muebles son geometría sólida y los sueltos, cuerpos libres que caen, se empujan y se vuelcan. Como el robot choca solo por pares de contacto explícitos, cada objeto recibe un par con cada parte del robot que tiene colisión, y los sueltos también con el piso. Se combina con los mundos (cocina con piso resbaloso) y con cualquier política; el modelo se reconstruye en un momento y la política vuelve sola.
+
+Los muebles de los lugares precargados quedan fuera del pasillo por donde pasa la pelvis de los clips (x de −1,4 a 2,4 m, y de −0,5 a 8,5 m): repitiendo un clip el robot es marioneta y no choca.
+
+| Prueba (`scripts/check-scenes.mjs`) | Resultado |
+| --- | --- |
+| Cada lugar carga sobre la escena de la política | 36 valores del robot más 7 por objeto suelto |
+| El robot sigue de pie con `g1-stand` | Pelvis a 0,78 m después de 2 s, en los tres |
+| Los objetos sueltos quedan apoyados en el piso | A menos de 1 mm de su altura de reposo |
+| Empujado hacia una pared a 0,4 m | La toca en vez de atravesarla |
+| Empujado hacia una caja de 2 kg a sus pies | La mueve 81 cm |
+
 ## Un clip completo: `RobotMotion`
 
 ```bash

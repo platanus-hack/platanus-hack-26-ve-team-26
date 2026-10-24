@@ -1,6 +1,6 @@
 // Ver simulaciones: the gallery of preloaded clips and the stage with the person and the robot.
 import { mountGallery } from '../gallery.js';
-import { WORLDS } from 'tridi-physics';
+import { SCENES, WORLDS } from 'tridi-physics';
 import { FINAL_LEVEL, IMITATIONS, LEVELS } from '../policies.js';
 import { robotPaneHTML } from '../robot-pane.js';
 import { mountStage } from '../stage.js';
@@ -34,6 +34,12 @@ export function mount(root, { dots }, [clipId] = []) {
             <label>Mundo
               <select id="world">
                 ${WORLDS.map(({ id, title }) => `<option value="${id}"${id === 'plano' ? ' selected' : ''}>${title}</option>`).join('')}
+              </select>
+            </label>
+            <label>Lugar
+              <select id="place">
+                <option value="" selected>Sin muebles</option>
+                ${SCENES.map(({ id, title }) => `<option value="${id}">${title}</option>`).join('')}
               </select>
             </label>
             <label>Robot entrenado con

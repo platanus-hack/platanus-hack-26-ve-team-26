@@ -12,7 +12,7 @@
 // For a clip with an imitation policy (policies.js IMITATIONS), "Robot entrenado con" also offers
 // it: the robot then does the clip itself, with physics, from its first pose, and the skeleton
 // follows the robot's clock (view.clipTime) instead of the other way around.
-import { WORLDS } from 'tridi-physics';
+import { SCENES, WORLDS } from 'tridi-physics';
 import { savedMotion } from './motions.js';
 import { FINAL_LEVEL, IMITATIONS, imitationOf, levelLabel, policyUrls } from './policies.js';
 import { mountRobotPane } from './robot-pane.js';
@@ -49,7 +49,8 @@ export function mountStage(root, dots) {
 
   function setRobotLabel(text) {
     const world = robot.view?.world();
-    const where = world && world.id !== 'plano' ? ` · ${world.title.toLowerCase()}` : '';
+    const place = robot.view?.scene();
+    const where = [world && world.id !== 'plano' ? world.title : null, place?.title].filter(Boolean).map((w) => ` · ${w.toLowerCase()}`).join('');
     const doing = imitating()
       ? 'imita el video con física (en entrenamiento)'
       : copying ? 'repite el movimiento' : `se equilibra solo (${levelLabel(level).toLowerCase()})`;
@@ -149,6 +150,28 @@ export function mountStage(root, dots) {
     else setRobotLabel();
   }
 
+  // Another place (a kitchen, a warehouse, a sidewalk): its furniture is solid and its loose objects
+  // can be knocked over. It rebuilds the model (a moment), and the clip resumes after.
+  async function setPlace(id) {
+    const view = robot.view;
+    if (!view) return;
+    $('place').disabled = true;
+    root.querySelector('.push').disabled = true;
+    setRobotLabel('Armando el lugar…');
+    try {
+      await view.setScene(SCENES.find((scene) => scene.id === id) ?? null);
+    } catch (error) {
+      console.error(error);
+      setRobotLabel('No se pudo armar el lugar.');
+    } finally {
+      $('place').disabled = false;
+      root.querySelector('.push').disabled = false;
+    }
+    copying = false;
+    if (motion && !imitating()) startMotion();
+    else setRobotLabel();
+  }
+
   robot.ready.then(async (view) => {
     if (!view) return;
     view.setSpeed(speed);
@@ -160,6 +183,7 @@ export function mountStage(root, dots) {
   $('show').onchange = (event) => ($('stage').dataset.show = event.target.value);
   $('policy').onchange = (event) => loadLevel(event.target.value);
   $('world').onchange = (event) => setWorld(event.target.value);
+  $('place').onchange = (event) => setPlace(event.target.value);
   $('play').onclick = () => {
     playing = !playing;
     if (robot.view) playing ? robot.view.play() : robot.view.pause();
@@ -202,7 +226,11 @@ export function mountStage(root, dots) {
       cancelAnimationFrame(frameId);
       skeleton.dispose();
       const view = robot.view;
-      if (view && view.world() && view.world().id !== 'plano') view.setWorld(WORLDS.find((world) => world.id === 'plano'));
+      // The app shares one robot: the next screen starts on flat, empty ground. One rebuild at a time.
+      if (view) {
+        const flat = view.world() && view.world().id !== 'plano' ? view.setWorld(WORLDS.find((world) => world.id === 'plano')) : Promise.resolve();
+        flat.then(() => view.scene() && view.setScene(null));
+      }
       robot.dispose();
     },
   };

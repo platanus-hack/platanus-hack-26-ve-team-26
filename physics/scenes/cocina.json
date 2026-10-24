@@ -1,0 +1,15 @@
+{
+  "id": "cocina",
+  "title": "Cocina",
+  "why": "Una cocina de casa: mesadas a la altura de la cadera (0,9 m), heladera, mesa con dos sillas que se pueden empujar y un tacho de basura. Los muebles quedan fuera del pasillo por donde pasa la pelvis de los clips precargados (x de -1,4 a 2,4 m, y de -0,5 a 8,5 m), así el robot no los atraviesa cuando repite un clip.",
+  "objects": [
+    { "label": "mesada", "kind": "box", "size": [0.6, 3.2, 0.9], "pos": [-2.1, 1.6], "yaw": 0 },
+    { "label": "cocina", "kind": "box", "size": [0.6, 0.7, 0.92], "pos": [-2.1, 3.6], "yaw": 0 },
+    { "label": "heladera", "kind": "box", "size": [0.7, 0.75, 1.8], "pos": [-2.15, 4.6], "yaw": 0 },
+    { "label": "mesada", "kind": "box", "size": [3.0, 0.6, 0.9], "pos": [0.5, -1.4], "yaw": 0 },
+    { "label": "mesa", "kind": "box", "size": [0.9, 1.5, 0.75], "pos": [2.8, 2.0], "yaw": 0 },
+    { "label": "silla", "kind": "box", "size": [0.45, 0.45, 0.9], "pos": [2.1, 1.6], "yaw": 0.1, "movable": true, "mass": 4 },
+    { "label": "silla", "kind": "box", "size": [0.45, 0.45, 0.9], "pos": [2.1, 2.5], "yaw": -0.15, "movable": true, "mass": 4 },
+    { "label": "tacho", "kind": "cylinder", "size": [0.35, 0.35, 0.6], "pos": [-1.6, -0.8], "yaw": 0, "movable": true, "mass": 3 }
+  ]
+}
