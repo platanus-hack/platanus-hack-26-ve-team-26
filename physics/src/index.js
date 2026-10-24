@@ -1,10 +1,11 @@
 // Public API of physics/ for the web app: give it a canvas and it loads MuJoCo and the G1,
 // simulates in real time and draws every frame until dispose().
 import { loadG1 } from './load.js';
-import { motionDuration, retargetClipAsync, sampleMotion } from './motion.js';
+import { motionDuration, retargetClipAsync, sampleMotion, smoothForDisplay } from './motion.js';
 import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
+import { createRobotPoseFilter } from './filters.js';
 import { RobotView } from './viewer.js';
 import { middleValues, sceneFile as worldScene, WORLD_ORDER } from './worlds.js';
 
@@ -85,6 +86,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   // Built on first use: only the camera and retargeting need them.
   let tracker = null;
   let retargeter = null;
+  let smoother = null; // the live pose filter (filters.js createRobotPoseFilter)
   // Retargeting runs on its own model of the G1: the kinematic chain and the soles, without meshes
   // (a model with them takes ~3 s to build in a browser, and would freeze the first camera frame).
   // It does not depend on which model the simulation shows, and its joints are laid out exactly
@@ -120,7 +122,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     if (clip) return void (clipTime = 0);
     sim.reset();
     retargeter?.delete();
-    tracker = retargeter = null;
+    tracker = retargeter = smoother = null;
   }
 
   return {
@@ -140,13 +142,14 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     /**
      * Plays a RobotMotion (physics/motions/, or any with the G1's 36 values per frame) on the
      * robot, without dynamics. It follows play(), pause() and setSpeed(), and reset() rewinds it.
+     * What shows is the motion cleaned of the video's jitter (smoothForDisplay in motion.js).
      * @param options.loop  start over at the end (default), or hold the last frame
      */
     playClip(motion, { loop = true } = {}) {
       if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== sim.model.nq) {
         throw new Error(`This RobotMotion is not for the ${sim.model.nq}-value G1 (robot: ${motion.robot}).`);
       }
-      clip = { motion, duration: motionDuration(motion), loop };
+      clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion), duration: motionDuration(motion), loop };
       clipTime = 0;
     },
     /**
@@ -238,8 +241,9 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       clip = null;
       tracker ??= createPoseTracker();
       retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
+      smoother ??= createRobotPoseFilter(sim.model.nq); // the robot's own jitter (filters.js)
       const { qpos, tracked, residual } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t));
-      if (tracked) sim.puppet(qpos);
+      if (tracked) sim.puppet(smoother.filter(qpos, pose.t));
       return { tracked, residual };
     },
     dispose() {

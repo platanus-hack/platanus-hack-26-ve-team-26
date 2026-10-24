@@ -1,0 +1,106 @@
+// Headless check that the robot moves smoothly on screen, with the real clips of data/clips: what
+// playClip shows (smoothForDisplay) and what the live camera gives (the robot pose filter), against
+// the raw RobotMotion and the raw retargeting. The video's frame-to-frame jitter is what made the
+// robot look buggy even when it did not fall.
+// Run: npm run check
+import { readFileSync } from 'node:fs';
+import { createRobotPoseFilter } from '../src/filters.js';
+import { sampleMotion, smoothForDisplay } from '../src/motion.js';
+import { createPoseTracker } from '../src/pose.js';
+import { createRetargeter } from '../src/retarget.js';
+import { loadG1Node } from './node-model.mjs';
+
+const SCREEN_DT = 1 / 60;
+const KNEE = 7 + 3; // left_knee_joint in qpos
+// A person walking moves the pelvis up and down with 2 to 5 m/s^2; the raw walk had 24.
+const PELVIS_ACCEL = 6;
+// Feet on the floor: within 2 cm in 95% of what is drawn (a sole sphere is 1 cm across).
+const FEET_M = 0.02;
+// Live, one camera frame (33 ms) of lag is the price of the filter; more would show as the robot
+// trailing the person.
+const MAX_LAG_S = 0.04;
+
+const { mujoco, sim } = await loadG1Node();
+const kinematic = sim.createModel('g1_kinematics.xml', ['g1_kinematics.xml']);
+const data = new mujoco.MjData(kinematic);
+const feetBodies = ['left_ankle_roll_link', 'right_ankle_roll_link'].map((n) => mujoco.mj_name2id(kinematic, mujoco.mjtObj.mjOBJ_BODY.value, n));
+const soles = [];
+for (let g = 0; g < kinematic.ngeom; g++) {
+  if (feetBodies.includes(kinematic.geom_bodyid[g]) && kinematic.geom_type[g] === mujoco.mjtGeom.mjGEOM_SPHERE.value) soles.push(g);
+}
+const lowestSole = (q) => {
+  data.qpos.set(q);
+  mujoco.mj_kinematics(kinematic, data);
+  return Math.min(...soles.map((g) => data.geom_xpos[3 * g + 2] - kinematic.geom_size[3 * g]));
+};
+const p95 = (a) => [...a].map(Math.abs).sort((x, y) => x - y)[Math.floor(0.95 * (a.length - 1))];
+const rate = (a, dt) => a.slice(1).map((v, i) => (v - a[i]) / dt);
+const accel = (a, dt) => p95(rate(rate(a, dt), dt));
+
+const failures = [];
+const expect = (ok, what) => {
+  console.log(`  ${ok ? 'ok  ' : 'FAIL'} ${what}`);
+  if (!ok) failures.push(what);
+};
+const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url)));
+
+console.log('playClip: the walk as the screen shows it, at 60 frames per second');
+{
+  const motion = read('../motions/clip_2026-10-23_caminar-perfil_01.json');
+  const shown = smoothForDisplay(mujoco, kinematic, motion);
+  const duration = (motion.qpos.length - 1) / motion.fps;
+  const raw = [];
+  const smooth = [];
+  for (let t = 0; t <= duration; t += SCREEN_DT) {
+    raw.push(Array.from(sampleMotion(motion, t, new Float64Array(sim.model.nq))));
+    smooth.push(Array.from(sampleMotion(shown, t, new Float64Array(sim.model.nq))));
+  }
+  const pelvis = (rows) => accel(rows.map((q) => q[2]), SCREEN_DT);
+  const knee = (rows) => accel(rows.map((q) => q[KNEE]), SCREEN_DT);
+  expect(pelvis(smooth) < PELVIS_ACCEL, `pelvis height acceleration ${pelvis(smooth).toFixed(1)} m/s^2 (p95; raw ${pelvis(raw).toFixed(1)}), under ${PELVIS_ACCEL}`);
+  expect(knee(smooth) < knee(raw) / 2, `knee acceleration ${knee(smooth).toFixed(0)} rad/s^2 (p95), under half the raw ${knee(raw).toFixed(0)}`);
+  const feet = p95(smooth.map(lowestSole));
+  expect(feet < FEET_M, `feet within ${(100 * feet).toFixed(1)} cm of the floor in 95% of frames, under ${100 * FEET_M}`);
+}
+
+console.log('mimic: the walk fed frame by frame like the live camera');
+{
+  const clip = read('../../data/clips/clip_2026-10-23_caminar-perfil_01.json');
+  const tracker = createPoseTracker();
+  const retargeter = createRetargeter(mujoco, kinematic, { mirror: false });
+  const filter = createRobotPoseFilter(sim.model.nq);
+  const raw = [];
+  const smooth = [];
+  for (const f of clip.frames) {
+    // PoseClip axes (y up, z toward the camera) back to MediaPipe's (y down, z away).
+    const world = f.joints.map(([x, y, z, v]) => ({ x, y: -y, z: -z, visibility: v }));
+    const { qpos } = retargeter.solve(tracker.update(world, world, f.t));
+    raw.push(Array.from(qpos));
+    smooth.push(Array.from(filter.filter(qpos, f.t)));
+  }
+  const dt = 1 / clip.fps;
+  const pelvis = (rows) => accel(rows.map((q) => q[2]), dt);
+  const knee = (rows) => accel(rows.map((q) => q[KNEE]), dt);
+  expect(pelvis(smooth) < PELVIS_ACCEL * 1.5, `pelvis height acceleration ${pelvis(smooth).toFixed(1)} m/s^2 (p95; raw ${pelvis(raw).toFixed(1)}), under ${PELVIS_ACCEL * 1.5} (live has no future frames)`);
+  expect(knee(smooth) < knee(raw) / 2, `knee acceleration ${knee(smooth).toFixed(0)} rad/s^2 (p95), under half the raw ${knee(raw).toFixed(0)}`);
+  // Lag: the delay at which the filtered knee matches the raw one best.
+  const k = raw.map((q) => q[KNEE]);
+  const s = smooth.map((q) => q[KNEE]);
+  let lag = 0;
+  let best = Infinity;
+  for (let shift = 0; shift <= 6; shift++) {
+    let err = 0;
+    for (let i = shift; i < k.length; i++) err += (s[i] - k[i - shift]) ** 2;
+    if (err < best) [best, lag] = [err, shift * dt];
+  }
+  expect(lag <= MAX_LAG_S, `follows the person ${(1000 * lag).toFixed(0)} ms late, at most ${1000 * MAX_LAG_S}`);
+}
+
+data.delete();
+kinematic.delete();
+sim.delete();
+if (failures.length) {
+  console.error(`\ncheck-smooth failed: ${failures.length} of the checks above`);
+  process.exit(1);
+}
+console.log('\ncheck-smooth passed');

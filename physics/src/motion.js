@@ -7,6 +7,7 @@
 //   position  the hips' path, scaled to the robot's legs, so its stride matches its travel
 //   heading   the direction of travel, because the hip line is noisy seen from the side
 import { createPoseTracker } from './pose.js';
+import { createReference } from './reference.js';
 import { createRetargeter } from './retarget.js';
 
 // Below this speed the person is standing or shuffling, and the direction of travel is noise:
@@ -140,6 +141,40 @@ function travelHeading(frames, hips, i) {
   const dx = hips[b][0] - hips[a][0];
   const dy = hips[b][1] - hips[a][1];
   return Math.hypot(dx, dy) / dt < MIN_TRAVEL_SPEED ? undefined : Math.atan2(dy, dx);
+}
+
+// For the screen only, the pelvis height is also smoothed over 0.2 s after the feet are put on the
+// floor. Grounding the lowest foot every frame makes the pelvis jump when support passes from one
+// foot to the other: 15 m/s^2 of vertical acceleration (p95) in the walk, where a person has 2 to 5.
+// With 0.2 s it is 4.5, and the feet sink or float at most ~1.2 cm in 95% of the frames (measured
+// on data/clips' walk; 0.3 s gave 3.4 m/s^2 but 1.9 cm of floating). Training keeps the reference as
+// it is (reference.js mirrors Python), because a policy's feet must really be on the floor.
+const DISPLAY_HEIGHT_SMOOTH_S = 0.2;
+
+const displayed = new WeakMap(); // RobotMotion -> its smoothed copy, computed once
+
+/**
+ * The RobotMotion the robot shows: the training's clean reference (joints and path smoothed, feet
+ * on the floor; reference.js) at each frame, with the pelvis height smoothed for the eye. Same frames
+ * and fps, so it plays in step with the person's skeleton.
+ * @param model  a model of the G1 with its feet (g1_kinematics.xml is enough)
+ */
+export function smoothForDisplay(mujoco, model, motion) {
+  if (displayed.has(motion)) return displayed.get(motion);
+  const reference = createReference(mujoco, model, motion);
+  const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
+  const n = qpos.length;
+  const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
+  const pad = Math.floor(window / 2);
+  const height = qpos.map((row) => row[2]);
+  qpos.forEach((row, i) => {
+    let sum = 0;
+    for (let k = i - pad; k < i - pad + window; k++) sum += height[Math.min(Math.max(k, 0), n - 1)];
+    row[2] = sum / window;
+  });
+  const smoothed = { ...motion, qpos };
+  displayed.set(motion, smoothed);
+  return smoothed;
 }
 
 /** Seconds a RobotMotion lasts: its frames are 1/fps apart, so the last one is at (n - 1) / fps. */

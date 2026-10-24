@@ -146,6 +146,17 @@ Los clips precargados ya tienen su `RobotMotion` guardado en `motions/` (la web 
 
 Calcula sobre su **propio modelo del G1 sin mallas** (`models/unitree_g1/g1_kinematics.xml`, que genera `npm run make-kinematic-model` a partir de `g1.xml`): al retargeting le bastan la cadena cinemática y las esferas de los pies, y cargar las 35 mallas tarda 3 s en un navegador. `npm run check` exige que dé exactamente el mismo movimiento que el modelo completo, y que los `motions/` guardados estén al día con los clips de `data/clips/`. Como no depende de qué modelo muestre la simulación, sirve igual con una política cargada.
 
+### Sin temblor: lo que se ve en pantalla
+
+El video trae el temblor de MediaPipe cuadro a cuadro, y el robot lo copiaba: se veía inestable aunque no se cayera. Ahora se limpia en los dos caminos que dibujan al robot como marioneta:
+
+| Camino | Qué se hace | Caminata real de `data/clips/`, crudo → ahora |
+| --- | --- | --- |
+| `playClip` | `smoothForDisplay` (`src/motion.js`): la referencia limpia del entrenamiento (`reference.js`) y la altura de la pelvis suavizada 0,2 s | Aceleración vertical de la pelvis 24,4 → 5,0 m/s² (p95; una persona camina con 2 a 5), rodilla 191 → 91 rad/s², pies a menos de 1,5 cm del piso en el 95 % de los cuadros |
+| `mimic` (cámara) | `createRobotPoseFilter` (`src/filters.js`): One Euro sobre la altura, el rumbo y las 29 articulaciones del robot | Pelvis 22,2 → 5,4 m/s², rodilla 166 → 66 rad/s², a cambio de 33 ms de retraso (un cuadro de cámara) |
+
+`scripts/check-smooth.mjs` lo exige en `npm run check`. El entrenamiento sigue usando la referencia sin el suavizado extra de la altura: los pies de una política tienen que estar de verdad en el piso.
+
 ### Reproducirlo: `view.playClip(motion)`
 
 ```js

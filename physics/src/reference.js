@@ -10,9 +10,18 @@ import { idOf } from './sim.js';
 // robot), the joints over 0.1 s (MediaPipe's frame-to-frame jitter).
 const SMOOTH_S = 0.3;
 const JOINT_SMOOTH_S = 0.1;
-// The collision capsules of the feet in scene_mjx.xml (imitate.FOOT_SPHERES).
-const FOOT_GEOMS = ['left_foot1_collision', 'left_foot2_collision', 'left_foot3_collision',
-  'right_foot1_collision', 'right_foot2_collision', 'right_foot3_collision'];
+// The feet: the spheres and capsules on the two ankle bodies. In scene_mjx.xml those are exactly the
+// six collision capsules training uses (imitate.FOOT_SPHERES); in g1_kinematics.xml, the eight sole
+// spheres the retargeting puts on the floor. So the same code grounds a reference for either model.
+const FOOT_BODIES = ['left_ankle_roll_link', 'right_ankle_roll_link'];
+
+function footGeoms(mujoco, model) {
+  const bodies = FOOT_BODIES.map((name) => idOf(mujoco, model, 'BODY', name));
+  const kinds = [mujoco.mjtGeom.mjGEOM_SPHERE.value, mujoco.mjtGeom.mjGEOM_CAPSULE.value];
+  const out = [];
+  for (let g = 0; g < model.ngeom; g++) if (bodies.includes(model.geom_bodyid[g]) && kinds.includes(model.geom_type[g])) out.push(g);
+  return out;
+}
 
 // Python's round(): halves go to the even neighbor. Window sizes must match training's exactly.
 function roundHalfEven(x) {
@@ -70,12 +79,13 @@ export function createReference(mujoco, model, motion) {
     r.set(plane[i], 0);
   });
 
-  // 3. pelvis height set frame by frame so the lowest foot capsule touches the floor (z = 0). A
+  // 3. pelvis height set frame by frame so the lowest foot geom touches the floor (z = 0). A
   // capsule's lowest point is its center, minus half its length along its tilted axis, minus its
-  // radius: exactly what mj_geomDistance gives against the floor plane in training.
+  // radius: exactly what mj_geomDistance gives against the floor plane in training. A sphere is a
+  // capsule of length 0.
   const data = new mujoco.MjData(model);
   try {
-    const feet = FOOT_GEOMS.map((name) => idOf(mujoco, model, 'GEOM', name));
+    const feet = footGeoms(mujoco, model);
     for (const r of qpos) {
       data.qpos.set(r);
       mujoco.mj_kinematics(model, data);
