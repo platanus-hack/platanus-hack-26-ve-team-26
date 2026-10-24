@@ -1,5 +1,6 @@
 // Tests buildPoseClip without a browser: a synthetic person walks across a fixed camera at a known
-// speed, seen at uneven webcam frame times, with a few lost frames and one mirrored misread.
+// speed, seen at uneven webcam frame times, with a few lost frames, one mirrored misread and a first
+// frame whose camera fit lands meters away (the body entering the shot).
 // The clip must follow the contract and recover the speed. Run: npm run check
 import { buildPoseClip } from '../src/poseclip.js';
 
@@ -45,7 +46,8 @@ let t = 0;
 for (let k = 0; t < 4; k++) {
   t += 1 / 30 + (k % 3 === 0 ? 0.008 : -0.004); // uneven webcam timing
   const s = { t, ...pose(t) };
-  if (k >= 40 && k < 44) samples.push({ t, valid: false }); // body lost for a few frames
+  if (k === 0) samples.push({ ...s, image: s.image.map(([x, y, v]) => [(x - W / 2) / 2 + W / 2, (y - H / 2) / 2 + H / 2, v]) }); // looks twice as far
+  else if (k >= 40 && k < 44) samples.push({ t, valid: false }); // body lost for a few frames
   else if (k === 60) samples.push({ ...s, world: s.world.map(([x, y, z]) => [-x, y, -z]) }); // mirrored misread
   else samples.push(s);
 }
@@ -64,6 +66,8 @@ const last = clip.frames.at(-1);
 const speed = Math.hypot(hips(last)[0], hips(last)[2]) / last.t;
 check(Math.abs(speed - SPEED) / SPEED < 0.1, `speed ${speed.toFixed(2)} m/s, expected ${SPEED}`);
 check(hips(last)[0] > 0, 'walking right moves +x');
+const depth = Math.max(...clip.frames.map((f) => Math.abs(hips(f)[2])));
+check(depth < 0.3, `walking across keeps the depth: hips up to ${depth.toFixed(2)} m toward the camera`);
 const head = clip.frames[0].joints[0][1];
 check(head > 0.4, `y up: the head is ${head.toFixed(2)} m above the hips`);
 check(clip.quality.valid_ratio > 0.9 && clip.quality.valid_ratio < 1, `valid_ratio ${clip.quality.valid_ratio}`);

@@ -46,6 +46,14 @@ FLIP_WINDOW_S = 1.0
 # A centered moving average over 0.2 s removes that without lagging the motion (a step lasts ~0.5 s).
 SMOOTH_S = 0.2
 
+# The camera fit can land meters off for a frame or two, typically when the subject enters the shot
+# cut by the image edge (the first frame of correr-perfil came out 5 m deep). Within half a second
+# a sprinter (8 m/s) moves 4 m, so the median of that window sits at most ~1 m from a good frame,
+# even at the clip's edges where the window is one-sided; 1.5 m leaves room for that and still
+# catches fit errors, which are several meters.
+CAM_WINDOW_S = 0.5
+CAM_OUTLIER_M = 1.5
+
 # MediaPipe foot points per side: ankle, heel, toe.
 FEET = ((27, 29, 31), (28, 30, 32))
 
@@ -142,6 +150,16 @@ def _facing_flips(world: np.ndarray, valid: np.ndarray, fps: float) -> np.ndarra
         ref = np.median(facing[near], axis=0)
         flips[k] = facing[k] @ ref < 0
     return flips
+
+
+def _camera_outliers(cam: np.ndarray, valid: np.ndarray, fps: float) -> np.ndarray:
+    """Frames whose camera-fit position is far from the median of its valid neighbors."""
+    half = max(1, int(round(CAM_WINDOW_S * fps / 2)))
+    out = np.zeros(len(cam), dtype=bool)
+    for k in np.flatnonzero(valid):
+        near = np.flatnonzero(valid[max(0, k - half) : k + half + 1]) + max(0, k - half)
+        out[k] = np.linalg.norm(cam[k] - np.median(cam[near], axis=0)) > CAM_OUTLIER_M
+    return out
 
 
 def _root_from_feet(rel: np.ndarray) -> np.ndarray:
@@ -278,7 +296,10 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     body_rel = _fill_gaps(world, valid) * np.array([1, -1, -1])
     window = max(1, int(round(SMOOTH_S * tr.fps)))
     feet = _root_from_feet(body_rel)
-    camera = (_fill_gaps(cam, valid) - cam[0]) * np.array([1, -1, -1])
+    # Bad camera fits are dropped only from the camera estimate: the pose of those frames is fine.
+    cam_ok = valid & ~_camera_outliers(cam, valid, tr.fps)
+    camera = _fill_gaps(cam, cam_ok)
+    camera = (camera - camera[0]) * np.array([1, -1, -1])
     # Each estimate fails by seeing too little motion: the camera one when the camera pans to follow
     # the person, the feet one along the depth axis (MediaPipe barely sees feet move toward the camera).
     # So on each ground axis we keep the one that travelled further. Height always comes from the feet.

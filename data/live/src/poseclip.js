@@ -27,6 +27,11 @@ const FLIP_WINDOW_S = 1.0;
 // estimate without lagging the motion (a step lasts ~0.5 s).
 const SMOOTH_S = 0.2;
 
+// A camera fit far from its neighbors' median is a fit error (the body cut by the image edge), not
+// motion: same window and threshold as data/lift.py, where the reasoning is.
+const CAM_WINDOW_S = 0.5;
+const CAM_OUTLIER_M = 1.5;
+
 // The contract fixes one fps per clip; webcams deliver uneven frame times, so the clip is resampled.
 export const CLIP_FPS = 30;
 
@@ -48,9 +53,10 @@ export function buildPoseClip(samples, { width, height, id = defaultId() }) {
   });
   const flips = facingFlips(items);
   items.forEach((s, k) => (s.valid = s.valid && !flips[k]));
+  fixCameraOutliers(items);
 
   const validIdx = items.flatMap((s, k) => (s.valid ? [k] : []));
-  if (validIdx.length < 2) throw new Error(`the body was seen in ${validIdx.length} frames; need at least 2`);
+  if (validIdx.length < 2) throw new Error(`se vio el cuerpo en ${validIdx.length} cuadros y hacen falta al menos 2: que se vea el cuerpo entero`);
   items = items.slice(validIdx[0], validIdx.at(-1) + 1);
 
   // Resample to CLIP_FPS. Each output frame interpolates between the valid samples around it;
@@ -159,6 +165,26 @@ function solve3(m, b) {
   const d = det(m);
   if (Math.abs(d) < 1e-9) return null;
   return [0, 1, 2].map((col) => det(m.map((row, r) => row.map((v, s) => (s === col ? b[r] : v)))) / d);
+}
+
+/**
+ * Replaces the camera fit of outlier samples with one interpolated in time from the good ones. The
+ * pose of those samples is fine, so they stay valid.
+ */
+function fixCameraOutliers(items) {
+  const ok = items.filter((s) => s.valid);
+  const bad = ok.filter((s) => {
+    const near = ok.filter((o) => Math.abs(o.t - s.t) <= CAM_WINDOW_S / 2);
+    const mid = [0, 1, 2].map((a) => median(near.map((o) => o.cam[a])));
+    return Math.hypot(...s.cam.map((v, a) => v - mid[a])) > CAM_OUTLIER_M;
+  });
+  const good = ok.filter((s) => !bad.includes(s));
+  if (!good.length) return;
+  for (const s of bad) {
+    const before = good.findLast((g) => g.t < s.t);
+    const after = good.find((g) => g.t > s.t);
+    s.cam = !before ? [...after.cam] : !after ? [...before.cam] : lerp(before.cam, after.cam, (s.t - before.t) / (after.t - before.t));
+  }
 }
 
 /**
