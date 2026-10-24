@@ -85,7 +85,7 @@ export function mount(root, { api }) {
           </div>
           <p class="pane-label camera-label">Tú</p>
         </section>
-        ${robotPaneHTML('Robot · te copia')}
+        ${robotPaneHTML('Robot · te copia', { push: false })}
       </div>
       <div class="live-bar">
         <div class="row">
@@ -132,7 +132,7 @@ export function mount(root, { api }) {
   let disposed = false;
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
-  const robot = mountRobotPane($('.robot-pane'), { beforePush: () => stop() });
+  const robot = mountRobotPane($('.robot-pane'));
   const trainBox = mountTrainBox($('.train-box'), api);
   robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
 

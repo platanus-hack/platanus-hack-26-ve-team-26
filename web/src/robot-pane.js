@@ -2,12 +2,18 @@
 // While the robot is still loading, the brand's loader (loader.js) turns in its place with a
 // progress bar; "Empujar" floats over the pane so it is always on screen without scrolling (the
 // pitch's key moment), and draws the push's arrow in the scene, as the landing does.
+// The push is opt-out: while the robot is copying someone from the camera it is placed frame by
+// frame and does not answer to physics, so a shove there does nothing and reads as a broken button.
 import { loader } from './loader.js';
 import { createPushArrow } from './push-arrow.js';
 import { attachRobot, onRobotProgress, robotView } from './robot-host.js';
 
-/** Markup for a robot pane; mountRobotPane fills it in. */
-export function robotPaneHTML(label) {
+/**
+ * Markup for a robot pane; mountRobotPane fills it in.
+ * @param label  the pane's caption
+ * @param options.push  false hides the shove button (the live screen, where the robot is puppeted)
+ */
+export function robotPaneHTML(label, { push = true } = {}) {
   return `
     <section class="pane robot-pane">
       <div class="robot-loading">
@@ -16,7 +22,7 @@ export function robotPaneHTML(label) {
         <p class="robot-status">Preparando el mundo de física…</p>
       </div>
       <p class="pane-label">${label}</p>
-      <button class="push" type="button" disabled>Empujar al robot</button>
+      ${push ? '<button class="push" type="button" disabled>Empujar al robot</button>' : ''}
     </section>`;
 }
 
@@ -50,12 +56,15 @@ export function mountRobotPane(pane, { beforePush } = {}) {
         arrow.update();
         frameId = requestAnimationFrame(frame);
       });
-      $('.push').disabled = false;
-      $('.push').onclick = () => {
-        beforePush?.();
-        view.push();
-        arrow.point(view);
-      };
+      const push = $('.push');
+      if (push) {
+        push.disabled = false;
+        push.onclick = () => {
+          beforePush?.();
+          view.push();
+          arrow.point(view);
+        };
+      }
     })
     .catch((error) => {
       $('.robot-status').textContent = 'No se pudo cargar el robot. Recarga la página para intentar de nuevo.';
