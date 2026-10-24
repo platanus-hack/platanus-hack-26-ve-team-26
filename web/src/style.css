@@ -395,6 +395,9 @@ select:disabled {
 .robot-loading {
   position: absolute;
   inset: 0;
+  /* Only shows progress, and stays over the canvas after it fades out: without this it took the
+     drags and the robot could no longer be orbited. */
+  pointer-events: none;
   display: grid;
   align-content: center;
   gap: var(--s-3);
