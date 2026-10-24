@@ -787,7 +787,7 @@ export function mount(root, { api }) {
   // A veil per chapter ended in a hard line where the chapter ended; one veil for the whole page,
   // eased toward each chapter's side, leaves no edge. On phones the words sit low: a floor instead.
   const washEl = $('.film-wash');
-  // The hero's title sits low on the left, over the café of the street (landing/city.js).
+  // The hero's title sits low on the left, over the street (landing/city.js).
   const WASH = { hero: [0.85, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
   const wash = { left: 0, right: 0, floor: 0 };
   const washed = { left: '', right: '', floor: '' }; // what the veil has now: write only changes

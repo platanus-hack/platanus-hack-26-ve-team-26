@@ -3,10 +3,13 @@
 // the walk of Capture heads (home.js faceForward turns it to +x), so the robot walks along its own
 // sidewalk: the road is on its right (-z) and its row of shops on its left (+z).
 // Drawn here, with no image files: the floors (sidewalks, curbs and a road one curb below), the
-// props (street lights, trees, parked cars, a bus stop, a café, shop signs) and a dusk sky the robot
-// reflects. The buildings are Kenney City Kit Commercial (CC0, public/models/kenney/commercial);
-// bins and plants come from the Furniture Kit. None of it is physics: the robot cannot hit
-// it, so it stays out of where the robot walks and falls.
+// props (street lights, trees, parked cars, a crosswalk) and a dusk sky the robot reflects. The
+// buildings are Kenney City Kit Commercial (CC0, public/models/kenney/commercial). None of it is
+// physics: the robot cannot hit it, so it stays out of where the robot walks and falls.
+// Kept simple on purpose: the street is a backdrop for the robot, not the subject. It used to run
+// 148 m with 16 towers, shop signs, a café with tables, a bus stop, benches, bins and plants;
+// phones dropped frames under it and the download waited on it. Now it runs 88 m (the fog hides
+// where it ends either way), with 6 towers (none on phones) and only the props that say "street".
 // Everything is added on dress and taken out on undress, so the app screens keep their look.
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -16,13 +19,11 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 const BASE = `${import.meta.env.BASE_URL}models/kenney/`;
 const BUILDINGS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'].map((k) => `commercial/building-${k}.glb`);
 const TOWERS = ['a', 'b', 'c'].map((k) => `commercial/building-skyscraper-${k}.glb`);
-const PLANT = 'furniture/pottedPlant.glb';
-const BIN = 'furniture/trashcan.glb';
 // Kenney's commercial buildings are about 1 unit wide and 0.43 units a floor: at 8 m a unit a floor
 // is 3.4 m and a shop door 2.2 m, so the robot (1.3 m) stands at the right size next to them.
 const BUILDING_M = 8;
-// The Furniture Kit's potted plant is 0.65 units tall; a shop's plant is 1.2 m.
-const FURNITURE_M = 1.8;
+// Phones: no towers, and fewer cars. Same street, a lighter frame on a small GPU.
+const SMALL_SCREEN = matchMedia('(max-width: 720px), (pointer: coarse)').matches;
 
 // Across the street (z, meters), from the cameras of home.js. The two that come closest to a wall:
 // Capture films from 3.3 m on the +z side of the robot (5.3 m on phones), so the shops stand just
@@ -33,9 +34,12 @@ const FAR_CURB_Z = -9.4; // 7.2 m of road: a parking lane on each side and one l
 const FAR_SHOPS_Z = -12.4; // 3 m of far sidewalk, then the far row
 const ROAD_DROP_M = 0.14; // the road lies a curb below; the sidewalks are the physics floor (y = 0)
 const CURB_W = 0.22;
-const STREET_M = 240; // floor length along x; the end buildings close the street well before
-const ROW_X = [-74, 74]; // the two rows of shops, along x
-const END_X = 78; // a row of buildings across each end of the street, so no shot looks into nothing
+const STREET_M = 140; // floor length along x; the end buildings close the street well before
+// The two rows of shops, along x: the hero looks down the street toward -x, and past 40 m the dusk
+// haze has already turned the buildings into silhouettes.
+const ROW_X = [-44, 44];
+const END_X = 48; // a row of buildings across each end of the street, so no shot looks into nothing
+const TOWERS_N = SMALL_SCREEN ? 0 : 6; // a skyline over the near rows, where the cameras look
 // Where the robot walks (x 0 to 7.5), falls (1.5 m around the origin) and where the cameras fly,
 // shots and the moves between them: nothing above the floor stands here, so no prop hides the
 // robot or cuts through the lens. Signs and awnings on the walls are high enough to pass over.
@@ -51,8 +55,8 @@ const isClear = (x, z, r = 0.5) => !KEEP_CLEAR.some((k) => x + r > k.x[0] && x -
 const SUN = { elevation: 3, azimuth: 200 };
 const SKY = { turbidity: 6, rayleigh: 2.2, mieCoefficient: 0.006, mieDirectionalG: 0.85 };
 // Dusk haze: the near facades (6 to 20 m from every camera) stay sharp, the street's far end
-// (78 m) fades into a silhouette.
-const FOG = { color: 0x1b1d24, near: 14, far: 95 };
+// (48 m) fades into a silhouette.
+const FOG = { color: 0x1b1d24, near: 14, far: 70 };
 // Kenney's colormap is a palette of pastel swatches, bright as noon: at dusk the walls take a
 // fraction of it, and the windows light up. The glass is the pale blue swatch (column 11 of 16, row
 // 1 of 4, the only one every building's window panes use), so an emissive map lit only there turns
@@ -275,15 +279,11 @@ const M = {
   leavesA: new THREE.MeshStandardMaterial({ color: 0x2f4d2c, roughness: 0.9, flatShading: true }),
   leavesB: new THREE.MeshStandardMaterial({ color: 0x3d5c33, roughness: 0.9, flatShading: true }),
   pit: new THREE.MeshStandardMaterial({ color: 0x141412, roughness: 1 }),
-  glass: new THREE.MeshStandardMaterial({ color: 0xa9c0d0, transparent: true, opacity: 0.22, roughness: 0.05, metalness: 0.2, depthWrite: false }),
   carGlass: new THREE.MeshStandardMaterial({ color: 0x0c1015, roughness: 0.08, metalness: 0.85 }),
   tire: new THREE.MeshStandardMaterial({ color: 0x121212, roughness: 0.9 }),
   rim: new THREE.MeshStandardMaterial({ color: 0x8a8d91, metalness: 0.8, roughness: 0.35 }),
   headlight: new THREE.MeshBasicMaterial({ color: 0xd9d2c0 }),
   taillight: new THREE.MeshBasicMaterial({ color: 0x7a1414 }),
-  wood: new THREE.MeshStandardMaterial({ color: 0x6b4a33, roughness: 0.8 }),
-  tabletop: new THREE.MeshStandardMaterial({ color: 0xd8d2c4, roughness: 0.5 }),
-  hydrant: new THREE.MeshStandardMaterial({ color: 0xb8902a, roughness: 0.6 }),
   signalRed: new THREE.MeshBasicMaterial({ color: 0xff3b2a }),
   signalOff: new THREE.MeshBasicMaterial({ color: 0x2a2a2a }),
 };
@@ -370,117 +370,7 @@ function car(b, x, z, dir, color) {
   }
 }
 
-// A bench of slats on two metal legs, `length` along x, its back toward +z × back.
-function bench(b, x, z, back, length = 1.8) {
-  for (const lx of [-length / 2 + 0.15, length / 2 - 0.15]) b.add(box(0.06, 0.45, 0.5), M.metal, { x: x + lx, y: 0.225, z });
-  for (let k = 0; k < 3; k++) b.add(box(length, 0.04, 0.13), M.wood, { x, y: 0.46, z: z - 0.17 + k * 0.17 });
-  for (let k = 0; k < 2; k++) b.add(box(length, 0.12, 0.04), M.wood, { x, y: 0.62 + k * 0.16, z: z + back * 0.26, rx: back * 0.15 });
-}
-
-// A café chair of dark metal, facing `ry` (0: toward -z).
-function chair(b, x, z, ry) {
-  const at = (lx, ly, lz) => ({ x: x + lx * Math.cos(ry) + lz * Math.sin(ry), y: ly, z: z - lx * Math.sin(ry) + lz * Math.cos(ry), ry });
-  b.add(box(0.42, 0.035, 0.42), M.metal, at(0, 0.46, 0));
-  for (const lx of [-0.18, 0.18]) {
-    for (const lz of [-0.18, 0.18]) b.add(cylinder(0.014, 0.014, 0.46, 6), M.metal, at(lx, 0.23, lz));
-    b.add(cylinder(0.014, 0.014, 0.42, 6), M.metal, at(lx, 0.67, 0.19));
-  }
-  b.add(box(0.4, 0.12, 0.02), M.wood, at(0, 0.8, 0.2));
-}
-
-// ---- Things with their own texture: signs, the bus stop's ad, the café's awning ----
-
-const FONT = "'Inter Tight Variable', system-ui, sans-serif";
-// A shop sign: glowing letters on a dark panel. Unlit (MeshBasicMaterial) and not tone mapped, so
-// it reads as a light source at dusk.
-function sign(renderer, text, { color = '#ffb36b', width = 4, height = 0.9, panel = '#121212', glyph = null } = {}) {
-  const px = 128;
-  const texture = canvasTexture(
-    renderer,
-    width * px,
-    height * px,
-    (ctx, w, h) => {
-      ctx.fillStyle = panel;
-      ctx.fillRect(0, 0, w, h);
-      ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-      ctx.lineWidth = 6;
-      ctx.strokeRect(3, 3, w - 6, h - 6);
-      ctx.font = `700 ${Math.round(h * 0.52)}px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = color;
-      ctx.shadowColor = color;
-      const tx = glyph ? w / 2 + h * 0.35 : w / 2;
-      for (const blur of [h * 0.3, h * 0.12, 0]) {
-        ctx.shadowBlur = blur;
-        ctx.fillText(text, tx, h * 0.54);
-      }
-      if (glyph === 'cross') {
-        // A pharmacy's green cross, before the word.
-        const s = h * 0.5;
-        const cx = tx - ctx.measureText(text).width / 2 - h * 0.55;
-        ctx.fillRect(cx - s / 6, h / 2 - s / 2, s / 3, s);
-        ctx.fillRect(cx - s / 2, h / 2 - s / 6, s, s / 3);
-      }
-    },
-    { repeat: false },
-  );
-  return new THREE.Mesh(new THREE.PlaneGeometry(width, height), new THREE.MeshBasicMaterial({ map: texture, toneMapped: false }));
-}
-
-// The bus stop's ad: a lit poster.
-function posterTexture(renderer) {
-  return canvasTexture(
-    renderer,
-    256,
-    384,
-    (ctx, w, h) => {
-      const g = ctx.createLinearGradient(0, 0, 0, h);
-      g.addColorStop(0, '#2a3b5c');
-      g.addColorStop(1, '#e0794a');
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, w, h);
-      ctx.fillStyle = 'rgba(255,240,220,0.9)';
-      ctx.beginPath();
-      ctx.arc(w * 0.5, h * 0.42, w * 0.22, 0, 2 * Math.PI);
-      ctx.fill();
-      ctx.fillStyle = '#1a1a1a';
-      ctx.beginPath(); // a mountain line: the Ávila over the city
-      ctx.moveTo(0, h * 0.62);
-      ctx.lineTo(w * 0.25, h * 0.5);
-      ctx.lineTo(w * 0.45, h * 0.58);
-      ctx.lineTo(w * 0.7, h * 0.46);
-      ctx.lineTo(w, h * 0.6);
-      ctx.lineTo(w, h);
-      ctx.lineTo(0, h);
-      ctx.fill();
-      ctx.fillStyle = '#f4efe6';
-      ctx.font = `800 40px ${FONT}`;
-      ctx.textAlign = 'center';
-      ctx.fillText('CARACAS', w / 2, h * 0.82);
-      ctx.font = `500 18px ${FONT}`;
-      ctx.fillText('de noche también', w / 2, h * 0.9);
-    },
-    { repeat: false },
-  );
-}
-
-function awningTexture(renderer) {
-  return canvasTexture(
-    renderer,
-    512,
-    64,
-    (ctx, w, h) => {
-      for (let i = 0; i < 16; i++) {
-        ctx.fillStyle = i % 2 ? '#e8dfcc' : '#b5432a';
-        ctx.fillRect((i * w) / 16, 0, w / 16, h);
-      }
-    },
-    { repeat: false },
-  );
-}
-
-// A soft pool of light on the floor, under a street light or a café.
+// A soft pool of light on the floor, under a street light.
 function poolTexture(renderer) {
   return canvasTexture(
     renderer,
@@ -564,7 +454,7 @@ export function dressCity(scene, renderer) {
   const lightPool = (x, y, z, r) => pools.push({ x, y, z, r });
 
   // Street lights every 18 m on both curbs, staggered, and trees between them.
-  for (let x = -66; x <= 70; x += 18) {
+  for (let x = -40; x <= 40; x += 18) {
     for (const [z, toward, offset] of [
       [CURB_Z + 0.45, -1, 0],
       [FAR_CURB_Z - 0.45, 1, 9],
@@ -584,35 +474,19 @@ export function dressCity(scene, renderer) {
 
   // Parked cars: the far lane all along, the near lane away from the cameras.
   let colorTurn = 0;
-  for (let x = -70; x < 70; x += BAY_M) {
+  for (let x = ROW_X[0]; x < ROW_X[1]; x += BAY_M) {
     // One way: every car faces +x. The far lane is clear of the cameras by its width (0.9 m).
     for (const [z, dir, r] of [
       [FAR_CURB_Z + 1.05, 1, 0.9],
       [CURB_Z - 1.05, 1, 2.3],
     ]) {
-      if (rand() < 0.3 || !isClear(x + BAY_M / 2, z, r) || Math.abs(x + BAY_M / 2 - CROSSWALK_X) < 5) continue;
+      if (rand() < (SMALL_SCREEN ? 0.6 : 0.3) || !isClear(x + BAY_M / 2, z, r) || Math.abs(x + BAY_M / 2 - CROSSWALK_X) < 5) continue;
       colorTurn = (colorTurn + 3) % CAR_COLORS.length;
       car(b, x + BAY_M / 2 + (rand() - 0.5) * 0.6, z + (rand() - 0.5) * 0.15, dir, CAR_COLORS[colorTurn]);
     }
   }
 
-  // A bus stop on the robot's sidewalk, facing the road, just past the hero's left shoulder.
-  const stop = { x: -15.5, z: CURB_Z + 1.5 };
-  for (const sx of [-1.9, 1.9]) for (const sz of [-0.6, 0.6]) b.add(box(0.07, 2.5, 0.07), M.metal, { x: stop.x + sx, y: 1.25, z: stop.z + sz });
-  b.add(box(4.1, 0.08, 1.6), M.metal, { x: stop.x, y: 2.52, z: stop.z });
-  b.add(box(3.8, 2.0, 0.03), M.glass, { x: stop.x, y: 1.3, z: stop.z + 0.6 });
-  bench(b, stop.x, stop.z + 0.3, 1, 2.4);
-  const poster = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.8), new THREE.MeshBasicMaterial({ map: posterTexture(renderer), toneMapped: false }));
-  poster.position.set(stop.x - 2.0, 1.25, stop.z);
-  poster.rotation.y = -Math.PI / 2; // faces down the street, toward the hero's camera
-  add(poster);
-  const posterBack = poster.clone();
-  posterBack.rotation.y = Math.PI / 2;
-  posterBack.position.x -= 0.02;
-  add(posterBack);
-  b.add(box(0.06, 1.95, 1.3), M.metal, { x: stop.x - 2.01, y: 1.25, z: stop.z });
-
-  // A crosswalk, with its pedestrian lights, ahead of the bus stop.
+  // A crosswalk, with its pedestrian lights, down the street in the hero.
   const crosswalk = new THREE.Mesh(
     new THREE.PlaneGeometry(3.2, CURB_Z - FAR_CURB_Z),
     new THREE.MeshStandardMaterial({ map: crosswalkTexture(renderer), transparent: true, roughness: 0.8, polygonOffset: true, polygonOffsetFactor: -2 }),
@@ -631,56 +505,6 @@ export function dressCity(scene, renderer) {
     b.add(box(0.2, 0.18, 0.02), M.signalOff, { x: CROSSWALK_X - 2, y: 2.5, z: z + face * 0.13 });
   }
 
-  // A café at the foot of the robot's row: an awning, bistro tables and chairs, and plants. It sits
-  // right behind the robot in the hero, the Gym and Policy.
-  const cafe = { x: -7.5, z: SHOPS_Z };
-  const awning = new THREE.Mesh(new THREE.PlaneGeometry(7, 2.2), new THREE.MeshStandardMaterial({ map: awningTexture(renderer), side: THREE.DoubleSide, roughness: 0.8 }));
-  awning.position.set(cafe.x, 3.05, cafe.z - 1.0);
-  awning.rotation.x = -Math.PI / 2 - 0.38; // sloping down toward the street
-  add(awning);
-  b.add(box(7, 0.25, 0.06), M.wood, { x: cafe.x, y: 2.62, z: cafe.z - 2.05 }); // its valance
-  const tables = [
-    [-9.8, 4.2],
-    [-7.3, 3.4],
-    [-5.0, 4.4],
-    [-8.4, 5.4],
-  ];
-  for (const [tx, tz] of tables) {
-    b.add(cylinder(0.36, 0.36, 0.035, 18), M.tabletop, { x: tx, y: 0.74, z: tz });
-    b.add(cylinder(0.03, 0.03, 0.72), M.metal, { x: tx, y: 0.37, z: tz });
-    b.add(cylinder(0.22, 0.24, 0.03, 14), M.metal, { x: tx, y: 0.015, z: tz });
-    chair(b, tx - 0.55, tz, -Math.PI / 2);
-    chair(b, tx + 0.55, tz, Math.PI / 2);
-  }
-  lightPool(cafe.x, 0.012, cafe.z - 1.6, 4.2);
-
-  // Benches, bins and a hydrant along the sidewalks.
-  for (const [x, z, back] of [
-    [-24, SHOPS_Z - 0.7, 1],
-    [20, SHOPS_Z - 0.7, 1],
-    [-34, FAR_SHOPS_Z + 0.7, -1],
-    [6, FAR_SHOPS_Z + 0.7, -1],
-    [30, FAR_SHOPS_Z + 0.7, -1],
-  ]) {
-    if (isClear(x, z, 1)) bench(b, x, z, back);
-  }
-  b.add(cylinder(0.11, 0.13, 0.6, 10), M.hydrant, { x: -10.5, y: 0.3, z: CURB_Z + 0.5 });
-  b.add(cylinder(0.14, 0.14, 0.08, 10), M.hydrant, { x: -10.5, y: 0.62, z: CURB_Z + 0.5 });
-  b.add(cylinder(0.05, 0.05, 0.36, 8), M.hydrant, { x: -10.5, y: 0.42, z: CURB_Z + 0.5, rz: Math.PI / 2 });
-  const bins = [
-    [-11.4, CURB_Z + 0.55],
-    [14.2, CURB_Z + 0.55],
-    [-2, FAR_CURB_Z - 0.6],
-    [12, FAR_CURB_Z - 0.6],
-  ];
-  const plants = [
-    [-11.2, SHOPS_Z - 0.4],
-    [-3.6, SHOPS_Z - 0.4],
-    [-17, SHOPS_Z - 0.4],
-    [3, FAR_SHOPS_Z + 0.4],
-    [-5, FAR_SHOPS_Z + 0.4],
-  ];
-
   for (const { x, y, z, r } of pools) {
     const decal = new THREE.Mesh(new THREE.PlaneGeometry(2 * r, 2 * r), pool);
     decal.rotation.x = -Math.PI / 2;
@@ -690,28 +514,10 @@ export function dressCity(scene, renderer) {
   }
   for (const mesh of b.meshes()) add(mesh);
 
-  // Shop signs: on the robot's row (they face -z, seen in the hero, the Gym and Policy) and on the
-  // far row (they face +z, behind the robot in Capture).
-  const SIGNS = [
-    { text: 'CAFÉ', x: cafe.x, z: SHOPS_Z - 0.08, y: 3.75, face: -1, width: 2.6, color: '#ffb36b' },
-    { text: 'FARMACIA', x: -21, z: SHOPS_Z - 0.08, y: 3.4, face: -1, width: 4.4, color: '#7dffa8', glyph: 'cross' },
-    { text: 'LIBRERÍA', x: 16, z: SHOPS_Z - 0.08, y: 3.4, face: -1, width: 3.8, color: '#ffd9a0' },
-    { text: 'PANADERÍA', x: -1.5, z: FAR_SHOPS_Z + 0.08, y: 3.4, face: 1, width: 4.6, color: '#ffc46b' },
-    { text: 'ABIERTO 24 H', x: 7.5, z: FAR_SHOPS_Z + 0.08, y: 3.2, face: 1, width: 4.4, color: '#ff6a5a' },
-    { text: 'FERRETERÍA', x: -14, z: FAR_SHOPS_Z + 0.08, y: 3.4, face: 1, width: 4.8, color: '#9fd0ff' },
-    { text: 'AREPERA', x: 22, z: FAR_SHOPS_Z + 0.08, y: 3.4, face: 1, width: 3.8, color: '#ffb36b' },
-  ];
-  for (const { text, x, y, z, face, width, color, glyph } of SIGNS) {
-    const mesh = sign(renderer, text, { width, color, glyph });
-    mesh.position.set(x, y, z);
-    mesh.rotation.y = face > 0 ? 0 : Math.PI;
-    add(mesh);
-  }
-
-  // ---- Buildings, and the Kenney furniture ----
+  // ---- Buildings ----
   // Each row is a run of shops wall to wall along x, a few set back a little, with towers behind
   // for a skyline and a row across each end of the street.
-  const files = [...BUILDINGS, ...TOWERS, PLANT, BIN];
+  const files = TOWERS_N ? [...BUILDINGS, ...TOWERS] : BUILDINGS;
   Promise.all(files.map(load))
     .then(() => {
       if (gone) return;
@@ -747,14 +553,12 @@ export function dressCity(scene, renderer) {
           }),
         ),
         // Towers behind both rows.
-        ...Array.from({ length: 16 }, async (_, i) => {
+        ...Array.from({ length: TOWERS_N }, async (_, i) => {
           const side = i % 2 ? 1 : -1;
-          const x = -70 + (i >> 1) * 19 + rand() * 8;
+          const x = -30 + (i >> 1) * 22 + rand() * 8;
           const z = side > 0 ? SHOPS_Z + 16 + rand() * 18 : FAR_SHOPS_Z - 16 - rand() * 18;
           await place(TOWERS[Math.floor(rand() * TOWERS.length)], { x, z, ry: side > 0 ? 0 : Math.PI, scale: BUILDING_M * (0.9 + rand() * 0.3) });
         }),
-        ...plants.map(([x, z]) => place(PLANT, { x, z, ry: rand() * Math.PI, scale: FURNITURE_M })),
-        ...bins.map(([x, z]) => place(BIN, { x, z, ry: rand() * Math.PI, scale: 2.1 })),
       ]);
     })
     .catch((error) => console.error(error));
