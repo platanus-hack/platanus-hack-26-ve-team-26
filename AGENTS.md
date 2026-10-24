@@ -41,7 +41,14 @@ Rules and template in [`docs/bitacora/README.md`](docs/bitacora/README.md).
 
 `platanus-hack-project.jsonc` (name, Spanish one-liner and description, deploy URL), `project-description.md`, `project-logo.png` (1000x1000, max 500 KB) and a concise `README.md`. Edit them only when the person asks.
 
-Platanus validates **every commit on `main`** and posts "Submission Invalid" in Discord if these files hold placeholders, or lose their filled values. `scripts/ship.sh` runs `scripts/check-submission.sh` and refuses to ship otherwise. `deploy-url` points to the repo until the web app is deployed; replace it then.
+Platanus validates **every commit on `main`** and posts "Submission Invalid" in Discord if these files hold placeholders, or lose their filled values. `scripts/ship.sh` runs `scripts/check-submission.sh` and refuses to ship otherwise. `deploy-url` is https://tridi-alpha.vercel.app.
+
+## Deploy
+
+Vercel and Render cannot connect to this organization repo, so they deploy from the public mirror [`Torpass/tridi`](https://github.com/Torpass/tridi), which `scripts/ship.sh` updates after every merge (`scripts/mirror.sh`). Never commit to the mirror. Detail in [`docs/decisiones/2026-10-23-deploy.md`](docs/decisiones/2026-10-23-deploy.md).
+
+- **Web:** Vercel project `tridi` (Pastor's account), production https://tridi-alpha.vercel.app, built from `physics/` until `web/` exists.
+- **Video server:** Render, from the same mirror, once `data/` has an HTTP server.
 
 ## Conventions
 

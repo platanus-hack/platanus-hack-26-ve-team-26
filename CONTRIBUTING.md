@@ -27,9 +27,17 @@ scripts/ship.sh
 scripts/ship.sh "feat(physics): rigid bodies and collisions"
 ```
 
-`ship.sh` hace, en orden: rebasea sobre `origin/main`, revisa los archivos de entrega (`scripts/check-submission.sh`), sube tu rama, abre el PR, lo mergea con squash, borra la rama remota y deja tu rama local igual a `main`. Sigues trabajando en la misma rama sin hacer nada más.
+`ship.sh` hace, en orden: rebasea sobre `origin/main`, revisa los archivos de entrega (`scripts/check-submission.sh`), sube tu rama, abre el PR, lo mergea con squash, borra la rama remota, deja tu rama local igual a `main` y copia `main` al espejo del deploy (`scripts/mirror.sh`). Sigues trabajando en la misma rama sin hacer nada más.
 
 Si cambias de tema, cambia el nombre: `git switch -c pastor/ragdoll` justo después de un `ship`.
+
+## Deploy
+
+Vercel y Render no se conectan a repos de la organización, así que despliegan desde un espejo público: [`Torpass/tridi`](https://github.com/Torpass/tridi). `ship.sh` lo actualiza solo después de cada merge, y Vercel publica en [tridi-alpha.vercel.app](https://tridi-alpha.vercel.app) en un minuto.
+
+- **Acepta la invitación** a `Torpass/tridi` en [github.com/notifications](https://github.com/notifications). Sin eso tu ship funciona igual, pero el deploy queda atrás hasta que alguien con acceso corra `scripts/mirror.sh`.
+- **Nadie commitea en el espejo:** cada ship lo pisa con `main`.
+- Detalle en [`docs/decisiones/2026-10-23-deploy.md`](docs/decisiones/2026-10-23-deploy.md).
 
 ## Quién es dueño de qué
 
