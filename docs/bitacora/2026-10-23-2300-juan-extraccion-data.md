@@ -71,6 +71,12 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - Arreglo en `scripts/mirror.sh` (de Pastor, commit aparte): si SSH falla, empuja por HTTPS autenticando con `gh auth git-credential`, sin configurar nada. Probado: SSH sigue funcionando en la Mac de Juan; la vía HTTPS autentica con `gh`. No se pudo probar SSH roto de punta a punta en esta Mac porque aquí `origin` también es SSH.
 - Ale: hacer `scripts/ship.sh` de su rama para llevar su bitácora pendiente (`1f692c4`).
 
+## Investigación de los otros equipos (Ale)
+
+- Juan pidió un prompt para que Ale estudie los 24 repos públicos de Caracas (`platanus-hack-26-ve-team-N`), con foco en Three-Dimensional, y lo guarde en `platanus-ideas`.
+- Para que la investigación llegue a todos sin hacer `pull` a mano, `scripts/sync-main.sh` ahora también hace fast-forward de `../platanus-ideas` en cada prompt (solo si está en `main` y sin cambios locales). Probado: trae el commit nuevo y lo anuncia; sin novedades no dice nada.
+- Error en la prueba: un `reset --hard` en `platanus-ideas` deshizo un borrado sin commitear de `campo/` que había en la Mac de Juan. No se perdió nada (todo está en git), pero el borrado hay que repetirlo si era a propósito.
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.
