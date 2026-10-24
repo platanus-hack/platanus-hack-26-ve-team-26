@@ -746,7 +746,7 @@ select:disabled {
   font-size: 20px;
 }
 
-/* Entrenar (WEB-2, screens/simulations.js): above the gallery, only for your own clips. */
+/* Entrenar (WEB-2, training.js): the step after recording in En vivo, for the clip just saved. */
 .train-box {
   display: grid;
   gap: 12px;
@@ -757,6 +757,16 @@ select:disabled {
 
 .train-box[hidden] {
   display: none;
+}
+
+/* In En vivo's bar (centered) the box is a left-aligned card under the saved clip's line. */
+.saved .train-box {
+  width: min(560px, 100%);
+  margin: 4px auto 0;
+  padding: var(--s-5);
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  text-align: left;
 }
 
 .train-box h2 {

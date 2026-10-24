@@ -1,14 +1,18 @@
 // Entrena a Tridi en vivo (W4, WEB-1 in docs/plan-producto.md): the camera on one side with the
 // person's skeleton drawn over it, and the G1 copying them on the other (view.mimic from physics/,
-// createLiveCapture from data/live). Move and the robot copies you; nothing is recorded here.
+// createLiveCapture from data/live). Turning the camera on also starts recording; stopping saves the
+// PoseClip, and the box under it (training.js) sends it to the server and trains the robot with it,
+// then opens its delivery.
 //
 // Optional: a phone as the camera (docs/contrato.md, "El teléfono como cámara"). "Usar el teléfono
 // como cámara" opens a session on the video server and shows a QR; the phone opens #/camara and
 // sends its poses with a small image of its camera; createPhoneCapture plays them here with the same
-// interface as the webcam, so everything below (the skeleton, mimic) does not know which
+// interface as the webcam, so everything below (the skeleton, mimic, recording) does not know which
 // camera it is, and the image goes where the webcam's video would, under the skeleton. Without the
 // server the button only says why; the webcam is untouched.
+import { addUserClip } from '../preloaded.js';
 import { mountRobotPane, robotPaneHTML } from '../robot-pane.js';
+import { mountTrainBox, trainBoxHTML } from '../training.js';
 
 export const title = 'En vivo';
 
@@ -20,6 +24,11 @@ const MIN_FPS = 20;
 // The first second after the camera opens is always slow (shaders, autofocus): wait this long
 // before warning about speed.
 const WARMUP_MS = 2500;
+// Longest recording: the same 30 s the video server accepts per video (docs/contrato.md), so a
+// camera clip and an uploaded one can be trained the same way.
+const MAX_RECORD_S = 30;
+// Shorter than this is not a movement worth keeping (a tap on the button by mistake).
+const MIN_RECORD_S = 2;
 // The page the QR sends the phone to. The deployed web in development: the phone cannot reach a
 // dev server on this machine, and its camera needs HTTPS, which a LAN address does not have.
 const PHONE_WEB = ['localhost', '127.0.0.1'].includes(location.hostname) ? 'https://tridi-alpha.vercel.app/' : `${location.origin}${location.pathname}`;
@@ -46,6 +55,8 @@ const FIX_NAMES = {
   'right arm on chest': 'brazo der. frente al pecho',
   hands: 'manos separadas',
 };
+
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 export function mount(root, { api }) {
   root.innerHTML = `
@@ -80,6 +91,15 @@ export function mount(root, { api }) {
         <div class="row">
           <button class="primary camera-toggle" type="button">Encender la cámara</button>
           <button class="phone-toggle" type="button">Usar el teléfono<span class="only-wide"> como cámara</span></button>
+          <button class="record-toggle" type="button" hidden>Parar y guardar</button>
+        </div>
+        <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · camina, salta: el robot va adonde vas</p>
+        <div class="saved" hidden>
+          <p class="saved-text"></p>
+          ${trainBoxHTML()}
+          <div class="row">
+            <button class="again" type="button">Grabar otro</button>
+          </div>
         </div>
         <p class="live-status" aria-live="polite"></p>
         <p class="live-warning" hidden></p>
@@ -113,11 +133,58 @@ export function mount(root, { api }) {
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
   const robot = mountRobotPane($('.robot-pane'), { beforePush: () => stop() });
+  const trainBox = mountTrainBox($('.train-box'), api);
   robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
+
+  // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
+  let recordTimer = 0;
+  let recordStart = 0;
+
+  function startRecording() {
+    live.startRecording();
+    recordStart = performance.now();
+    $('.saved').hidden = true;
+    trainBox.show(null);
+    $('.recording').hidden = false;
+    $('.record-toggle').hidden = false;
+    clearInterval(recordTimer);
+    recordTimer = setInterval(() => {
+      const seconds = (performance.now() - recordStart) / 1000;
+      $('.rec-time').textContent = clock(Math.min(seconds, MAX_RECORD_S));
+      if (seconds >= MAX_RECORD_S) saveRecording();
+    }, 250);
+  }
+
+  function saveRecording() {
+    if (!live?.isRecording()) return;
+    clearInterval(recordTimer);
+    $('.recording').hidden = true;
+    $('.record-toggle').hidden = true;
+    const seconds = (performance.now() - recordStart) / 1000;
+    // The result gets its own block: the live status line rewrites itself every second. A saved
+    // clip brings the next step with it: training the robot with it (the box, training.js).
+    const result = (text, clip = null) => {
+      $('.saved-text').textContent = text;
+      $('.saved-text').classList.toggle('error', !clip);
+      trainBox.show(clip && { clip: clip.id, data: clip });
+      $('.saved').hidden = false;
+    };
+    let clip;
+    try {
+      clip = live.stopRecording();
+    } catch {
+      return result('No se te vio lo suficiente. Que se vean tus hombros, brazos y manos, y graba otra vez.');
+    }
+    if (seconds < MIN_RECORD_S) return result('La grabación fue muy corta. Graba al menos 2 segundos.');
+    const time = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    addUserClip(clip, `${isPhone() ? 'Tu teléfono' : 'Tu cámara'} · ${time}`);
+    result(`Movimiento guardado: ${Math.round(seconds)} s, se te vio el ${Math.round(100 * clip.quality.valid_ratio)} % del tiempo.`, clip);
+  }
 
   function stop() {
     if (!live) return;
     say('');
+    saveRecording(); // turning the camera off keeps what was recorded
     live.stop(); // a phone session ends on the server too, and the phone says so
     live = null;
     robot.view?.reset();
@@ -187,6 +254,7 @@ export function mount(root, { api }) {
       startedAt = performance.now();
       root.querySelector('.live').classList.add('camera-on');
       button.textContent = 'Apagar la cámara';
+      startRecording();
     } catch (error) {
       // CameraError messages are already in plain Spanish (permission denied, no camera).
       const isCamera = capture && error instanceof capture.CameraError;
@@ -213,7 +281,7 @@ export function mount(root, { api }) {
       if (!api.ok) return say('Para usar el teléfono hace falta el servidor de videos, y ahora no está encendido.', true);
       if (LOCAL_API.test(api.url)) return say('El teléfono no puede llegar a un servidor en esta máquina: abre la web con el enlace de data/serve.sh (?api=<túnel>).', true);
       returnToWebcam = !!live && !isPhone();
-      stop();
+      stop(); // keeps what the webcam recorded
       say('Abriendo la sesión para el teléfono…');
       // tridi-live and the QR library only download when the phone is asked for.
       const [tridi, { renderSVG }] = await Promise.all([capture ?? import('tridi-live'), import('uqr')]);
@@ -251,13 +319,17 @@ export function mount(root, { api }) {
   function onPhoneStatus({ state }) {
     if (!isPhone()) return;
     if (state === 'streaming') {
-      // The first frames: the QR goes and the skeleton shows; the slow-frames warning counts from here.
-      if (!root.querySelector('.live').classList.contains('camera-on')) startedAt = performance.now();
+      // The first frames: the QR goes, the skeleton shows, and recording starts here (not while
+      // the QR waited, so the 30 s are of movement).
       $('.phone-qr').hidden = true;
       root.querySelector('.live').classList.add('camera-on');
+      if (!live.isRecording()) {
+        startedAt = performance.now();
+        startRecording();
+      }
     } else if (state === 'lost' || state === 'ended') {
       const why = state === 'lost' ? `El teléfono dejó de mandar (${capture.PHONE_SILENCE_S} s sin cuadros).` : 'El teléfono cerró la sesión.';
-      stop();
+      stop(); // keeps what was recorded
       note(`${why} ${returnToWebcam ? 'Volví a la webcam.' : 'La webcam vuelve a ser la cámara: enciéndela cuando quieras.'}`);
       if (returnToWebcam) start();
     }
@@ -270,10 +342,14 @@ export function mount(root, { api }) {
 
   button.onclick = () => (live && !isPhone() ? stop() : start());
   phoneButton.onclick = () => (isPhone() ? stopPhone() : startPhone());
+  $('.record-toggle').onclick = saveRecording;
+  $('.again').onclick = () => (live ? startRecording() : start());
 
   return () => {
     disposed = true;
-    stop();
+    clearInterval(recordTimer);
+    stop(); // a recording in progress is kept, and a training goes on (training.js)
+    trainBox.dispose();
     if (robot.view) robot.view.viewer.followTau = 0; // the other screens follow the robot rigidly
     robot.dispose();
   };
