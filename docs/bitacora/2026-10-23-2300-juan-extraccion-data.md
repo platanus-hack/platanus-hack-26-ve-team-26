@@ -64,6 +64,13 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - Probado en el navegador con un túnel real: el link da la URL, se recuerda al recargar sin el parámetro, `checkApi` da `true` por el túnel (CORS ok) y `false` con un servidor que no existe; `?api=javascript:…` se ignora. Todo apagado después.
 - No se tocó `web/`: es de César; la llamada va en su W5.
 
+## Espejo del deploy tras el ship de Ale
+
+- El ship de Ale (`0d1ba20`) mergeó bien, pero `scripts/mirror.sh` falló: solo empujaba por SSH, y la clave SSH de Ale no está registrada en GitHub (su `origin` es HTTPS con `gh`). Su invitación a `Torpass/tridi` sí estaba aceptada.
+- El espejo ya estaba al día: los ships siguientes de Juan lo resincronizaron (`Torpass/tridi` = `main` = `7ab3cbf`).
+- Arreglo en `scripts/mirror.sh` (de Pastor, commit aparte): si SSH falla, empuja por HTTPS autenticando con `gh auth git-credential`, sin configurar nada. Probado: SSH sigue funcionando en la Mac de Juan; la vía HTTPS autentica con `gh`. No se pudo probar SSH roto de punta a punta en esta Mac porque aquí `origin` también es SSH.
+- Ale: hacer `scripts/ship.sh` de su rama para llevar su bitácora pendiente (`1f692c4`).
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.
