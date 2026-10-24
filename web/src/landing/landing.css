@@ -1157,12 +1157,12 @@ html.is-landing.lenis body {
 
 .tries {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-top: 12px;
 }
 
-/* The three ways to try it: real cards, each with its own icon, a short detail and a button, so
+/* The four ways to try it (and see what it delivers): real cards, each with its own icon, a short detail and a button, so
    they read as different and clickable. */
 .try {
   display: grid;
@@ -1301,6 +1301,10 @@ html.is-landing.lenis body {
 
   .topbar .btn {
     margin-left: auto;
+  }
+
+  .tries {
+    grid-template-columns: repeat(2, 1fr); /* four cards in a row are too narrow to read under 1000 px */
   }
 }
 

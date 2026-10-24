@@ -1,5 +1,5 @@
-// Hash routes (#/, #/en-vivo, #/subir, #/simulaciones, #/simulaciones/<clip id>): they work on
-// any static host, with no server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
+// Hash routes (#/, #/en-vivo, #/subir, #/simulaciones, #/simulaciones/<clip id>, #/entrega,
+// #/entrega/<clip id>): they work on any static host, with no server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
 // does not wait for MuJoCo, the robot or MediaPipe.
 import * as home from './screens/home.js';
 
@@ -8,6 +8,7 @@ const ROUTES = {
   'en-vivo': () => import('./screens/live.js'),
   subir: () => import('./screens/upload.js'),
   simulaciones: () => import('./screens/simulations.js'),
+  entrega: () => import('./screens/delivery.js'),
 };
 // The fade between screens; long enough to read as a transition, short enough not to wait on it.
 const FADE_MS = 180;

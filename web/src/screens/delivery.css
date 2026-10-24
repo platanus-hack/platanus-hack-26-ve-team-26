@@ -1,0 +1,1437 @@
+/* La entrega (screens/delivery.js): one delivery as a control room. Dark like the landing, one
+   signal orange for what moves or can be touched (the data, the playhead, the selection), Geist
+   Mono for every number and label. Everything is scoped to .dl; html.is-delivery darkens the page
+   behind it and hides the app screens' dot field. */
+
+html.is-delivery,
+html.is-delivery body {
+  background: #0a0a09;
+}
+
+html.is-delivery #scene,
+html.is-delivery body::before {
+  display: none;
+}
+
+.dl {
+  --bg: #0a0a09;
+  --panel: #111110; /* the 3D scene's background (skeleton.js SCENE_THEME): the canvas blends in */
+  --bar: #000;
+  --fg: #efede8;
+  --fg-2: #b5b2aa;
+  --dim: #8f8c84;
+  --line: rgb(239 237 232 / 0.14);
+  --hair: rgb(239 237 232 / 0.07);
+  --signal: #ff4f1a;
+  --gutter: 16px;
+  --gap: 12px;
+  min-height: 100vh;
+  padding: 0 var(--gutter) 40px;
+  background: var(--bg);
+  color: var(--fg);
+  font: 400 14px/1.45 var(--display);
+}
+
+.dl p,
+.dl dl,
+.dl dd,
+.dl ul,
+.dl figure {
+  margin: 0;
+  padding: 0;
+}
+
+.dl ul {
+  list-style: none;
+}
+
+/* The app's buttons are big paper pills (style.css); here they are instrument controls. */
+.dl button {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  transition: none;
+}
+
+.dl button:hover:not(:disabled) {
+  box-shadow: none;
+}
+
+.dl :focus-visible {
+  outline: 2px solid var(--signal);
+  outline-offset: 2px;
+}
+
+.dl-mono {
+  font-family: var(--mono);
+}
+
+.dl-message {
+  padding: 48px 0;
+  font: 400 14px/1.5 var(--mono);
+  color: var(--fg-2);
+}
+
+.dl-message.dl-error {
+  max-width: 64ch;
+  margin-top: 32px;
+  padding: 4px 0 4px 14px;
+  border-left: 2px solid var(--signal);
+  color: var(--fg);
+}
+
+/* ---- Header ---- */
+
+.dl-screen {
+  display: flex;
+  flex-direction: column;
+}
+
+.dl-top {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  min-height: 64px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.dl-back {
+  flex: none;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font: 500 11px/1 var(--mono);
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+.dl-back:hover {
+  border-color: var(--signal);
+  color: var(--fg);
+}
+
+.dl-kicker {
+  margin-bottom: 5px !important;
+  font: 500 10px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--dim);
+}
+
+.dl-name {
+  min-width: 0;
+}
+
+.dl-name h1 {
+  margin: 0;
+  font: 500 26px/1 var(--display);
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+}
+
+.dl-meta {
+  display: flex;
+  gap: 24px;
+  min-width: 0;
+  margin-left: auto !important;
+}
+
+.dl-meta > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+}
+
+.dl-meta dt,
+.dl-stats dt,
+.dl-train-facts dt {
+  font: 500 9.5px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dim);
+}
+
+.dl-meta dd {
+  font: 500 13px/1.2 var(--mono);
+  white-space: nowrap;
+}
+
+.dl-clip {
+  max-width: 24ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dl-meter {
+  display: block;
+  height: 3px;
+  margin-top: 5px;
+  background: var(--hair);
+}
+
+.dl-meter b {
+  display: block;
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+  background: var(--signal);
+}
+
+.dl .dl-jump {
+  flex: none;
+  padding: 9px 14px;
+  border: 1px solid var(--signal);
+  border-radius: 999px;
+  font: 500 12px/1 var(--display);
+  color: var(--signal);
+}
+
+.dl .dl-jump:hover {
+  background: var(--signal);
+  color: #0d0d0b;
+}
+
+.dl-status {
+  padding: 8px 0 !important;
+  border-bottom: 1px solid var(--line);
+  font: 400 11.5px/1.45 var(--mono);
+  color: var(--fg-2);
+}
+
+.dl-status b {
+  margin-right: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--signal);
+}
+
+/* ---- Windows: a black bar with the technical name, like the landing's ---- */
+
+.dl-main {
+  display: grid;
+  gap: var(--gap);
+  padding-top: var(--gap);
+}
+
+.dl-win {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.dl-bar {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  height: 32px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bar);
+  font: 500 10px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.dl-bar > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ---- The 3D replay ---- */
+
+/* Scrolled to when an episode is picked in one column: a little air above it. */
+.dl-sim {
+  scroll-margin-top: var(--gap);
+}
+
+.dl-view {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: var(--panel);
+}
+
+.dl-view > canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.dl-view.ready > canvas {
+  opacity: 1;
+}
+
+.dl-boot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  gap: 8px;
+  width: min(300px, 70%);
+  transform: translate(-50%, -50%);
+  font: 500 10.5px/1.4 var(--mono);
+  text-transform: uppercase;
+  color: var(--fg-2);
+}
+
+.dl-boot .dl-meter b {
+  width: 0;
+  transition: width 0.3s;
+}
+
+.dl-view.ready .dl-boot {
+  display: none;
+}
+
+.dl-hud {
+  position: absolute;
+  display: flex;
+  gap: 8px;
+  font: 500 10.5px/1 var(--mono);
+  text-transform: uppercase;
+  pointer-events: none;
+}
+
+.dl-hud > span {
+  padding: 6px 8px;
+  border-radius: 3px;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.dl-hud-left {
+  left: 10px;
+  top: 10px;
+}
+
+.dl-hud-right {
+  right: 10px;
+  top: 10px;
+}
+
+.dl-hud-state {
+  color: var(--fg-2);
+}
+
+.dl-hud-state:empty {
+  display: none;
+}
+
+.dl-hud-state.done {
+  color: var(--signal);
+}
+
+.dl-feet {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--fg-2);
+}
+
+.dl-feet i {
+  width: 7px;
+  height: 7px;
+  margin-left: 3px;
+  border: 1px solid var(--fg-2);
+  border-radius: 50%;
+}
+
+.dl-feet i.on {
+  border-color: var(--signal);
+  background: var(--signal);
+}
+
+.dl-hud-t {
+  min-width: 9ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-hud-note {
+  left: 10px;
+  right: 10px;
+  bottom: 10px;
+  color: var(--fg-2);
+  text-transform: none;
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.dl-transport {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--line);
+}
+
+.dl .dl-play {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--signal);
+  color: #0d0d0b;
+}
+
+.dl-play svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+.dl-play .i-play,
+.dl-play.paused .i-pause {
+  display: none;
+}
+
+.dl-play.paused .i-play {
+  display: inline;
+}
+
+.dl-scrub {
+  flex: 1 1 140px;
+  min-width: 0;
+  height: 22px;
+  margin: 0;
+  background: none;
+  appearance: none;
+  cursor: pointer;
+}
+
+.dl-scrub::-webkit-slider-runnable-track {
+  height: 3px;
+  background: var(--line);
+}
+
+.dl-scrub::-moz-range-track {
+  height: 3px;
+  background: var(--line);
+}
+
+.dl-scrub::-webkit-slider-thumb {
+  width: 14px;
+  height: 14px;
+  margin-top: -5.5px;
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  background: var(--signal);
+  appearance: none;
+}
+
+.dl-scrub::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--panel);
+  border-radius: 50%;
+  background: var(--signal);
+}
+
+.dl-time {
+  min-width: 13ch;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--fg-2);
+}
+
+/* Small segmented toggles: speeds, the time axis, the table. */
+.dl-speeds,
+.dl-seg {
+  display: inline-flex;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.dl-speeds button,
+.dl-seg button,
+.dl .dl-table-toggle {
+  padding: 6px 9px;
+  font: 500 10px/1 var(--mono);
+  text-transform: uppercase;
+  color: var(--dim);
+}
+
+.dl-speeds button + button,
+.dl-seg button + button {
+  border-left: 1px solid var(--line);
+}
+
+.dl .dl-table-toggle {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+}
+
+.dl-speeds button:hover,
+.dl-seg button:hover,
+.dl .dl-table-toggle:hover {
+  color: var(--fg);
+}
+
+.dl-speeds [aria-pressed='true'],
+.dl-seg [aria-pressed='true'],
+.dl .dl-table-toggle[aria-pressed='true'] {
+  background: rgb(255 79 26 / 0.16);
+  color: var(--fg);
+}
+
+.dl-tools {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.dl-tools button {
+  padding: 4px 9px !important;
+}
+
+/* ---- Worlds x episodes ---- */
+
+.dl-side {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+  min-width: 0;
+  min-height: 0;
+}
+
+.dl-matrix {
+  flex: none;
+}
+
+.dl-grid {
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px 4px;
+}
+
+.dl-row {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr) 58px;
+  gap: 10px;
+  align-items: center;
+}
+
+/* A world's name: a button that picks its first episode, with the world's ranges on hover/focus. */
+.dl .dl-world {
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  text-align: left;
+}
+
+.dl-world b {
+  font: 500 13px/1.1 var(--display);
+}
+
+.dl .dl-world:hover b,
+.dl .dl-world.on b {
+  color: var(--signal);
+}
+
+.dl-tag {
+  font: 500 9px/1 var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--dim);
+}
+
+.dl-tag.on {
+  color: var(--signal);
+}
+
+.dl-cells {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.dl .dl-cell {
+  position: relative;
+  height: 40px;
+  padding: 6px 5px;
+  border-radius: 3px;
+  background: rgb(239 237 232 / 0.045);
+  text-align: left;
+  font: 500 11px/1 var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--fg-2);
+}
+
+/* The track under the bar: the whole clip. The bar is how much of it the episode followed. */
+.dl-cell::before,
+.dl-cell i {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 4px;
+}
+
+.dl-cell::before {
+  right: 0;
+  background: var(--hair);
+}
+
+.dl-cell i {
+  width: calc(var(--f) * 100%);
+  border-radius: 0 2px 2px 0;
+  background: var(--signal);
+  opacity: 0.75;
+}
+
+.dl .dl-cell:hover {
+  background: rgb(239 237 232 / 0.1);
+  color: var(--fg);
+}
+
+.dl .dl-cell.on {
+  background: rgb(255 79 26 / 0.16);
+  color: var(--fg);
+}
+
+.dl-cell.on i {
+  opacity: 1;
+}
+
+.dl-cell.on::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid var(--signal);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.dl-cell-mark {
+  position: absolute;
+  top: 6px;
+  right: 5px;
+  color: var(--signal);
+}
+
+.dl-sum {
+  display: grid;
+  gap: 4px;
+  justify-items: end;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-sum b {
+  font: 500 14px/1 var(--mono);
+}
+
+.dl-sum span {
+  font-size: 10.5px;
+  line-height: 1;
+  color: var(--dim);
+}
+
+.dl-legend {
+  padding: 6px 12px 10px !important;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--dim);
+}
+
+.dl-legend b {
+  color: var(--signal);
+  font-weight: 500;
+}
+
+.dl-legend-bar {
+  display: inline-block;
+  width: 16px;
+  height: 4px;
+  margin-right: 6px;
+  vertical-align: middle;
+  border-radius: 0 2px 2px 0;
+  background: var(--signal);
+}
+
+/* ---- The selected episode ---- */
+
+.dl-episode {
+  flex: 1;
+}
+
+.dl-ep-world {
+  color: var(--fg-2);
+}
+
+.dl-ep-body {
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  padding: 14px 12px;
+  overflow: auto;
+}
+
+/* Set by delivery.js while the card has more below than its window shows (a short screen): the
+   bottom 40 px fade out, so a cut line reads as "scroll for more", not as the end. */
+.dl-ep-body.more {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+  mask-image: linear-gradient(to bottom, #000 calc(100% - 40px), transparent);
+}
+
+.dl-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dl-stats dd {
+  margin-top: 6px !important;
+  font: 500 11px/1 var(--mono);
+  color: var(--fg-2);
+}
+
+.dl-stats dd b {
+  font: 500 19px/1 var(--mono);
+  color: var(--fg);
+}
+
+.dl-stats small {
+  display: block;
+  margin-top: 4px;
+  font-size: 10px;
+  color: var(--dim);
+}
+
+.dl-params {
+  display: grid;
+  gap: 9px;
+}
+
+.dl-params li {
+  display: grid;
+  grid-template-columns: 112px minmax(60px, 1fr) 64px 96px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.dl-param-name {
+  color: var(--fg-2);
+}
+
+/* A parameter's span over all worlds (the line), this world's range (the band) and the
+   episode's draw (the mark). */
+.dl-range {
+  position: relative;
+  height: 12px;
+}
+
+.dl-range::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--line);
+}
+
+.dl-band {
+  position: absolute;
+  top: 4px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgb(239 237 232 / 0.3);
+}
+
+.dl-range b {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 12px;
+  margin-left: -1px;
+  background: var(--signal);
+}
+
+.dl-param-value {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-param-span {
+  font-size: 10.5px;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.dl-ep-end,
+.dl-ep-peak,
+.dl-ep-why {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--dim);
+}
+
+.dl-ep-end {
+  color: var(--fg-2);
+}
+
+.dl-ep-peak:empty,
+.dl-ep-why:empty {
+  display: none;
+}
+
+/* ---- Telemetry ---- */
+
+.dl-plot {
+  position: relative;
+  height: 320px;
+  padding: 8px 12px 6px;
+}
+
+.dl-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.dl-gl {
+  stroke: var(--hair);
+}
+
+.dl-base {
+  stroke: var(--line);
+}
+
+.dl-tick,
+.dl-axis text,
+.dl-limit-label {
+  fill: var(--dim);
+  font: 500 9.5px var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-axis line {
+  stroke: var(--line);
+}
+
+.dl-lane-name {
+  fill: var(--dim);
+  font: 500 9.5px var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dl-lane-value {
+  fill: var(--fg);
+  font: 500 14px var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-limit {
+  stroke: var(--fg-2);
+  stroke-opacity: 0.55;
+  stroke-dasharray: 3 3; /* a threshold, not a gridline */
+}
+
+.dl-area {
+  fill: var(--signal);
+  fill-opacity: 0.1;
+}
+
+.dl-line {
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.dl-nodata {
+  fill: url(#dl-hatch);
+}
+
+.dl-hatch-line {
+  stroke: var(--hair);
+  stroke-width: 2;
+}
+
+.dl-end {
+  stroke: var(--fg-2);
+  stroke-opacity: 0.6;
+}
+
+.dl-end-label {
+  fill: var(--fg-2);
+  font: 500 10px var(--mono);
+}
+
+.dl-cross {
+  stroke: var(--fg-2);
+  stroke-opacity: 0.5;
+}
+
+.dl-head line {
+  stroke: var(--fg);
+}
+
+.dl-dot {
+  fill: var(--signal);
+  stroke: var(--panel);
+  stroke-width: 2;
+}
+
+.dl-hit {
+  fill: transparent;
+  cursor: crosshair;
+  touch-action: pan-y; /* a vertical swipe still scrolls the page on phones; a sideways one scrubs */
+}
+
+.dl-plot-msg {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font: 400 12px/1.4 var(--mono);
+  color: var(--dim);
+}
+
+.dl-plot-msg[hidden] {
+  display: none;
+}
+
+.dl-table {
+  position: absolute;
+  inset: 8px 12px 6px;
+  overflow: auto;
+}
+
+.dl-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font: 400 11px/1.3 var(--mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.dl-table caption {
+  padding-bottom: 6px;
+  text-align: left;
+  color: var(--dim);
+}
+
+.dl-table th {
+  position: sticky;
+  top: 0;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--line);
+  background: var(--panel);
+  font-weight: 500;
+  text-align: right;
+  color: var(--dim);
+}
+
+.dl-table td {
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--hair);
+  text-align: right;
+  color: var(--fg-2);
+}
+
+/* ---- Below the fold: training, downloads, formats ---- */
+
+.dl-more {
+  display: grid;
+  gap: var(--gap);
+  margin-top: var(--gap);
+}
+
+.dl-train-body {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.dl-train-facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 32px;
+}
+
+.dl-train-facts dd {
+  margin-top: 6px !important;
+  font: 500 12px/1 var(--mono);
+  color: var(--fg-2);
+}
+
+.dl-train-facts dd b {
+  font: 500 22px/1 var(--mono);
+  color: var(--fg);
+}
+
+.dl-train-note {
+  max-width: 68ch;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+
+.dl-train-empty {
+  max-width: 68ch;
+  padding-left: 12px !important;
+  border-left: 2px solid var(--signal);
+  font-size: 13px;
+  color: var(--fg);
+}
+
+.dl-ladder svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.dl-ladder .dl-dot.final {
+  fill: var(--fg);
+}
+
+.dl-dot-hit {
+  fill: transparent;
+  cursor: help;
+}
+
+.dl-ladder figcaption {
+  margin-top: 6px;
+  font: 400 10px/1.4 var(--mono);
+  color: var(--dim);
+}
+
+.dl-file-list li {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr) 72px 104px;
+  gap: 14px;
+  align-items: center;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--hair);
+}
+
+.dl-file-list li:last-child {
+  border-bottom: 0;
+}
+
+.dl-file-name {
+  font-size: 13px;
+}
+
+.dl-file-what {
+  font-size: 13px;
+  color: var(--fg-2);
+}
+
+.dl-file-size {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--dim);
+}
+
+.dl-get {
+  justify-self: end;
+  padding: 8px 14px;
+  border: 1px solid var(--signal);
+  border-radius: 999px;
+  font: 500 12px/1 var(--display);
+  text-decoration: none;
+  color: var(--signal);
+  white-space: nowrap;
+}
+
+.dl-get:hover {
+  background: var(--signal);
+  color: #0d0d0b;
+}
+
+.dl-other {
+  display: inline-block;
+  margin: 20px 12px 0 0;
+}
+
+.dl-get.off {
+  border-color: var(--line);
+  color: var(--dim);
+}
+
+.dl-guide-body {
+  display: grid;
+  gap: 20px;
+  padding: 14px;
+}
+
+.dl-formats {
+  display: grid;
+  gap: 14px;
+}
+
+.dl-formats dt {
+  font-weight: 500;
+}
+
+.dl-formats dt .dl-mono {
+  margin-right: 8px;
+  font-size: 12.5px;
+  color: var(--signal);
+}
+
+.dl-formats dd {
+  margin-top: 4px !important;
+  font-size: 13px;
+  color: var(--fg-2);
+}
+
+.dl code {
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgb(239 237 232 / 0.06);
+  font: 400 12px var(--mono);
+  color: var(--fg);
+}
+
+.dl-code {
+  margin: 0;
+  padding: 14px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #000;
+  font: 400 12px/1.6 var(--mono);
+  color: var(--fg-2);
+}
+
+.dl-code code {
+  padding: 0;
+  background: none;
+  color: inherit;
+}
+
+/* ---- Tooltip ---- */
+
+.dl-tip {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 20;
+  max-width: 300px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #000;
+  box-shadow: 0 12px 30px -12px rgb(0 0 0 / 0.8);
+  font: 400 11px/1.5 var(--mono);
+  color: var(--fg-2);
+  pointer-events: none;
+}
+
+.dl-tip[hidden] {
+  display: none;
+}
+
+.dl-tip b {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+/* ---- Desktop: the main view fits one screen (1440 x 900 without scrolling) ---- */
+
+@media (min-width: 1100px) {
+  .dl {
+    --gutter: 20px;
+  }
+
+  .dl-screen {
+    height: 100vh;
+    min-height: 680px;
+    padding-bottom: var(--gap);
+  }
+
+  .dl-main {
+    flex: 1;
+    min-height: 0;
+    grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) clamp(250px, 36vh, 340px);
+    grid-template-areas:
+      'sim side'
+      'tele side';
+  }
+
+  .dl-sim {
+    grid-area: sim;
+  }
+
+  .dl-side {
+    grid-area: side;
+  }
+
+  .dl-tele {
+    grid-area: tele;
+  }
+
+  .dl-view {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: auto;
+  }
+
+  .dl-plot {
+    flex: 1;
+    height: auto;
+    min-height: 0;
+  }
+
+  .dl-more {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr);
+  }
+
+  .dl-guide {
+    grid-column: 1 / -1;
+  }
+
+  .dl-guide-body {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+/* A short desktop window: the small print under the episode's numbers goes, so the card still
+   fits (it scrolls inside itself past that, with a fade), and so does the note under the robot,
+   which in a 225 px view (1280 x 720) sits on its feet; the window bar says "dataset". */
+@media (min-width: 1100px) and (max-height: 820px) {
+  .dl-stats small,
+  .dl-hud-note {
+    display: none;
+  }
+}
+
+/* ---- Tablets and phones: one column ---- */
+
+@media (max-width: 1099px) {
+  .dl-top {
+    flex-wrap: wrap;
+    gap: 12px 16px;
+  }
+
+  .dl-meta {
+    display: grid;
+    order: 3;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .dl-clip {
+    max-width: 100%;
+    white-space: normal; /* the whole clip id, wrapped: on a phone the ellipsis hid its date */
+    overflow-wrap: anywhere;
+  }
+
+  .dl .dl-jump {
+    margin-left: auto;
+  }
+
+  .dl-view {
+    aspect-ratio: 16 / 10;
+  }
+}
+
+@media (max-width: 640px) {
+  .dl-name h1 {
+    font-size: 22px;
+  }
+
+  .dl-view {
+    aspect-ratio: 4 / 3;
+  }
+
+  .dl-hud-note {
+    display: none; /* the window bar and the matrix say it; the robot needs the room */
+  }
+
+  .dl-hud-right {
+    top: auto;
+    bottom: 10px; /* the top row is the episode's, and both do not fit in 375 px */
+  }
+
+  .dl-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'world sum'
+      'cells cells';
+    gap: 6px 10px;
+  }
+
+  .dl .dl-world {
+    grid-area: world;
+    grid-template-columns: auto auto;
+    justify-content: start;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .dl-sum {
+    grid-area: sum;
+    grid-template-columns: auto auto;
+    align-items: baseline;
+    gap: 8px;
+  }
+
+  .dl-cells {
+    grid-area: cells;
+  }
+
+  .dl .dl-cell {
+    height: 36px;
+    padding: 5px 4px;
+    font-size: 10px;
+  }
+
+  .dl-cell-mark {
+    display: none;
+  }
+
+  .dl-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dl-params li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name value'
+      'range span';
+    gap: 4px 10px;
+  }
+
+  .dl-param-name {
+    grid-area: name;
+  }
+
+  .dl-param-value {
+    grid-area: value;
+  }
+
+  .dl-range {
+    grid-area: range;
+  }
+
+  .dl-param-span {
+    grid-area: span;
+  }
+
+  .dl-plot {
+    height: 340px;
+  }
+
+  .dl-tools .dl-seg button:last-child {
+    letter-spacing: 0;
+  }
+
+  .dl-tele .dl-bar > span:first-child {
+    display: none; /* the toggles need the bar */
+  }
+
+  .dl-tele .dl-bar {
+    justify-content: flex-end;
+  }
+
+  .dl-file-list li {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'name size'
+      'what what'
+      'get get';
+    gap: 6px 12px;
+  }
+
+  .dl-file-name {
+    grid-area: name;
+  }
+
+  .dl-file-size {
+    grid-area: size;
+  }
+
+  .dl-file-what {
+    grid-area: what;
+  }
+
+  .dl-get {
+    grid-area: get;
+    justify-self: start;
+  }
+}
+
+/* ---- Touch screens: every control at least 32 px tall, enough for a fingertip (WCAG 2.2 asks for
+   24 px at least); the cells are already 36 px ---- */
+
+@media (pointer: coarse) {
+  .dl-scrub {
+    height: 32px;
+  }
+
+  .dl-speeds button,
+  .dl-seg button,
+  .dl .dl-table-toggle,
+  .dl-tools button {
+    min-height: 32px;
+    padding: 0 12px !important;
+  }
+
+  /* The bar grows around its 32 px toggles. */
+  .dl-tele .dl-bar {
+    height: 44px;
+  }
+
+  .dl-back,
+  .dl .dl-jump,
+  .dl-get {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+  }
+
+  .dl .dl-world {
+    min-height: 32px;
+    align-content: center;
+  }
+
+  .dl-dot-hit {
+    r: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dl *,
+  .dl *::before,
+  .dl *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}

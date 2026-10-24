@@ -204,7 +204,7 @@ export function mount(root, { api }) {
             <li><b>20 ms</b><span>entre una decisión y la siguiente</span></li>
             <li><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></li>
           </ul>
-          <p class="policy-note">Hoy entregamos la política de pie, que corre aquí, en tu navegador. Lo siguiente es entregar también los datos: el movimiento de la persona corregido por la física, para entrenar tu propio robot.</p>
+          <p class="policy-note">Entregamos la política, que corre aquí, en tu navegador, y los datos: el movimiento de la persona corregido por la física, probado en cuatro mundos, para entrenar tu propio robot. La de pie aguanta 4 de 4 empujones de 250 N; la de la caminata todavía sigue 3,5 s de 11,8.</p>
         </div>
       </div>
     </section>
@@ -260,6 +260,13 @@ export function mount(root, { api }) {
             <b>Persona y robot, lado a lado</b>
             <span class="try-detail">Clips, entrenamiento y mundos</span>
             <span class="try-go">Ver el laboratorio →</span>
+          </a>
+          <a class="try" href="#/entrega" data-warm="entrega">
+            <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="16" width="32" height="24" rx="2"/><path d="M8 24h32M24 6v14M18 14l6 6 6-6"/></svg>
+            <span class="try-kind">La entrega</span>
+            <b>Política y datos del robot</b>
+            <span class="try-detail">ONNX, episodios en 4 mundos, sus curvas</span>
+            <span class="try-go">Ver lo que se llevan →</span>
           </a>
         </nav>
       </div>
