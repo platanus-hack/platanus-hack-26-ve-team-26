@@ -28,6 +28,7 @@ view.pause(); view.play(); view.setSpeed(0.5);
 view.reset(); view.push();
 view.mimic(pose);   // copiar a una persona, un cuadro de cámara por llamada (ver más abajo)
 view.playClip(motion); // reproducir un RobotMotion (ver "Un clip completo"); reset() lo rebobina
+await view.retarget(poseClip, { onProgress }); // calcular el RobotMotion de un PoseClip, por tandas, sin congelar la página
 view.clipTime();    // en qué segundo va, para sincronizar lo que se dibuja al lado
 view.stop();        // soltar el clip o la cámara y volver al robot físico, de pie
 await view.loadPolicy(onnxUrl, jsonUrl); // una política entrenada (training/policies/): el robot se equilibra solo
@@ -110,6 +111,12 @@ npm run retarget -- ../data/clips/clip_2026-10-23_caminar-perfil_01.json   # -> 
 | Cuando se adopta el rumbo de avance | También se gira el sistema de referencia de la persona en el mismo ángulo, para que las piernas no queden giradas respecto del recorrido |
 | Altura de la pelvis | Se ajusta cada cuadro para que el punto más bajo de un pie toque el piso |
 
+### Calcularlo en el navegador: `view.retarget(poseClip)`
+
+Los clips precargados ya tienen su `RobotMotion` guardado en `motions/` (la web lo usa y arranca al instante). Para cualquier otro (el clip sintético, un video que sube el público) `view.retarget(poseClip, { onProgress })` lo calcula en el navegador, **por tandas de 8 ms** que dejan respirar a la página, y devuelve `{ motion, stats }` (o `null` si la vista se destruyó mientras tanto). Mide unos 2 ms por cuadro: el clip sintético de 72 cuadros tarda 0,14 s, con la página a 60 cuadros por segundo y su peor tirón en 25 ms.
+
+Calcula sobre su **propio modelo del G1 sin mallas** (`models/unitree_g1/g1_kinematics.xml`, que genera `npm run make-kinematic-model` a partir de `g1.xml`): al retargeting le bastan la cadena cinemática y las esferas de los pies, y cargar las 35 mallas tarda 3 s en un navegador. `npm run check` exige que dé exactamente el mismo movimiento que el modelo completo, y que los `motions/` guardados estén al día con los clips de `data/clips/`. Como no depende de qué modelo muestre la simulación, sirve igual con una política cargada.
+
 ### Reproducirlo: `view.playClip(motion)`
 
 ```js
@@ -157,9 +164,10 @@ Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos c
 | `src/pose.js` | Puntos de MediaPipe → puntos en los ejes del robot, filtrados (One Euro) y con histéresis de visibilidad. De Sombra |
 | `src/filters.js` | El filtro One Euro. De Sombra |
 | `src/retarget.js` | Pose → `qpos` del G1: la IK de Sombra sobre la cinemática de MuJoCo |
-| `src/motion.js` | Un `PoseClip` completo → `RobotMotion`, con el recorrido y el rumbo de la pelvis |
+| `src/motion.js` | Un `PoseClip` completo → `RobotMotion`, con el recorrido y el rumbo de la pelvis; también por tandas (`retargetClipAsync`) |
 | `scripts/retarget-clip.mjs` | `npm run retarget`: lo anterior sobre archivos |
 | `motions/` | Los `RobotMotion` de los clips de `data/clips/` |
+| `models/unitree_g1/g1_kinematics.xml` | El G1 sin mallas, para el retargeting (generado) |
 | `src/policy.js`, `src/ort.js` | La política entrenada (arriba) |
 | `src/index.js` | `createSimView`: carga, ciclo de física y dibujo, controles, `mimic`, `playClip` y `loadPolicy` |
 | `src/main.js`, `index.html` | La página de desarrollo, con el botón de la cámara (usa `data/live`) |
