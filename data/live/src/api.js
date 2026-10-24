@@ -1,11 +1,20 @@
 // Where the video server is. It runs on Juan's Mac behind a Cloudflare quick tunnel whose URL
-// changes on every start, so the web cannot hardcode it: data/serve.sh prints a link to the web
-// with ?api=<url>, and the page remembers it for later visits on the same browser.
+// changes on every start, so the web cannot hardcode it. data/serve.sh writes the URL to a gist on
+// every start (null when it stops), and findApiUrl reads it: the web's plain address finds the
+// server. ?api=<url> still wins (the phone's QR carries it, and it points a page at another server),
+// and the last URL that worked is remembered on the browser.
 
 const STORAGE_KEY = 'tridi.api';
 
 // /health answers in milliseconds; 4 s covers the tunnel's first request, which is slower.
 const HEALTH_TIMEOUT_MS = 4000;
+
+// The gist data/serve.sh writes (its id is also in that script). Read through GitHub's API first:
+// it is fresh within ~15 s of an edit, but allows 60 reads an hour per IP without a token. The raw
+// file has no such limit but is cached for up to 5 minutes, so it is only the fallback. The
+// remembered URL is tried before either, so a visitor only reads the gist when the server moved.
+export const SERVER_GIST = { user: 'juanevillam', id: '78eb7f16b9c2d8d21a9abfe6607a98da', file: 'tridi-api.json' };
+const GIST_TIMEOUT_MS = 4000;
 
 function valid(url) {
   try {
@@ -28,6 +37,59 @@ export function resolveApiUrl({ fallback = null } = {}) {
   } catch {
     return fromQuery ?? fallback; // storage blocked (private mode): the link still works
   }
+}
+
+function remember(url) {
+  try {
+    localStorage.setItem(STORAGE_KEY, url);
+  } catch {
+    /* storage blocked (private mode): nothing to remember */
+  }
+}
+
+/** The URL data/serve.sh published, or null (no server running, or GitHub unreachable). */
+export async function publishedApiUrl(gist = SERVER_GIST) {
+  const sources = [
+    [`https://api.github.com/gists/${gist.id}`, (body) => JSON.parse(body.files[gist.file].content)],
+    [`https://gist.githubusercontent.com/${gist.user}/${gist.id}/raw/${gist.file}`, (body) => body],
+  ];
+  for (const [url, read] of sources) {
+    try {
+      const res = await fetch(url, { signal: AbortSignal.timeout(GIST_TIMEOUT_MS) });
+      if (!res.ok) continue; // the API answers 403 past its hourly limit: try the raw file
+      const { url: published } = read(await res.json());
+      return published ? valid(published) : null; // null: serve.sh stopped
+    } catch {
+      /* offline or malformed: try the next source */
+    }
+  }
+  return null;
+}
+
+/**
+ * Like resolveApiUrl, but finds the server on its own: ?api= in the page address, else the last one
+ * seen on this browser if it still answers, else the one data/serve.sh published, else `fallback`.
+ * null if there is none.
+ */
+export async function findApiUrl({ fallback = null } = {}) {
+  const fromQuery = valid(new URLSearchParams(location.search).get('api') ?? '');
+  if (fromQuery) {
+    remember(fromQuery);
+    return fromQuery;
+  }
+  let stored = null;
+  try {
+    stored = valid(localStorage.getItem(STORAGE_KEY) ?? '');
+  } catch {
+    /* storage blocked */
+  }
+  if (stored && (await checkApi(stored))) return stored;
+  const published = await publishedApiUrl();
+  if (published) {
+    remember(published);
+    return published;
+  }
+  return fallback ?? stored;
 }
 
 /** true if the server answers /health: show the "Subir" tab only then, and the gallery otherwise. */

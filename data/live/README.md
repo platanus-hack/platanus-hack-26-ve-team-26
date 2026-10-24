@@ -63,9 +63,9 @@ const cam = await createLiveCapture(video, { model: 'lite', facingMode: 'environ
 ## Subir videos al servidor (César, W5 y W6)
 
 ```js
-import { resolveApiUrl, checkApi, uploadVideo, watchJob, chooseSubject, firstFrameUrl, fetchClip, UploadError } from 'tridi-live';
+import { findApiUrl, checkApi, uploadVideo, watchJob, chooseSubject, firstFrameUrl, fetchClip, UploadError } from 'tridi-live';
 
-const base = resolveApiUrl({ fallback: 'http://127.0.0.1:8000' }); // ?api= del link, o la última vista
+const base = await findApiUrl({ fallback: 'http://127.0.0.1:8000' }); // ?api=, la última que anduvo, o la que publicó serve.sh
 if (!(await checkApi(base))) mostrarSoloGaleria(); // servidor apagado: la web sigue con las precargadas
 const jobId = await uploadVideo(base, file, { onProgress: ({ sent, total }) => {} }); // reintenta cada pedazo
 const job = await watchJob(base, jobId, { onUpdate: (job) => {} }); // etapas y avance de cada video
@@ -85,7 +85,7 @@ const train = await watchTraining(base, trainId, { onUpdate: (t) => {} }); // GE
 // train.state === 'done' && !train.error → la entrega está en #/entrega/<clipId>
 ```
 
-**URL del servidor:** el túnel cambia de URL en cada arranque, así que `data/serve.sh` imprime y copia el link de la web con `?api=<url del túnel>` (por ejemplo `https://tridi-alpha.vercel.app/?api=https://xxxx.trycloudflare.com`). `resolveApiUrl` lo lee y lo guarda en el navegador, así que recargar o volver sin el parámetro sigue funcionando. Solo acepta URLs `http(s)`.
+**URL del servidor:** el túnel cambia de URL en cada arranque, así que `data/serve.sh` la escribe en un [gist](https://gist.github.com/juanevillam/78eb7f16b9c2d8d21a9abfe6607a98da) (`SERVER_GIST`) y `findApiUrl` la busca en este orden: `?api=` del link (el QR del teléfono lo lleva), la última que anduvo en este navegador si todavía responde, y la del gist. El gist se lee por la API de GitHub (fresca en ~15 s, pero 60 lecturas por hora por IP sin token) y, si se agotó, por el archivo crudo (sin límite, pero hasta 5 min de caché); como primero se prueba la guardada, un visitante solo lee el gist cuando el servidor se movió. `resolveApiUrl` es la versión inmediata, sin red. Solo aceptan URLs `http(s)`.
 
 Los errores del servidor llegan como `UploadError` con el mensaje en español. Formato de cada respuesta en el [contrato](../../docs/contrato.md).
 
@@ -96,7 +96,7 @@ Los errores del servidor llegan como `UploadError` con el mensaje en español. F
 | `src/index.js` | Carga MediaPipe (WASM desde jsDelivr y el modelo desde Google, versión fija), abre la cámara, procesa cada cuadro nuevo en modo VIDEO y guarda las muestras mientras se graba |
 | `src/poseclip.js` | Muestras → `PoseClip`. Los mismos pasos y umbrales que [`../lift.py`](../lift.py): visibilidad mínima, frames "volteados", trayectoria de las caderas por pie apoyado y por ajuste a la cámara, ejes y origen del contrato. Además remuestrea a 30 fps fijos, porque las webcams entregan cuadros a ritmo irregular |
 | `src/draw.js` | El esqueleto sobre el video, mismos colores que `data.overlay` |
-| `src/api.js` | Dónde está el servidor: `?api=` o la última URL guardada, y si responde |
+| `src/api.js` | Dónde está el servidor: `?api=`, la última URL que anduvo o la que publicó `data/serve.sh` en el gist, y si responde |
 | `src/upload.js` | Cliente del servidor de video: subida por partes con reintentos, progreso, elegir sujeto |
 | `src/relay.js` | El teléfono como cámara: el teléfono manda las poses en lotes de 100 ms, la Mac las recibe con *long polling* y las reproduce con la misma interfaz que la webcam |
 | `scripts/check.mjs` | Prueba sin navegador |

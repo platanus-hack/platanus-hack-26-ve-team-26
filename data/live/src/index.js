@@ -7,7 +7,7 @@ import { BODY, MIN_VISIBILITY, buildPoseClip } from './poseclip.js';
 export { buildPoseClip } from './poseclip.js';
 export { PoseFilter } from './oneeuro.js';
 export { drawSkeleton } from './draw.js';
-export { checkApi, resolveApiUrl } from './api.js';
+export { SERVER_GIST, checkApi, findApiUrl, publishedApiUrl, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, sendClip, trainClip, uploadVideo, watchJob, watchTraining } from './upload.js';
 export { IMAGE_FPS, PHONE_SILENCE_S, closePhoneSession, createImageGrabber, createPhoneCapture, createPhoneSender, openPhoneSession, phonePageUrl } from './relay.js';
 
