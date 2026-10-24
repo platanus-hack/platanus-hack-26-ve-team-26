@@ -292,9 +292,10 @@ export function mountStage(root, dots) {
   function showMode(clip) {
     const learned = imitationFor(clip) !== null;
     root.querySelector('[data-physics="on"]').disabled = !learned;
-    root.querySelector('.mode-note').textContent = learned
-      ? 'Con física el robot lo hace solo, con sus motores (todavía en entrenamiento: se cae a los pocos segundos). Sin física lo repite como un títere.'
-      : 'Este movimiento todavía no tiene una política entrenada: el robot lo repite sin física, como referencia.';
+    // Each note has a short phone version (.only-narrow, style.css).
+    root.querySelector('.mode-note').innerHTML = learned
+      ? '<span class="only-wide">Con física el robot lo hace solo, con sus motores (todavía en entrenamiento: se cae a los pocos segundos). Sin física lo repite como un títere.</span><span class="only-narrow">Con física lo hace solo (aún se cae pronto). Sin física, lo copia como títere.</span>'
+      : '<span class="only-wide">Este movimiento todavía no tiene una política entrenada: el robot lo repite sin física, como referencia.</span><span class="only-narrow">Aún sin política entrenada: lo copia sin física.</span>';
     root.querySelectorAll('[data-physics]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.physics === 'on') === (learned && physics))));
   }
 

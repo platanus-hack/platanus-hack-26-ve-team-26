@@ -62,6 +62,22 @@
   color-scheme: dark;
 }
 
+/* Short phone versions of some lines: .only-wide is the long copy, .only-narrow its phone
+   version. Phones and small tablets (860 px, the landing's phone layout) read the short one. */
+.only-narrow {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .only-wide {
+    display: none !important;
+  }
+
+  .only-narrow {
+    display: inline;
+  }
+}
+
 /* ---- Brand: the mark and the wordmark (brand.js) ---- */
 
 .logo {
@@ -1406,3 +1422,249 @@ select optgroup {
 .example-pane {
   min-height: min(56vh, 460px);
 }
+
+/* The physics sliders of Simulaciones fold under a toggle on phones only (simulations.js). */
+.tune > summary {
+  display: none;
+}
+
+/* ---- Phones: the app screens ----
+   Not the desktop screens stacked: a one-line header (back arrow and title), the scene first, the
+   main buttons in a bar stuck to the bottom so they never scroll away, short notes, and lists
+   that scroll sideways instead of down. */
+
+@media (max-width: 720px) {
+  .page {
+    padding: var(--s-3) var(--s-3) var(--s-6);
+  }
+
+  .page-head {
+    flex-wrap: nowrap;
+    gap: var(--s-3);
+  }
+
+  .back {
+    flex: none;
+    min-height: 40px;
+    padding: 0 var(--s-3);
+    font-size: 18px;
+  }
+
+  .page h1,
+  .page-head h1 {
+    margin: 0;
+    font-size: 26px;
+    line-height: 1;
+  }
+
+  .pane-label {
+    font-size: 12px;
+  }
+
+  button,
+  select {
+    min-height: 46px;
+    padding: 0 var(--s-4);
+    font-size: 15px;
+  }
+
+  .lead {
+    font-size: 15px;
+  }
+
+  /* The main buttons: a bar along the bottom of the screen, two to a row. */
+  .live-bar {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: var(--s-3) calc(-1 * var(--s-3)) 0;
+    padding: var(--s-3);
+    border-top: 1px solid var(--line);
+    background: rgb(8 9 11 / 0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .live-bar .row,
+  .upload .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: 100%;
+  }
+
+  .live-bar .row > :only-child,
+  .live-bar .row > [hidden] + :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .camera-toggle {
+    min-height: 48px;
+    padding: 0 var(--s-3);
+    font-size: 15px;
+  }
+
+  .live-status {
+    font-size: 14px;
+  }
+
+  /* Live: the two scenes stacked, the steps small. */
+  .live-grid {
+    gap: var(--s-2);
+    height: 64svh;
+    margin-top: var(--s-3);
+  }
+
+  .camera-off {
+    padding: var(--s-4);
+  }
+
+  .steps {
+    gap: var(--s-2);
+    margin: 0;
+  }
+
+  .steps li {
+    grid-template-columns: 26px 1fr;
+    gap: var(--s-3);
+    font-size: 14px;
+  }
+
+  .steps li::before {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+
+  /* Upload: the example as a 16:9 picture, the panel tight. */
+  .upload-grid {
+    gap: var(--s-3);
+  }
+
+  .example-pane {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+
+  .upload-panel {
+    padding: var(--s-4);
+  }
+
+  .upload-panel h2 {
+    margin-bottom: var(--s-2);
+    font-size: 21px;
+  }
+
+  .tips {
+    font-size: 14px;
+  }
+
+  .upload .row .primary {
+    grid-column: 1 / -1;
+  }
+
+  .upload .row > * {
+    justify-content: center;
+    min-height: 46px;
+    padding: 0 var(--s-2);
+    font-size: 14px;
+    white-space: nowrap;
+  }
+
+  /* Simulaciones: the scene, the play controls, the clips sideways, the physics folded. */
+  #stage {
+    height: 58svh;
+  }
+
+  .sims-grid {
+    gap: var(--s-3);
+    margin-top: var(--s-3);
+  }
+
+  /* The clips right under the scene, the controls after them. */
+  .sims-main {
+    display: contents;
+  }
+
+  #stage {
+    order: 1;
+  }
+
+  .sims-list {
+    order: 2;
+  }
+
+  #controls {
+    order: 3;
+  }
+
+  .control-group {
+    padding: var(--s-4);
+  }
+
+  .mode-note,
+  .conditions-note {
+    font-size: 12px;
+  }
+
+  .tune > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 44px;
+    margin-top: var(--s-3);
+    padding: 0 var(--s-3);
+    border: 1px solid var(--line);
+    border-radius: var(--r-1);
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .tune > summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .tune > summary::after {
+    content: '+';
+    color: var(--signal);
+    font: 500 18px/1 var(--mono);
+  }
+
+  .tune[open] > summary::after {
+    content: '−';
+  }
+
+  .tune[open] .sliders {
+    margin-top: var(--s-3);
+  }
+
+  .sims-list {
+    padding: var(--s-4);
+  }
+
+  .sims-list h2 {
+    font-size: 17px;
+  }
+
+  #gallery {
+    display: flex;
+    gap: var(--s-2);
+    margin: 0 calc(-1 * var(--s-4));
+    padding: 0 var(--s-4) var(--s-1);
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+
+  #gallery li {
+    flex: 0 0 62%;
+    scroll-snap-align: start;
+  }
+
+  #gallery .card {
+    height: 100%;
+  }
+
+  .card .credit {
+    display: none;
+  }
+}
+

@@ -32,7 +32,7 @@ export function mount(root, { dots, api }, [clipId] = []) {
   root.innerHTML = `
     <section class="page sims">
       <header class="page-head">
-        <a class="back" href="#/">← Volver al inicio</a>
+        <a class="back" href="#/" aria-label="Volver al inicio">←<span class="only-wide">&nbsp;Volver al inicio</span></a>
         <h1>Simulaciones</h1>
       </header>
       <div class="sims-grid">
@@ -84,6 +84,8 @@ export function mount(root, { dots, api }, [clipId] = []) {
                   </select>
                 </label>
               </div>
+              <details class="tune">
+              <summary>Ajustar la física</summary>
               <div class="sliders">
                 ${CONDITIONS.map(({ key, label, min, max, step }) => `
                 <label class="slider">
@@ -92,6 +94,7 @@ export function mount(root, { dots, api }, [clipId] = []) {
                 </label>`).join('')}
               </div>
               <p class="conditions-note">Los deslizadores cambian la física al momento, sobre el mundo elegido. Elegir otro mundo los vuelve a sus valores.</p>
+              </details>
             </section>
           </div>
         </div>
@@ -123,6 +126,9 @@ export function mount(root, { dots, api }, [clipId] = []) {
         </aside>
       </div>
     </section>`;
+  // The physics sliders are open on wide screens; on phones they fold under "Ajustar la física"
+  // (style.css hides the toggle on wide screens), so the scene and the clips come first.
+  root.querySelector('.tune').open = !matchMedia('(max-width: 720px)').matches;
   const stage = mountStage(root, dots);
   const trainBox = mountTrainBox(root, api);
   mountGallery(root, stage, clipId, trainBox.show);

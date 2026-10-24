@@ -113,11 +113,11 @@ export function mount(root, { api }) {
       <div class="caption hero-caption">
         <p class="eyebrow">Physical AI para humanoides</p>
         <h1>Robots que aprenden <em>de un video</em></h1>
-        <p class="hero-lede">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual, practicando en física real hasta no caerse.</p>
+        <p class="hero-lede"><span class="only-wide">Grabas a una persona moviéndose. Un humanoide aprende a hacerlo igual, practicando en física real hasta no caerse.</span><span class="only-narrow">Grabas a una persona. Un humanoide aprende a moverse igual, con física real.</span></p>
         <ol class="hero-steps" aria-label="Cómo funciona">
-          <li><b>01</b>Video de celular</li>
+          <li><b>01</b><span class="only-wide">Video de celular</span><span class="only-narrow">Video</span></li>
           <li><b>02</b>Esqueleto 3D</li>
-          <li><b>03</b>Robot que practica</li>
+          <li><b>03</b><span class="only-wide">Robot que practica</span><span class="only-narrow">Robot practica</span></li>
         </ol>
         <div class="cta-row">
           <button class="btn btn-signal hero-push" type="button" disabled>Empújalo <kbd>espacio</kbd></button>
@@ -136,17 +136,17 @@ export function mount(root, { api }) {
         <div class="capture-media">
           <figure class="frame frame-video">
             <video class="walk-video" src="${WALK_VIDEO}" muted playsinline loop preload="auto"></video>
-            <figcaption>Video de celular · Mixkit</figcaption>
+            <figcaption><span class="only-wide">Video de celular · Mixkit</span><span class="only-narrow">Video</span></figcaption>
           </figure>
           <figure class="frame frame-skeleton">
             <canvas class="skeleton-canvas"></canvas>
-            <figcaption>Esqueleto 3D · 33 puntos · tenue: lo que la cámara no ve</figcaption>
+            <figcaption><span class="only-wide">Esqueleto 3D · 33 puntos · tenue: lo que la cámara no ve</span><span class="only-narrow">Esqueleto 3D</span></figcaption>
           </figure>
         </div>
         <div class="caption capture-caption">
           <p class="product">Tridi Capture</p>
           <h2><span class="only-wide">De un video de celular al cuerpo del robot</span><span class="only-narrow">Del video al robot</span></h2>
-          <p>El esqueleto 3D de la persona, pasado a las 29 articulaciones del robot. Aquí lo copia sin física.</p>
+          <p><span class="only-wide">El esqueleto 3D de la persona, pasado a las 29 articulaciones del robot. Aquí lo copia sin física.</span><span class="only-narrow">El esqueleto 3D de la persona, pasado a las 29 articulaciones del robot.</span></p>
         </div>
       </div>
     </section>
@@ -158,6 +158,7 @@ export function mount(root, { api }) {
           <h2>Practica hasta no caerse</h2>
           <div class="steps-meter">
             <p class="steps-now"><b data-gym="steps">0</b><span>pasos de<br>práctica</span></p>
+            <p class="gym-lede only-narrow">Lo empujamos, se cae y vuelve a intentar. Toca una etapa.</p>
             <div class="steps-axis">
               <div class="axis-track" aria-hidden="true">
                 <i class="axis-line"><i class="axis-fill"></i></i>
@@ -186,14 +187,15 @@ export function mount(root, { api }) {
       <div class="sticky">
         <div class="caption policy-caption panel">
           <p class="product">Tridi Policy</p>
-          <h2><span class="only-wide">Lo que entregamos cabe en un correo</span><span class="only-narrow">Cabe en un correo</span></h2>
+          <h2><span class="only-wide">Te llevas el cerebro entrenado del robot</span><span class="only-narrow">Te llevas su cerebro entrenado</span></h2>
+          <p class="policy-lede">Una red neuronal pequeña (la política) que mueve al robot sola. Corre en tu navegador.</p>
           <ul class="specs">
-            <li><b>265 KB</b><span><span class="only-wide">la red completa que mueve al robot</span><span class="only-narrow">la red</span></span></li>
-            <li><b>29</b><span><span class="only-wide">motores que controla a la vez</span><span class="only-narrow">motores</span></span></li>
-            <li><b>20 ms</b><span><span class="only-wide">entre una decisión y la siguiente</span><span class="only-narrow">por decisión</span></span></li>
+            <li><b>265 KB</b><span><span class="only-wide">la red completa que mueve al robot</span><span class="only-narrow">pesa la red</span></span></li>
+            <li><b>29</b><span><span class="only-wide">motores que controla a la vez</span><span class="only-narrow">motores a la vez</span></span></li>
+            <li><b>20 ms</b><span><span class="only-wide">entre una decisión y la siguiente</span><span class="only-narrow">entre decisiones</span></span></li>
             <li><b>&lt; 1 ms</b><span><span class="only-wide">lo que tarda en decidir</span><span class="only-narrow">en decidir</span></span></li>
           </ul>
-          <p class="policy-note">La política corre aquí, en tu navegador. Con ella van los datos del movimiento, probados en cuatro mundos.</p>
+          <p class="policy-note">Con ella van los datos del movimiento, probados en cuatro mundos.</p>
         </div>
       </div>
     </section>
@@ -207,21 +209,25 @@ export function mount(root, { api }) {
           <a class="try" href="#/en-vivo" data-warm="en-vivo">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="28" height="20" rx="3"/><path d="M34 21l9-5v16l-9-5z"/><circle cx="20" cy="24" r="5"/></svg>
             <b><span class="only-wide">Muévete y el robot te copia</span><span class="only-narrow">Cámara en vivo</span></b>
+            <span class="try-sub only-narrow">Muévete y el robot te copia</span>
             <span class="try-go">Abrir la cámara →</span>
           </a>
           <a class="try" href="#/subir" data-warm="subir" data-route="subir">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="26" rx="3"/><path d="M24 31V17M18 22l6-6 6 6"/><path d="M14 40h20"/></svg>
             <b><span class="only-wide">Sube un video de una persona</span><span class="only-narrow">Subir un video</span></b>
+            <span class="try-sub only-narrow">Hasta 30 s · solo guardamos el movimiento</span>
             <span class="try-go">Subir un video →</span>
           </a>
           <a class="try" href="#/simulaciones" data-warm="simulaciones">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="15" cy="11" r="4"/><path d="M15 15v12M9 20h12M15 27l-4 10M15 27l4 10"/><rect x="28" y="7" width="10" height="8" rx="2"/><path d="M33 15v12M27 19h12M33 27l-3 10M33 27l3 10"/></svg>
             <b><span class="only-wide">Persona y robot, lado a lado</span><span class="only-narrow">Laboratorio</span></b>
+            <span class="try-sub only-narrow">Persona y robot, lado a lado</span>
             <span class="try-go">Ver el laboratorio →</span>
           </a>
           <a class="try" href="#/entrega" data-warm="entrega">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="16" width="32" height="24" rx="2"/><path d="M8 24h32M24 6v14M18 14l6 6 6-6"/></svg>
             <b><span class="only-wide">La política y los datos que entregamos</span><span class="only-narrow">La entrega</span></b>
+            <span class="try-sub only-narrow">La política y los datos del robot</span>
             <span class="try-go">Ver la entrega →</span>
           </a>
         </nav>
@@ -826,7 +832,7 @@ export function mount(root, { api }) {
     gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, duration: 0.6, scrollTrigger: { trigger: '.gym', start: 'top 60%', toggleActions: 'play none none none' } });
 
     // Policy: the numbers come in one by one.
-    gsap.from('.policy-caption h2, .policy-caption .product', { opacity: 0, y: 30, stagger: 0.1, scrollTrigger: { trigger: '.policy', start: 'top 60%', end: 'top 10%', scrub: true } });
+    gsap.from('.policy-caption h2, .policy-caption .product, .policy-lede', { opacity: 0, y: 30, stagger: 0.1, scrollTrigger: { trigger: '.policy', start: 'top 60%', end: 'top 10%', scrub: true } });
     gsap.from('.specs li', { opacity: 0, x: 40, stagger: 0.25, scrollTrigger: { trigger: '.policy', start: 'top top', end: '60% bottom', scrub: true } });
 
     // Closing: the page closes over the film like a curtain, and the manifesto rises word by word.
@@ -870,6 +876,7 @@ export function mount(root, { api }) {
     // Still a link: the upload screen explains it and can try the server again.
     card.classList.add('unavailable');
     card.querySelector('.try-go').textContent = 'Servidor apagado · ver por qué →';
+    card.querySelector('.try-sub').textContent = 'El servidor de videos está apagado';
   });
 
   return () => {

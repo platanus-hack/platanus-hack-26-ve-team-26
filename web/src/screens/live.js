@@ -46,7 +46,7 @@ export function mount(root, { dots, api }) {
   root.innerHTML = `
     <section class="page live">
       <header class="page-head">
-        <a class="back" href="#/">← Volver al inicio</a>
+        <a class="back" href="#/" aria-label="Volver al inicio">←<span class="only-wide">&nbsp;Volver al inicio</span></a>
         <h1>Entrena a Tridi en vivo</h1>
       </header>
       <div class="live-grid">
@@ -73,7 +73,7 @@ export function mount(root, { dots, api }) {
       <div class="live-bar">
         <div class="row">
           <button class="primary camera-toggle" type="button">Encender la cámara</button>
-          <button class="phone-toggle" type="button">Usar el teléfono como cámara</button>
+          <button class="phone-toggle" type="button">Usar el teléfono<span class="only-wide"> como cámara</span></button>
           <button class="record-toggle" type="button" hidden>Parar y guardar</button>
         </div>
         <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · camina, salta: el robot va adonde vas</p>
@@ -175,7 +175,7 @@ export function mount(root, { dots, api }) {
     $('.phone-qr').hidden = true;
     $('.camera-label').textContent = 'Tú';
     button.textContent = 'Encender la cámara';
-    phoneButton.textContent = 'Usar el teléfono como cámara';
+    phoneButton.innerHTML = 'Usar el teléfono<span class="only-wide"> como cámara</span>';
     $('.live-warning').hidden = true;
   }
 
@@ -262,7 +262,7 @@ export function mount(root, { dots, api }) {
       live = capture.createPhoneCapture(api.url, sessionId, { onPose, onImage, onStatus: onPhoneStatus });
       root.querySelector('.live').classList.add('phone-on');
       $('.camera-label').textContent = 'Tu teléfono';
-      phoneButton.textContent = 'Dejar de usar el teléfono';
+      phoneButton.innerHTML = 'Dejar<span class="only-wide"> de usar</span> el teléfono';
       say('Escanea el código con el teléfono. Mientras tanto, la webcam no se usa.');
     } catch (error) {
       const known = capture && error instanceof capture.UploadError;

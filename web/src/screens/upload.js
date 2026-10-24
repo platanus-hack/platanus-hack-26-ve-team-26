@@ -45,12 +45,12 @@ export function mount(root, { api }) {
   root.innerHTML = `
     <section class="page upload" data-step="checking">
       <header class="page-head">
-        <a class="back" href="#/">← Volver al inicio</a>
+        <a class="back" href="#/" aria-label="Volver al inicio">←<span class="only-wide">&nbsp;Volver al inicio</span></a>
         <h1>Sube un video</h1>
       </header>
       <div class="upload-grid">
         <section class="pane example-pane">
-          <p class="pane-label">Así se ve un buen video: de perfil y con el cuerpo entero</p>
+          <p class="pane-label"><span class="only-wide">Así se ve un buen video: de perfil y con el cuerpo entero</span><span class="only-narrow">Buen video: de perfil, cuerpo entero</span></p>
         </section>
         <div class="upload-panel">
           <div data-show="checking"><p class="lead">Conectando con Tridi…</p></div>
@@ -106,7 +106,7 @@ export function mount(root, { api }) {
 
           <div data-show="off">
             <h2>Subir videos no está disponible ahora</h2>
-            <p class="lead">El equipo que mira los videos está apagado. Mientras tanto, puedes usar la cámara o ver lo que Tridi ya aprendió.</p>
+            <p class="lead"><span class="only-wide">El equipo que mira los videos está apagado. Mientras tanto, puedes usar la cámara o ver lo que Tridi ya aprendió.</span><span class="only-narrow">El servidor de videos está apagado. Prueba la cámara o el laboratorio.</span></p>
             <div class="row">
               <button class="primary retry" type="button">Reintentar</button>
               <a class="button" href="#/en-vivo">Usar la cámara</a>

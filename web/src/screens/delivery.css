@@ -1267,6 +1267,26 @@ html.is-delivery body::before {
     font-size: 22px;
   }
 
+  /* Phones keep the numbers, the robot and the files, and drop the long explanations: the
+     status reads in three lines, and the episode's and the training's notes stay wide-only. */
+  .dl-status {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .dl-legend,
+  .dl-ep-peak,
+  .dl-ep-why,
+  .dl-train-note,
+  .dl-train figcaption,
+  .dl-file-what,
+  .dl-formats dd,
+  .dl-code {
+    display: none; /* the file formats keep their names; the specs and the code sample are wide-only */
+  }
+
   .dl-view {
     aspect-ratio: 4 / 3;
   }
@@ -1361,13 +1381,14 @@ html.is-delivery body::before {
     justify-content: flex-end;
   }
 
+  /* One row per file: its name and size on the left, the download on the right. */
   .dl-file-list li {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      'name size'
-      'what what'
-      'get get';
-    gap: 6px 12px;
+      'name get'
+      'size get';
+    align-items: center;
+    gap: 2px 12px;
   }
 
   .dl-file-name {
@@ -1376,6 +1397,7 @@ html.is-delivery body::before {
 
   .dl-file-size {
     grid-area: size;
+    justify-self: start;
   }
 
   .dl-file-what {
@@ -1384,7 +1406,6 @@ html.is-delivery body::before {
 
   .dl-get {
     grid-area: get;
-    justify-self: start;
   }
 }
 

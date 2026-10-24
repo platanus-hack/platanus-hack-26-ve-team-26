@@ -40,8 +40,16 @@ Que la barra espaciadora haga avanzar el landing, que "Probar en vivo" lleve a l
 - Landing en móvil (`landing.css`, bloque `max-width: 860px`, y `home.js`): no es el desktop apretado. Por pantalla, un título corto y una cosa: hero = título + "Empújalo"; Capture = video y esqueleto como dos tiles arriba + "Del video al robot"; Gym = número de pasos, chips de las 4 etapas y una frase; Policy = "Cabe en un correo" + 4 tiles 2x2; cierre = manifiesto + filas con ícono y flecha + hitos de una línea; footer sin párrafo. Títulos cortos con `.only-narrow`, copy largo con `.only-wide`.
 - Probado a 375x812: sin scroll horizontal, el botón del header ("Probar") aterriza en las filas. Desktop sin cambios (ningún `.only-narrow` visible). `vite build` pasa.
 
+## Tercera vuelta: móvil con más contexto, y las otras pantallas
+
+- Landing móvil: el recorte quedó corto de contexto. Vuelve una línea por sección (hero, Capture, Gym, Policy, cierre), los 3 pasos del hero en chips cortos, las etiquetas de video y esqueleto, las cifras del Gym y los hitos con su prueba. Las filas de "Probar" llevan subtítulo.
+- Policy: "cabe en un correo" no se entendía. Ahora "Te llevas el cerebro entrenado del robot" + "Una red neuronal pequeña (la política) que mueve al robot sola. Corre en tu navegador.", también en desktop.
+- `.only-wide` / `.only-narrow` pasan a `style.css` (globales, 860 px) para usarlos en todas las pantallas.
+- Pantallas de la app en móvil (`style.css`, bloque de 720 px): encabezado en una línea (flecha + título), barra de botones pegada abajo en En vivo, ejemplo 16:9 y botones en grilla en Subir; en Simulaciones los clips en carrusel horizontal justo bajo la escena y los deslizadores de física plegados bajo "Ajustar la física" (`<details>`, abierto en desktop); notas con versión corta (`stage.js`). Entrega (`delivery.css`, 640 px): estado en 3 líneas, sin notas largas ni specs de formatos ni el ejemplo de código, archivos en una fila con su botón.
+- Probado a 375x812 en las 5 pantallas, sin scroll horizontal; desktop revisado en landing y Simulaciones. `vite build` pasa.
+
 ## Sigue
 
-- Móvil de las otras pantallas (`live`, `upload`, `simulations`, `delivery`).
+- Revisar `#/camara` (la del teléfono) y los estados de Subir con el servidor prendido (subiendo, procesando, listo) en móvil.
 - Exportar el logo nuevo a `project-logo.png` (1000x1000) si se aprueba.
 - Las otras pantallas (`upload`, `live`, `simulations`) heredan tokens pero no se revisaron una por una.
