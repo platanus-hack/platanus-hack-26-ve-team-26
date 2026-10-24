@@ -488,7 +488,9 @@ export function mount(root, { api }) {
       // From the first frame, with the video: resuming where the video was paused made the robot
       // jump along the walk (1.9 m) the moment it started.
       video.currentTime = 0;
-      if (token === modeToken && motion) view.playClip(motion);
+      // plantFeet: the retargeted path is shorter than the robot's stride, so without it the foot on
+      // the floor slid backward (0,35 m/s) and the walk read as a moonwalk (physics/src/motion.js).
+      if (token === modeToken && motion) view.playClip(motion, { plantFeet: true });
     } else if (kind === 'gym') {
       await useLevel(gymLevel());
       if (token === modeToken) startGymRun();

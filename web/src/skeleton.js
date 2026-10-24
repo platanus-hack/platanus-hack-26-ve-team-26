@@ -36,6 +36,15 @@ const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next 
 const JOINT_RADIUS = 0.03;
 const HUMAN_COLOR = 0xff4f1a; // the brand's signal: the human is orange, the robot keeps its own colors
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
+// The camera follows the hips, so a walk only shows as the floor sliding under the skeleton and
+// as the path it leaves behind. The grid is brighter than SCENE_THEME's (where it is a backdrop
+// behind the robot): in the landing's small frame, at those values, it vanished and the person
+// seemed to walk in place. The trail is the hips' path on the floor up to the current frame.
+const GRID_MAJOR = 0x56534c;
+const GRID_MINOR = 0x2f2e2a;
+const TRAIL_LIFT_M = 0.004; // just above the floor and the grid, so neither hides it
+const TRAIL_OPACITY = 0.7;
+const TRAIL_WIDTH_M = 0.04; // a ribbon: a one-pixel line vanished in the landing's frame (~75 px per meter)
 
 /** Dark stage colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
 export const SCENE_THEME = { background: 0x111110, ground: 0x181816, gridMajor: 0x3a3833, gridMinor: 0x242320 };
@@ -63,9 +72,16 @@ export class SkeletonView {
       new THREE.MeshStandardMaterial({ color: SCENE_THEME.ground, roughness: 0.95 }),
     );
     ground.rotation.x = -Math.PI / 2;
-    const grid = new THREE.GridHelper(60, 120, SCENE_THEME.gridMajor, SCENE_THEME.gridMinor);
+    const grid = new THREE.GridHelper(60, 120, GRID_MAJOR, GRID_MINOR);
     grid.position.y = 0.001;
     scene.add(ground, grid);
+    // The path of the hips on the floor, a ribbon drawn up to the current frame (setClip builds it).
+    this.trail = new THREE.Mesh(
+      new THREE.BufferGeometry(),
+      new THREE.MeshBasicMaterial({ color: HUMAN_COLOR, transparent: true, opacity: TRAIL_OPACITY, depthWrite: false, side: THREE.DoubleSide }),
+    );
+    this.trail.frustumCulled = false;
+    scene.add(this.trail);
 
     // The skeleton hangs from this group; its y offset puts the clip's lowest foot on the ground.
     this.body = new THREE.Group();
@@ -120,6 +136,26 @@ export class SkeletonView {
       for (const j of FOOT_JOINTS) if (joints[j][3] >= MIN_VISIBILITY) floor = Math.min(floor, joints[j][1]);
     }
     this.body.position.y = Number.isFinite(floor) ? -floor : 0;
+    // The trail: the center of the hips of every frame, on the floor (the body's y offset does not
+    // move x and z, so the trail lies under the skeleton without it), as a ribbon: two vertices per
+    // frame across the direction of travel, two triangles per step between frames.
+    const n = clip.frames.length;
+    const hips = clip.frames.map(({ joints }) => [(joints[23][0] + joints[24][0]) / 2, (joints[23][2] + joints[24][2]) / 2]);
+    const vertices = new Float32Array(6 * n);
+    let across = [0, 1]; // kept from the last frame that moved, for frames standing still
+    hips.forEach(([x, z], i) => {
+      const [ax, az] = hips[Math.max(i - 1, 0)];
+      const [bx, bz] = hips[Math.min(i + 1, n - 1)];
+      const length = Math.hypot(bx - ax, bz - az);
+      if (length > 1e-6) across = [-(bz - az) / length, (bx - ax) / length];
+      vertices.set([x - (across[0] * TRAIL_WIDTH_M) / 2, TRAIL_LIFT_M, z - (across[1] * TRAIL_WIDTH_M) / 2], 6 * i);
+      vertices.set([x + (across[0] * TRAIL_WIDTH_M) / 2, TRAIL_LIFT_M, z + (across[1] * TRAIL_WIDTH_M) / 2], 6 * i + 3);
+    });
+    const indices = [];
+    for (let i = 0; i + 1 < n; i++) indices.push(2 * i, 2 * i + 1, 2 * i + 2, 2 * i + 1, 2 * i + 3, 2 * i + 2);
+    this.trail.geometry.dispose();
+    this.trail.geometry = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(vertices, 3)).setIndex(indices);
+    this.trail.geometry.setDrawRange(0, 0);
   }
 
   /** Moves the clip forward `seconds` of clip time, looping at the end. */
@@ -130,14 +166,22 @@ export class SkeletonView {
   }
 
   render() {
-    if (this.clip) this.pose(this.frameAt(this.time));
+    if (this.clip) {
+      const i = this.indexAt(this.time);
+      this.pose(this.clip.frames[i]);
+      this.trail.geometry.setDrawRange(0, 6 * i); // the steps up to this frame, six indices each
+    }
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
   }
 
-  frameAt(time) {
+  indexAt(time) {
     const { frames, fps } = this.clip;
-    return frames[Math.min(frames.length - 1, Math.floor(time * fps))];
+    return Math.min(frames.length - 1, Math.floor(time * fps));
+  }
+
+  frameAt(time) {
+    return this.clip.frames[this.indexAt(time)];
   }
 
   pose({ joints }) {
