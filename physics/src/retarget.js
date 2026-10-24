@@ -11,8 +11,8 @@
 //   waist     torso orientation relative to the hips
 //   arms/legs the direction of the upper and lower segment, in the torso (arms) or hip (legs) frame
 //   feet      kept flat on the floor
-//   wrists   live only (options.live): how the hand bends off the forearm, from the pose's wrist,
-//             index and pinky points
+//   wrists   live only (options.live): how the hand bends off the forearm and which way its palm
+//             faces, from the pose's wrist, index, pinky and thumb points
 // What is not: head (the G1 has no neck), fingers (the G1 model here has none).
 // Whatever the camera does not see (legs of someone sitting at a desk) stays in the stand pose.
 import * as THREE from 'three';
@@ -42,14 +42,22 @@ const SHOULDER_TWIST_PENALTY = 0.05;
 // 2026-10-24-manos-y-dedos-en-vivo.md): waving or arms up came out flattened. Facing the camera
 // the penalty drops to this, and it grows back to 0.05 as the person turns to profile.
 const SHOULDER_TWIST_FACING = 0.005;
-// The wrist (live) copies the hand's bend off the forearm (up-down and side to side), not its
-// turn: the pose's index and pinky points are ~5 cm apart with noisy depth, and the turn read from
-// them flipped between its limits (+-113 degrees) in data/clips' jumping jacks. The forearm's twist
-// comes from the shoulder instead. The bend is taken off the person's forearm and put on the
+// The wrist (live) copies the hand's bend off the forearm (up-down and side to side). The bend is taken off the person's forearm and put on the
 // robot's, so a difference between their arms does not show as a bent wrist. Seen from the side
 // the hand is edge-on and its points are a guess: on data/clips' profile walk the wrist stayed
 // bent ~45 degrees the whole clip. So the bend counts fully facing the camera and fades to none in
 // profile (by cos^2 of the heading), the reverse of the shoulder's twist penalty.
+// It also copies which way the palm faces (forward, back, up, down), with the forearm's roll: without
+// it the palm was never read, and palms forward and back gave the same robot (check-gestures). The
+// palm's normal is the cross product of the hand's length and its width (pinky to index and thumb),
+// and its part toward the camera only uses the image's axes (x, y), the steady ones: that is the
+// part that tells a palm forward from one back. Read from the index and pinky alone, ~5 cm apart,
+// the turn flipped between its limits (+-113 degrees) in data/clips' jumping jacks; the thumb's tip
+// doubles the width. A hand whose points collapse (narrower than this share of its length: a fist
+// read badly, or a misread) gives no palm, and the wrist keeps its roll.
+const MIN_HAND_WIDTH = 0.3;
+// The roll's own cost, so a palm read at the edge of its trust does not swing the forearm fully.
+const WRIST_ROLL_PENALTY = 0.02;
 const WAIST_TWIST_PENALTY = 0.2;
 const HIP_INWARD_PENALTY = 0.05;
 // The penalties alone do not stop it: the data itself puts the knees and ankles inward, because
@@ -60,6 +68,8 @@ const HIP_INWARD_PENALTY = 0.05;
 // frames (12% and 7% before), hip twist 9 to 19 degrees at p95 (48 to 68), jumping jacks still open
 // the legs 24 degrees, and the limbs still reach within 8 cm in 97 to 100% of the frames.
 const MAX_LEG_INWARD = Math.sin((5 * Math.PI) / 180);
+// sin^2 of a 45-degree heading: past it the person is closer to profile than to facing the camera.
+const PROFILE_SIN2 = 0.5;
 // The solution from rest replaces the one from the previous frame only if it costs under 70% of it.
 const RESEED_MARGIN = 0.7;
 
@@ -67,8 +77,8 @@ const RESEED_MARGIN = 0.7;
 // flips the pose), so the robot moves like your reflection: raise your right hand and the arm on
 // the same side of the screen goes up.
 const HUMAN = {
-  left: { shoulder: 11, elbow: 13, wrist: 15, pinky: 17, index: 19, hip: 23, knee: 25, ankle: 27 },
-  right: { shoulder: 12, elbow: 14, wrist: 16, pinky: 18, index: 20, hip: 24, knee: 26, ankle: 28 },
+  left: { shoulder: 11, elbow: 13, wrist: 15, pinky: 17, index: 19, thumb: 21, hip: 23, knee: 25, ankle: 27 },
+  right: { shoulder: 12, elbow: 14, wrist: 16, pinky: 18, index: 20, thumb: 22, hip: 24, knee: 26, ankle: 28 },
 };
 const OTHER = { left: 'right', right: 'left' };
 
@@ -85,7 +95,7 @@ const limbs = (side) => [
     mid: `${side}_elbow_link`,
     tip: `${side}_wrist_roll_link`,
     human: ['shoulder', 'elbow', 'wrist'],
-    hand: { joints: ['pitch', 'yaw'].map((j) => `${side}_wrist_${j}_joint`), link: `${side}_wrist_yaw_link` },
+    hand: { joints: ['roll', 'pitch', 'yaw'].map((j) => `${side}_wrist_${j}_joint`), link: `${side}_wrist_yaw_link` },
   },
   {
     name: `${side}_leg`,
@@ -122,7 +132,8 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
     const inward = name.endsWith('hip_roll_joint') ? (name.startsWith('left') ? -1 : 1) : 0;
     const twist = name.endsWith('hip_yaw_joint') ? HIP_TWIST_PENALTY
       : name.endsWith('shoulder_yaw_joint') ? SHOULDER_TWIST_PENALTY
-      : name === 'waist_yaw_joint' ? WAIST_TWIST_PENALTY : 0;
+      : name === 'waist_yaw_joint' ? WAIST_TWIST_PENALTY
+      : name.endsWith('wrist_roll_joint') ? WRIST_ROLL_PENALTY : 0;
     return { name, adr: model.jnt_qposadr[id], limited: model.jnt_limited[id], lo: model.jnt_range[2 * id], hi: model.jnt_range[2 * id + 1],
       twist, inward };
   };
@@ -173,13 +184,22 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
   const rest = { torso: orientation(waist.body, new THREE.Quaternion()) };
   for (const c of chains) if (c.foot) rest[c.name] = orientation(c.foot.body, new THREE.Quaternion());
   const restTorsoInverse = rest.torso.clone().invert();
-  // The fingers run along the hand's +x (wrist_yaw_link; the chain runs along x).
+  // The fingers run along the hand's +x (wrist_yaw_link; the chain runs along x). The palm faces
+  // its -y on the left hand and +y on the right: in the stand pose both face the thighs (measured).
   const fingersOf = (id, out) => {
     const m = data.xmat;
     return out.set(m[9 * id], m[9 * id + 3], m[9 * id + 6]);
   };
+  const palmOf = (id, out, sign) => {
+    const m = data.xmat;
+    return out.set(m[9 * id + 1], m[9 * id + 4], m[9 * id + 7]).multiplyScalar(-sign);
+  };
   const handTarget = new THREE.Vector3();
   const handNow = new THREE.Vector3();
+  const palmTarget = new THREE.Vector3();
+  const palmNow = new THREE.Vector3();
+  const across = new THREE.Vector3();
+  let palmWeight = 0; // how much the palm counts in this hand's solve (0 when it was not read)
   const bend = new THREE.Quaternion();
   const NO_TURN = new THREE.Quaternion();
   const forearm = new THREE.Vector3();
@@ -217,10 +237,12 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
     return a.distanceToSquared(c.targetMid) + b.distanceToSquared(c.targetTip) + penalty(c.joints);
   }
 
-  // How far the hand points from where the person's does (world axes, unit length).
-  function handCost(hand) {
+  // How far the hand points, and its palm faces, from where the person's do (world axes, unit length).
+  function handCost(hand, sign) {
     fk();
-    return 1 - fingersOf(hand.body, handNow).dot(handTarget) + penalty(hand.joints);
+    let cost = 1 - fingersOf(hand.body, handNow).dot(handTarget) + penalty(hand.joints);
+    if (palmWeight > 0) cost += palmWeight * (1 - palmOf(hand.body, palmNow, sign).dot(palmTarget));
+    return cost;
   }
 
   function orientationCost(part, goal) {
@@ -284,7 +306,8 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
    *   the hips' heading.
    * @returns qpos: Float64Array(nq), a copy; residual: the worst distance (m) between where a limb
    *   ended up and where the person put it (above ~0.08 the robot cannot do that move); tracked:
-   *   false when the shoulders were not seen and the previous pose was kept.
+   *   false when the shoulders were not seen and the previous pose was kept; mirroredArm: true when
+   *   one arm was not seen and copies the other's swing (in profile).
    */
   function solve({ points, visible: V }, { travelYaw } = {}) {
     Q = data.qpos;
@@ -384,7 +407,20 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
         position(c.midId, a);
         position(c.tipId, b);
         handTarget.copy(forearm.subVectors(b, a).normalize()).applyQuaternion(bend);
-        solveJoints(c.hand.joints, () => handCost(c.hand));
+        // The person's palm: across the hand from the pinky to the index and thumb, crossed with
+        // its length, signed so it faces the thighs with the arms hanging (left: length x across).
+        const sign = c.side === 'left' ? 1 : -1;
+        const length = dir.subVectors(mid(h.index, h.pinky), S[h.wrist]);
+        across.subVectors(V[h.thumb] ? mid(h.index, h.thumb) : S[h.index], S[h.pinky]);
+        palmTarget.crossVectors(length, across).multiplyScalar(sign);
+        palmWeight = 0;
+        if (palmTarget.length() > MIN_HAND_WIDTH * length.lengthSq()) {
+          // In the person's torso frame, then the robot's (as the limbs), across the robot's hand.
+          palmTarget.normalize().applyQuaternion(toRobot).applyQuaternion(robotFrame);
+          palmTarget.addScaledVector(handTarget, -palmTarget.dot(handTarget)).normalize();
+          palmWeight = handTrust;
+        }
+        solveJoints(c.hand.joints, () => handCost(c.hand, sign));
       }
     }
 
@@ -393,9 +429,13 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
     // opposite phase, so the hidden arm mirrors the seen one: the shoulder goes forward as much as
     // the seen one goes back (around the stand pose), the side lift and the twist mirror (the G1's
     // left and right ranges are mirrored), and the elbow bends the same.
+    // Only in profile (turned past 45 degrees): facing the camera, an arm goes unseen because it is
+    // behind the back or hidden by the other, not because it swings. Mirroring it there moved an
+    // arm the person never moved; it now keeps where it was last seen.
     const arms = chains.filter((c) => !c.foot);
     const seenArms = arms.filter((c) => solved.has(c));
-    if (seenArms.length === 1) {
+    const mirroredArm = seenArms.length === 1 && Math.sin(bodyYaw) ** 2 > PROFILE_SIN2;
+    if (mirroredArm) {
       const [shown] = seenArms;
       const hidden = arms.find((c) => c !== shown);
       const [pitch, roll, twist, elbow] = shown.joints;
@@ -411,7 +451,7 @@ export function createRetargeter(mujoco, model, { mirror = true, live = false } 
     let lowest = Infinity;
     for (const { id, radius } of soles) lowest = Math.min(lowest, data.geom_xpos[3 * id + 2] - radius);
     Q[2] = -lowest;
-    return { qpos: Q.slice(), residual, tracked: true };
+    return { qpos: Q.slice(), residual, tracked: true, mirroredArm };
   }
 
   // Hip to ankle along the leg (m): lets a recorded path be scaled to this robot's stride.

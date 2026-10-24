@@ -95,6 +95,7 @@ export function createClearance(mujoco, model) {
   // `amount` (rad) and says how much clearance the pose in `data` has (>= 0 when clear).
   const parts = [
     {
+      name: 'legs',
       max: MAX_LEGS,
       open(q, amount) {
         for (const s of sides) {
@@ -108,7 +109,8 @@ export function createClearance(mujoco, model) {
         return -Math.sin(yaw) * (l[0] - r[0]) + Math.cos(yaw) * (l[1] - r[1]) - FEET_APART_M;
       },
     },
-    ...sides.map((s) => ({
+    ...sides.map((s, k) => ({
+      name: k === 0 ? 'left arm' : 'right arm',
       max: MAX_ARM,
       open: (q, amount) => turn(q, s.shoulder, s.out * amount),
       margin() {
@@ -128,6 +130,7 @@ export function createClearance(mujoco, model) {
     // The two hands against each other: both shoulders open by the same amount, so a clap stops
     // in the middle, where the person's hands meet, instead of one arm doing all the giving.
     {
+      name: 'hands',
       max: MAX_ARM,
       open(q, amount) {
         for (const s of sides) turn(q, s.shoulder, s.out * amount);
@@ -170,11 +173,15 @@ export function createClearance(mujoco, model) {
         });
       }
     },
-    /** For the live camera: (qpos, t) -> qpos, cleared in place. */
+    /**
+     * For the live camera: (qpos, t) -> qpos, cleared in place. Its opened() lists the parts it is
+     * holding open in the last pose ('legs', 'left arm', 'right arm', 'hands'), so the page can
+     * tell a move the person made from one this added.
+     */
     createLive() {
       const current = parts.map(() => 0);
       let last = null;
-      return (q, t) => {
+      const clear = (q, t) => {
         const dt = last === null ? 1 : Math.max(0, t - last);
         last = t;
         parts.forEach((part, k) => {
@@ -183,6 +190,8 @@ export function createClearance(mujoco, model) {
         });
         return q;
       };
+      clear.opened = () => parts.filter((_, k) => current[k] > 0).map((p) => p.name);
+      return clear;
     },
     delete: () => data.delete(),
   };

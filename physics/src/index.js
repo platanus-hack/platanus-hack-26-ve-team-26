@@ -318,11 +318,13 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * With the pose's `camera` (where the hips are from the camera) the robot also goes where the
      * person goes: it walks across the floor with its planted foot still, and leaves it in a jump
      * (root.js). Without it, it still walks by its feet, but cannot jump.
-     * @returns { tracked, residual, airborne } residual is the worst distance (m) between a limb
-     *   and where the person put it; above ~0.08 the G1 cannot do that move. airborne: in a jump.
+     * @returns { tracked, residual, airborne, fixes } residual is the worst distance (m) between a
+     *   limb and where the person put it; above ~0.08 the G1 cannot do that move. airborne: in a
+     *   jump. fixes: what the robot added that the person did not do ('mirrored arm', and the parts
+     *   clearance.js holds open: 'legs', 'left arm', 'right arm', 'hands'), for a debug readout.
      */
     mimic(pose) {
-      if (!pose?.visible) return { tracked: false, residual: 0, airborne: false };
+      if (!pose?.visible) return { tracked: false, residual: 0, airborne: false, fixes: [] };
       clip = null;
       tracker ??= createPoseTracker({ smooth: false }); // data/live already filtered the points
       retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror, live: true });
@@ -334,12 +336,13 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
         clearance = { model, clear: model.createLive() };
       }
       const points = tracker.update(pose.world, pose.landmarks, pose.t);
-      const { qpos, tracked, residual } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw() });
+      const { qpos, tracked, residual, mirroredArm } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw() });
       // The path is made from the filtered pose, the one drawn: made from the raw one, the planted
       // foot would slide by whatever the filter holds back.
       // Leveled before the path: root.js puts the leveled feet back on the floor.
       if (tracked) sim.puppet(rootTracker.update(clearance.clear(leveler.level(smoother.filter(qpos, pose.t), pose.t), pose.t), pose));
-      return { tracked, residual, airborne: rootTracker.airborne() };
+      const fixes = [...(mirroredArm ? ['mirrored arm'] : []), ...clearance.clear.opened()];
+      return { tracked, residual, airborne: rootTracker.airborne(), fixes };
     },
     dispose() {
       disposed = true;
