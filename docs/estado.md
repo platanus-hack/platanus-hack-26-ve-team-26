@@ -10,10 +10,10 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 
 Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, render three.js; arranca `training/` ([decisión](decisiones/2026-10-23-robot-g1.md)).
 
-- **Funciona:** el G1 de pie en MuJoCo WASM dentro del navegador, con three.js, a tiempo real, y se cae si se lo empuja. `createSimView(canvas)` lista para la web ([`physics/README.md`](../physics/README.md)). `npm run check` prueba la física en Node. **Deploy:** https://tridi-alpha.vercel.app (Vercel, desde el espejo `Torpass/tridi` que actualiza `ship.sh`; [decisión](decisiones/2026-10-23-deploy.md)).
+- **Funciona:** el G1 de pie en MuJoCo WASM dentro del navegador, con three.js, a tiempo real, y se cae si se lo empuja. `createSimView(canvas)` lista para la web ([`physics/README.md`](../physics/README.md)). **Retargeting en vivo:** `view.mimic(pose)` convierte lo que entrega `onPose` de `data/live` en los 36 valores de `qpos` del G1 (cintura, brazos, piernas, rumbo de la pelvis, pies planos), con la IK de Sombra sobre la cinemática de MuJoCo ([decisión](decisiones/2026-10-24-retargeting-sombra-en-mujoco.md)); 1,7 ms por cuadro, y con el clip real de caminata de Juan queda a 3,2 cm de error mediano. Botón "Cámara" en la página de desarrollo. `npm run check` prueba física y retargeting en Node. **Deploy:** https://tridi-alpha.vercel.app (Vercel, desde el espejo `Torpass/tridi` que actualiza `ship.sh`; [decisión](decisiones/2026-10-23-deploy.md)).
 - **En curso:** —
-- **Bloqueado por:** nada para empezar. Para imitar desplazamientos hace falta la trayectoria de la pelvis en `PoseClip` (pregunta abierta para Juan).
-- **Sigue:** Render para el servidor de video cuando `data/` tenga uno; entorno de entrenamiento con `scene_mjx.xml` (Python, MuJoCo 3.16.0) y una primera política que se sostenga de pie, con checkpoints desde el paso 0; retargeting de `PoseClip` a `RobotMotion`, empezando por un clip sintético.
+- **Bloqueado por:** nada. Falta probar el retargeting con una webcam real (solo se probó con poses sintéticas, el clip de Juan y la página con una pose inyectada).
+- **Sigue:** probar la cámara en vivo; retargetear un `PoseClip` completo (trayectoria de la pelvis y rumbo del desplazamiento) para `RobotMotion`; Render para el servidor de video cuando `data/` tenga uno; entorno de entrenamiento con `scene_mjx.xml` (Python, MuJoCo 3.16.0) y una primera política que se sostenga de pie, con checkpoints desde el paso 0.
 
 ---
 
