@@ -98,9 +98,11 @@ El detalle está en [`../plan-producto.md`](../plan-producto.md). En corto:
 - El equipo: revisar el pitch y el plan, y repartir las tareas.
 - Primero, el cambio de contrato, en un commit aparte.
 - Lo crítico: que la imitación aprenda la caminata (ENT-1), con punto de control el sábado a las 12:00.
+- **Premiar la velocidad de la pelvis tampoco cambia el cuadro** (`walk-speed`, 10 M pasos): 1,27 s por episodio contra 1,23 s, 1,3 s desde el inicio del clip, y de 40 episodios 29 se cortan por alejarse y 11 por caída. El robot avanza a 0,47 m/s cuando la referencia va a 0,78, y se mueve 0,50 m/s de costado: se tambalea de lado para no caerse y eso le come el avance. Parece equilibrio al caminar, no falta de información ni de premio. El premio se queda: no empeora nada.
 - **Mirar adelante ayuda poco:** sigue mejor la pose y aguanta algo más, pero el robot sigue sin avanzar con la referencia. Se queda (shipeado en `9d2bab0`) porque no empeora nada y la red ve dónde está el recorrido.
+- ENT-2 (`--task mimic --motion <archivo o clip_id>`) y SIM-4 (`retarget --out`) hechos: un clip de usuario ya puede ir de `PoseClip` a política con comandos.
 - ENT-1, próximas pruebas, de la más directa a la de respaldo:
-  1. Premiar que la pelvis avance a la velocidad de la referencia. Hoy la recompensa premia la posición de la pelvis (0,2 × exp(−10 d²): a 0,5 m de distancia ya casi no da nada y no empuja a alcanzarla) y la velocidad de las articulaciones, pero no la velocidad de la pelvis.
+  1. Más práctica: 30 M pasos con todo lo de hoy (la curva todavía sube de 1,04 a 1,27 s entre los 7 M y los 10 M). Lanzado en la M5 como `walk-long`.
   2. Un movimiento en el lugar (jumping jacks, brazos, baile sin desplazarse): no tiene recorrido del que alejarse, que es justo donde falla hoy. Se puede grabar con la página de `data/live` (tiene botón Grabar), pasar por `npm run retarget` y revisar con `diagnose_reference.py`.
   3. Reproducir la referencia más lenta al principio (por ejemplo a la mitad de velocidad) y acelerarla a medida que aprende, para que los primeros pasos sean más fáciles.
   4. Más pasos (30 M o más) en las dos Macs, si la curva sigue subiendo con 1, 2 o 3.

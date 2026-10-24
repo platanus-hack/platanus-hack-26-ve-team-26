@@ -80,12 +80,13 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
   - [x] Reproducir la referencia con la pelvis sostenida (sin red y sin que pueda caerse) y medir si los motores siguen los ángulos y si los pies apoyan sin hundirse ni flotar: `training/diagnose_reference.py`. Sin sostenerla, caerse es lo esperado (sin red tampoco se sostiene de pie), así que la fila "sin política" de `evaluate_walk.py` no dice si la referencia sirve. Encontró dos errores, ya arreglados en `imitate.Motion`: suavizar la altura de la pelvis dejaba pies hundidos o en el aire, y los objetivos de los pies no coincidían con la pose. Queda uno: caderas y tobillos van 60 a 100 ms detrás de la referencia, y la observación la muestra solo 20 ms adelante.
   - [x] Entrenar con la referencia limpia y comparar con `walk-v2`: igual (0,93 s contra 0,9 s a los 5 M pasos). La red aprende a no caerse, pero los episodios se cortan porque se aleja del recorrido: no da los pasos para avanzar con la referencia.
   - [x] Sumar a la observación la referencia a 0,1 y 0,25 s (`obs_dim` 190) para que la red pueda anticiparse al retraso de los motores. Ayuda poco: 1,23 s contra 1,03 s a los 10 M pasos, y el robot sigue quedándose atrás (la referencia va 0,5 m adelante cuando se corta).
-  - Premiar que la pelvis avance a la velocidad de la referencia: hoy la recompensa no lo pide, y la de posición casi no da nada a 0,5 m.
+  - [x] Premiar que la pelvis avance a la velocidad de la referencia: igual (1,27 s). El robot avanza a 0,47 m/s cuando la referencia va a 0,78 y se tambalea 0,50 m/s de costado: es equilibrio al caminar.
+  - [~] Más práctica: 30 M pasos con todo lo anterior (`walk-long`).
   - Probar un movimiento en el lugar (jumping jacks, brazos), que no tiene recorrido del que alejarse.
   - Reproducir la referencia más lenta al principio y acelerarla a medida que aprende.
   - Probar con 2 a 3 s de un ciclo de paso en vez del clip entero.
   - Los empujones, recién cuando camine.
-- [ ] **ENT-2. Cualquier clip.** `ppo.py --task mimic --motion <ruta>`: `MimicEnv` carga el `RobotMotion` de cualquier ruta, no solo de `physics/motions/`. `walk` queda como alias.
+- [x] **ENT-2. Cualquier clip.** `ppo.py --task mimic --motion <ruta>`: `MimicEnv` carga el `RobotMotion` de cualquier ruta, no solo de `physics/motions/`. `walk` queda como alias.
 - [ ] **ENT-3. Empujones y mundos en la imitación.** Prender los empujones de `MimicEnv` (hoy apagados) y sortear un mundo por episodio. *Necesita:* ENT-1 y SIM-3.
 - [ ] **ENT-4. Un ONNX por checkpoint.** Exportar cada checkpoint al guardarlo (no solo al final), con `task`, `motion` y `worlds` en `policy.json`, y medir `followed_s` con la evaluación: es lo que la web muestra mientras entrena. *Necesita:* el contrato.
 - [ ] **ENT-5. Los datos.** `training/rollout.py`: la política final en N episodios por mundo, guardada con el formato del contrato. *Necesita:* ENT-3.
