@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/landing-walk
 sesion: 1f1978e0-2209-4fc7-979b-a03519566c81
 inicio: 2026-10-24 14:40
-estado: en curso
+estado: cerrada
 ---
 
 # Llevar a `main` la caminata de Capture sin patinar (parche de la nube)
@@ -17,6 +17,7 @@ Shippear desde la Mac los dos commits de [`2026-10-24-1300-juan-landing-caminata
 - **Sesión en la nube del 24/10 a las 14:05** (`sesion: 99c4d9f2-109e-5749-a184-767fa45de1bd`): aplicó y verificó el parche sobre `main` = `9120f7a` (`git am -3` limpio; `npm run check` de `physics/` en verde con `the foot on the floor slides 0.13 m/s (median; 0.35 without plantFeet), under 0.2`; `npx vite build` de `web/` pasa; `scripts/check-submission.sh` pasa; `#capture` fotografiado en Chromium sin cabeza con el pie plantado, la grilla y la línea naranja). No pudo hacer push: `git push` 403, porque la app de GitHub de Claude no está instalada en `platanus-hack` y la cuenta conectada a Claude solo lee el repo por la API.
 - En la Mac: worktree `../tridi-walk` en `juan/landing-walk` desde `origin/main` (`9120f7a`, sin cambios desde la verificación) y `git am -3` del parche: aplica limpio y los 7 archivos quedan con los mismos blobs que el parche (`index` de cada diff).
 - La bitácora de la nube queda con `estado: cerrada` (commit aparte).
+- Juan avisó en el grupo antes de shippear; se shippea con `scripts/ship.sh "feat(web): Capture's walk with planted feet, and the skeleton's path on the floor"` y se borran el worktree y la rama local.
 
 ## Qué funcionó
 
@@ -32,4 +33,5 @@ Shippear desde la Mac los dos commits de [`2026-10-24-1300-juan-landing-caminata
 
 ## Sigue
 
-- Juan avisa en el grupo; luego `scripts/ship.sh`, borrar el worktree y la rama, y avisar a Pastor (`physics/`) y César (`web/src/skeleton.js`).
+- Avisar a Pastor (`physics/`: `plantFeet` en `motion.js` e `index.js`, medido en `check-smooth.mjs`, contado en el README) y a César (`web/src/skeleton.js`: grilla más clara y cinta naranja del recorrido de las caderas).
+- Lo pendiente de la sesión en la nube sigue en su "Sigue" (`g1-stand` 40 M / 4 de 4 en la web y el pitch, pose al caer, cámara por QR).
