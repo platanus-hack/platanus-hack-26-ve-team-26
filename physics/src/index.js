@@ -11,7 +11,8 @@ import { RobotView } from './viewer.js';
 const STATS_WINDOW_S = 1;
 
 /**
- * @param canvas  a <canvas> sized by CSS; the view follows its size
+ * @param canvas  a <canvas> sized by CSS; the view follows its size. It can be moved between
+ *   elements (the WebGL context survives); while it is out of the page the robot pauses
  * @param options.onProgress  ({ done, total, bytes }) while MuJoCo and the robot download
  * @param options.onStats     ({ realtime, pelvisHeight, puppet }) once per second while playing;
  *   `puppet` is true while the robot copies a person (no dynamics, so `realtime` is 0)
@@ -42,6 +43,12 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     try {
       const wall = Math.max(0, (now - last) / 1000); // the first frame's timestamp can predate `last`
       last = now;
+      // A canvas outside the page (the web app keeps one robot and moves its canvas between
+      // screens) is neither simulated nor drawn: the robot waits where it was, at no GPU cost.
+      if (!canvas.isConnected) {
+        frameId = requestAnimationFrame(frame);
+        return;
+      }
       if (clip) {
         // Same clock as the web's skeleton (wall time x speed), so both stay in step.
         if (playing) clipTime = clip.loop ? (clipTime + wall * speed) % clip.duration : Math.min(clipTime + wall * speed, clip.duration);
