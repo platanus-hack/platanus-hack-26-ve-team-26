@@ -9,6 +9,7 @@ export { PoseFilter } from './oneeuro.js';
 export { drawSkeleton } from './draw.js';
 export { checkApi, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, sendClip, trainClip, uploadVideo, watchJob, watchTraining } from './upload.js';
+export { PHONE_SILENCE_S, closePhoneSession, createPhoneCapture, createPhoneSender, openPhoneSession, phonePageUrl } from './relay.js';
 
 // The WASM runtime and the models come from their official hosts, pinned to the package version
 // in package.json, so the web build does not have to copy them.
@@ -21,13 +22,15 @@ const MODEL_URL = (variant) =>
 const DEFAULT_MODEL = 'full';
 
 // 1280x720 is enough for a full body a few meters away; asking for more only slows the model.
-const CAMERA = { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' };
+const CAMERA = { width: { ideal: 1280 }, height: { ideal: 720 } };
 
 export class CameraError extends Error {}
 
 /**
  * @param video  a <video> element; the module puts the camera stream in it (muted, inline)
  * @param options.model       'full' (default) or 'lite'
+ * @param options.facingMode  'user' (default, the webcam or a phone's front camera) or
+ *   'environment' (a phone's back camera, to film someone else: the phone-as-camera page)
  * @param options.stream      a MediaStream to use instead of the camera (e.g. a video file's
  *   captureStream(), for tests and demos without a webcam)
  * @param options.smooth      true (default): every point goes through a causal One Euro filter
@@ -39,7 +42,7 @@ export class CameraError extends Error {}
  *   (hip-centered, MediaPipe axes), `visible` false when no body or too occluded; null if no body.
  * @returns { startRecording, stopRecording, isRecording, fps, stop }
  */
-export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, smooth = true, onProgress, onPose } = {}) {
+export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMode = 'user', stream, smooth = true, onProgress, onPose } = {}) {
   onProgress?.({ stage: 'model', done: false });
   const vision = await FilesetResolver.forVisionTasks(WASM_URL);
   const landmarker = await PoseLandmarker.createFromOptions(vision, {
@@ -51,7 +54,7 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, stream, 
 
   onProgress?.({ stage: 'camera', done: false });
   try {
-    stream ??= await navigator.mediaDevices.getUserMedia({ video: CAMERA, audio: false });
+    stream ??= await navigator.mediaDevices.getUserMedia({ video: { ...CAMERA, facingMode }, audio: false });
   } catch (e) {
     landmarker.close();
     const denied = e?.name === 'NotAllowedError' || e?.name === 'SecurityError';
