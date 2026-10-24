@@ -9,6 +9,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@fontsource-variable/nunito": "5.3.0",
+    "@fontsource-variable/quicksand": "5.3.0",
     "@mujoco/mujoco": "3.16.0",
     "three": "0.186.1",
     "tridi-physics": "file:../physics"

@@ -3,71 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f7fb" />
+    <meta name="description" content="Tridi: de video humano a un robot simulado que aprende a moverse solo." />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Ccircle cx=%2716%27 cy=%2716%27 r=%2714%27 fill=%27%23101b2d%27/%3E%3Ccircle cx=%2711%27 cy=%2714%27 r=%273%27 fill=%27%234c7cf3%27/%3E%3Ccircle cx=%2721%27 cy=%2714%27 r=%273%27 fill=%27%234c7cf3%27/%3E%3C/svg%3E" />
     <title>Tridi</title>
   </head>
   <body>
-    <header id="topbar">
-      <h1>Tridi</h1>
-      <p>De video humano a un robot simulado que aprende a moverse solo.</p>
-    </header>
-
-    <main id="stage" data-show="both">
-      <section class="pane" id="human-pane">
-        <canvas id="human"></canvas>
-        <p class="pane-label" id="human-label">Humano</p>
-      </section>
-      <section class="pane" id="robot-pane">
-        <canvas id="view"></canvas>
-        <div id="loading">
-          <div class="track"><div id="progress-bar"></div></div>
-          <p id="progress-text">Cargando MuJoCo y el robot…</p>
-        </div>
-        <p class="pane-label">Robot G1 · de pie, todavía sin política</p>
-      </section>
-      <div id="controls">
-        <select id="show" aria-label="Qué ver">
-          <option value="both" selected>Ambos</option>
-          <option value="human">Humano</option>
-          <option value="robot">Robot</option>
-        </select>
-        <button id="play">Pausa</button>
-        <select id="speed" aria-label="Velocidad">
-          <option value="0.25">x0,25</option>
-          <option value="0.5">x0,5</option>
-          <option value="1" selected>x1</option>
-        </select>
-        <button id="reset" class="secondary">Reiniciar</button>
-        <button id="push" class="secondary" disabled>Empujar</button>
-      </div>
-      <p id="stats"></p>
-    </main>
-
-    <aside id="panel">
-      <nav role="tablist">
-        <button role="tab" id="tab-capture" aria-controls="pane-capture">Capturar</button>
-        <button role="tab" id="tab-upload" aria-controls="pane-upload">Subir</button>
-        <button role="tab" id="tab-gallery" aria-controls="pane-gallery">Galería</button>
-      </nav>
-      <section role="tabpanel" id="pane-capture" aria-labelledby="tab-capture">
-        <h2>Cámara en vivo</h2>
-        <p>Muévete frente a la cámara y Tridi saca tu esqueleto 3D al instante.</p>
-        <button disabled>Encender cámara</button>
-        <p class="note">Próximamente.</p>
-      </section>
-      <section role="tabpanel" id="pane-upload" aria-labelledby="tab-upload">
-        <h2>Subir un video</h2>
-        <p>Un <code>.mp4</code> o un <code>.zip</code> de videos. Si hay varias personas, Tridi sigue a la más grande y central, y puedes elegir otra.</p>
-        <button disabled>Elegir archivo</button>
-        <p class="note">Próximamente.</p>
-      </section>
-      <section role="tabpanel" id="pane-gallery" aria-labelledby="tab-gallery">
-        <h2>Simulaciones</h2>
-        <p>Movimientos ya procesados y políticas ya entrenadas.</p>
-        <ul id="gallery"></ul>
-      </section>
-      <p id="phase" aria-live="polite"></p>
-    </aside>
-
+    <canvas id="scene" aria-hidden="true"></canvas>
+    <div id="app" tabindex="-1"></div>
+    <p id="app-loading" role="status">Cargando…</p>
     <script type="module" src="./src/main.js"></script>
   </body>
 </html>

@@ -3,11 +3,11 @@ import { fetchClip, preloaded } from './preloaded.js';
 
 function describe(clip) {
   const seconds = clip.frames.length / clip.fps;
-  return `${seconds.toFixed(1)} s · ${Math.round(clip.fps)} fps · ${Math.round(100 * clip.quality.valid_ratio)} % de frames detectados`;
+  return `${seconds.toFixed(0)} segundos · se ve el ${Math.round(100 * clip.quality.valid_ratio)} % del tiempo`;
 }
 
-export function mountGallery(stage) {
-  const list = document.getElementById('gallery');
+export function mountGallery(root, stage) {
+  const list = root.querySelector('#gallery');
   const cards = preloaded.map((item) => {
     const li = document.createElement('li');
     const button = document.createElement('button');

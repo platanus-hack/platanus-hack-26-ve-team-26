@@ -1,5 +1,5 @@
-// three.js view of a PoseClip: the human skeleton the robot learns from (W3.2). Same scene look
-// as physics/viewer.js so both panes read as one world.
+// three.js view of a PoseClip: the human skeleton the robot learns from (W3.2). Same scene
+// layout as physics/viewer.js, in the web app's light colors (SCENE_THEME, also passed to it).
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -18,8 +18,11 @@ const FOOT_JOINTS = [27, 28, 29, 30, 31, 32];
 const MIN_VISIBILITY = 0.5;
 const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next to a limb
 const JOINT_RADIUS = 0.03;
-const HUMAN_COLOR = 0xf5c542; // the app's accent: the human is yellow, the robot is gray
+const HUMAN_COLOR = 0x4c7cf3; // the app's accent: the human is blue, the robot is gray
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
+
+/** Light, cool scene colors shared by the skeleton and the robot (createSimView's `theme`). */
+export const SCENE_THEME = { background: 0xeef2f7, ground: 0xe4eaf2, gridMajor: 0xc3cfdf, gridMinor: 0xd6dee9 };
 
 export class SkeletonView {
   constructor(canvas) {
@@ -32,19 +35,19 @@ export class SkeletonView {
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
 
     const scene = (this.scene = new THREE.Scene());
-    scene.background = new THREE.Color(0x0e141b);
-    scene.fog = new THREE.Fog(0x0e141b, 8, 25);
-    scene.add(new THREE.HemisphereLight(0xcfe3ff, 0x1a2230, 1.6));
+    scene.background = new THREE.Color(SCENE_THEME.background);
+    scene.fog = new THREE.Fog(SCENE_THEME.background, 8, 25);
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d3e2, 2));
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(2, 4, 1.5);
     scene.add(sun);
 
     const ground = new THREE.Mesh(
       new THREE.PlaneGeometry(60, 60),
-      new THREE.MeshStandardMaterial({ color: 0x18212c, roughness: 0.95 }),
+      new THREE.MeshStandardMaterial({ color: SCENE_THEME.ground, roughness: 0.95 }),
     );
     ground.rotation.x = -Math.PI / 2;
-    const grid = new THREE.GridHelper(60, 120, 0x3a4a5c, 0x253140);
+    const grid = new THREE.GridHelper(60, 120, SCENE_THEME.gridMajor, SCENE_THEME.gridMinor);
     grid.position.y = 0.001;
     scene.add(ground, grid);
 
