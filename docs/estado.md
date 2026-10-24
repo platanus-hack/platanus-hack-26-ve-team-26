@@ -35,10 +35,10 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** web en el estilo claro, que abre con una intro de dos slides ([decisión](decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)): qué es Tridi, con una persona de puntos que camina, y elegir cómo empezar, con los robots de puntos. Cámara, Subir y Simulaciones funcionan. Un solo G1 para toda la web, cargado detrás de una pantalla de carga: listo en 6,6 s (antes 26 s) y al instante al volver a una pantalla ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
+- **Funciona:** web en estilo claro con un inicio de dos slides ([decisión](decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)): el pitch de Physical AI junto al G1 real, que pasa solo por los movimientos precargados y se deja empujar, con tres cifras medidas; y elegir cómo empezar. Cámara en vivo (el G1 copia con `mimic`), Subir (subida por partes, etapas, elegir persona) y Simulaciones (clip + política + escalera) funcionan. Un solo G1 para toda la web, listo en 6,6 s ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
 - **En curso:** —
-- **Bloqueado por:** nada. Conversar con Juan: la vuelta al estilo claro cambia su decisión de marca corporativa.
-- **Sigue:** Pastor pasa la raíz de Vercel a `web/`. Subir un video real con el servidor de Juan.
+- **Bloqueado por:** nada para WEB-1 del [plan](plan-producto.md). WEB-2 y WEB-3 esperan al servidor de entrenamiento (SRV-2, SRV-3) y a SIM-1 y SIM-3.
+- **Sigue:** WEB-1 (la cámara graba al encenderse y el clip va a la galería). Pastor pasa la raíz de Vercel a `web/`. Subir un video real con el servidor de Juan.
 
 ---
 
