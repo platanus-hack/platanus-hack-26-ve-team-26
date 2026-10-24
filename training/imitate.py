@@ -51,7 +51,12 @@ SMOOTH_S = 0.3
 # 0.1 s is 3 frames at 30 fps: it removes the jitter and keeps a swing (~0.4 s) intact.
 JOINT_SMOOTH_S = 0.1
 
-MIMIC_OBS_DIM = 93 + NU + 3 + 1
+# How far ahead the policy also sees the reference. Hips and ankles follow it 60 to 100 ms late
+# (diagnose_reference.py: soft position motors act like a slow filter), so seeing only the next
+# 20 ms leaves the policy no way to step in time. 0.1 s covers that lag; 0.25 s is half a step.
+LOOKAHEAD_S = (0.1, 0.25)
+
+MIMIC_OBS_DIM = 93 + NU + 3 + 1 + len(LOOKAHEAD_S) * (NU + 3)
 
 
 class Motion:
@@ -136,17 +141,28 @@ class MimicEnv(G1Env):
         - [93:122]  reference joint angles minus the standing pose
         - [122:125] reference pelvis velocity, in the pelvis frame (m/s)
         - [125]     reference pelvis height minus the current one (m)
+
+        and, for each instant in LOOKAHEAD_S (0.1 s, then 0.25 s), 32 more:
+
+        - 29: reference joint angles minus the standing pose
+        - 3:  reference pelvis position minus the current one, in the pelvis frame (m). It also tells
+              the policy how far it has drifted from the path, which ends the episode at 0.6 m.
         """
         q, root_vel, _, _ = self.motion.sample(self.t + CONTROL_DT)
         self.ref_next = q[7:]
         rot = np.zeros(9)
         mujoco.mju_quat2Mat(rot, self.data.qpos[3:7])
-        vel_body = rot.reshape(3, 3).T @ root_vel
+        to_body = rot.reshape(3, 3).T
+        ahead = []
+        for s in LOOKAHEAD_S:
+            q_ahead = self.motion.sample(self.t + s)[0]
+            ahead += [q_ahead[7:] - self.default, to_body @ (q_ahead[:3] - self.data.qpos[:3])]
         return np.concatenate([
             super().observe(),
             self.ref_next - self.default,
-            vel_body,
+            to_body @ root_vel,
             [q[2] - self.data.qpos[2]],
+            *ahead,
         ]).astype(np.float32)
 
     def apply(self, action: np.ndarray) -> np.ndarray:

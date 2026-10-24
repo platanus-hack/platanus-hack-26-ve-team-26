@@ -2,8 +2,8 @@
 
     uv run --project training python -m training.export training/runs/stand-v1/step_20000000.pt --id g1-stand
 
-The ONNX takes the raw 93-number observation of env.observe() and returns the 29 motor targets
-(MuJoCo ctrl) directly: normalization, the deterministic action, the 0.25 rad scale, the standing
+The ONNX takes the raw observation (93 numbers of env.observe() for standing, imitate.MIMIC_OBS_DIM
+of MimicEnv.observe() for walking) and returns the 29 motor targets (MuJoCo ctrl) directly: normalization, the deterministic action, the 0.25 rad scale, the standing
 offset and the motor ranges are all inside, so the browser only builds obs and writes ctrl.
 """
 
@@ -20,6 +20,7 @@ import torch
 from torch import nn
 
 from .env import ACTION_SCALE, MJCF, NU, OBS_DIM, G1Env
+from .imitate import LOOKAHEAD_S
 from .ppo import ActorCritic, obs_size
 
 OUT = Path(__file__).parent / "policies"
@@ -86,6 +87,8 @@ def export(checkpoint: Path, policy_id: str, out: Path, task: str = "stand") -> 
         "nu": NU,
         # Standing learns from pushes, not from people; walking from the clips it imitates.
         "trained_on": [m.id for m in env.motions] if walk else [],
+        # Imitation: how far ahead the observation shows the reference (imitate.MimicEnv.observe).
+        **({"lookahead_s": list(LOOKAHEAD_S)} if walk else {}),
         "steps": int(state["step"]),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
