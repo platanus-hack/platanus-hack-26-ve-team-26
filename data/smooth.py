@@ -8,8 +8,10 @@ height between frames). More points do not help (MediaPipe gives 33, fixed); fil
 Why Savitzky-Golay and not a moving average: it fits a polynomial to each window instead of
 averaging it, so it keeps the shape of fast but real motion (a heel strike, the turn at the top of
 a swing) while removing the frame-to-frame noise. A moving average of the same window would round
-those corners and shorten the step; the polynomial follows them. A planted foot (constant position)
-passes through unchanged, so contacts with the ground are not flattened nor made to slide.
+those corners and shorten the step; the polynomial follows them. A point at rest or moving at a
+steady speed passes through unchanged: the planted foot (which, in MediaPipe's hip-centered points,
+moves back at the walking speed) keeps its line, so the contacts the trajectory is built from are
+neither flattened nor made to slide.
 
 The camera (data/live) has no future frames, so it uses a causal One Euro filter instead.
 """
