@@ -2,11 +2,13 @@
 
 Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. Cada uno actualiza solo su sección, al cerrar una sesión o cuando algo cambia (para que dos personas no editen las mismas líneas). El detalle de cada sesión está en [`bitacora/`](bitacora).
 
-**Track:** 🧊 Three-Dimensional · **Idea:** por definir (Physical AI) · **Cierre de repos:** domingo 25, 08:30
+**Track:** 🧊 Three-Dimensional · **Idea:** Tridi: de video humano a un robot simulado que aprende a moverse solo ([decisión](decisiones/2026-10-23-idea-tridi.md)) · **Cierre de repos:** domingo 25, 08:30
 
 ---
 
-## Pastor: motor de física
+## Pastor: motor de física y render (`physics/`)
+
+Escena MuJoCo, modelo del robot, retargeting de `PoseClip` a `RobotMotion`, render three.js.
 
 - **Funciona:** —
 - **En curso:** —
@@ -15,16 +17,20 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 
 ---
 
-## Juan: datos (de dónde salen, qué hacemos con ellos y cómo se pintan)
+## Juan: extracción de datos (`data/`)
 
-- **Funciona:** flujo de ramas, commits y bitácora del equipo.
+Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` limpio.
+
+- **Funciona:** flujo de ramas, commits y bitácora del equipo. Idea, roles y contrato en borrador.
 - **En curso:** —
 - **Bloqueado por:** —
 - **Sigue:** —
 
 ---
 
-## César: por definir
+## César: experiencia de usuario de la simulación (`web/`)
+
+App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
 - **Funciona:** —
 - **En curso:** —
@@ -33,7 +39,9 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 
 ---
 
-## Ale: documentación, pitch y guion
+## Ale: estrategia, pitch y guion (`docs/`)
+
+Pitch, README, diferencia con lo que ya existe, video para el voto público.
 
 - **Funciona:** —
 - **En curso:** —
