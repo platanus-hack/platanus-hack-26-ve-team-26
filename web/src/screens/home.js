@@ -1,10 +1,11 @@
 // Home, in two slides. Slide 1 explains Tridi, with an intro: a person made of dots gathers out
-// of a cloud and walks, with live readouts on its joints. Scrolling scatters it and brings up
+// of a cloud and goes through activities that train a robot's mobility (dancing, boxing, guitar,
+// sewing), with live readouts on its joints. Scrolling scatters it and brings up
 // slide 2: three big choices, each with its dot robot, whose dots gather into the robot's face on
 // hover (or, on touch screens, in turns). Structure adapted from the team's design reference
 // (Tridi Design System, ui_kits/website/Intro.html), in the app's own light style.
 import { dancing, scrolling, watching } from '../dots/poses.js';
-import { createWalkingFigure } from '../dots/figure.js';
+import { ACTIVITIES, createWalkingFigure } from '../dots/figure.js';
 import { prefetch } from '../router.js';
 
 export const title = '';
@@ -14,21 +15,21 @@ const CHOICES = [
     route: 'en-vivo',
     variant: dancing,
     title: 'Entrena a Tridi en vivo',
-    text: 'Párate frente a la cámara y muévete. Tridi te imita al momento.',
+    text: 'Muévete frente a la cámara y Tridi te copia.',
     action: 'Usar la cámara',
   },
   {
     route: 'subir',
     variant: watching,
     title: 'Sube un video',
-    text: 'Elige un video de una persona moviéndose. Tridi aprende de ella.',
+    text: 'Un video de alguien moviéndose, y Tridi lo aprende.',
     action: 'Elegir un video',
   },
   {
     route: 'simulaciones',
     variant: scrolling,
     title: 'Ver simulaciones',
-    text: 'Mira lo que Tridi ya aprendió de otras personas.',
+    text: 'Mira lo que Tridi ya aprendió.',
     action: 'Ver ahora',
   },
 ];
@@ -70,33 +71,27 @@ export function mount(root, { dots, api }) {
   root.innerHTML = `
     <section class="slide intro" aria-labelledby="intro-title">
       <div class="intro-copy">
-        <p class="kicker">tri·di — «3D», dicho a nuestra manera</p>
         <h1 class="brand">Tridi</h1>
         <h2 id="intro-title">Del video de una persona al movimiento de un robot.</h2>
-        <p class="lead">Tridi mira un video de alguien moviéndose, calcula cómo se mueve su cuerpo en 3D y se lo enseña a un robot humanoide, que aprende a hacerlo en un mundo de física real.</p>
-        <p class="problem">Hoy, para enseñarle a un robot a moverse hacen falta estudios con trajes y cámaras, o una persona manejándolo durante meses. Pero el video de personas moviéndose ya existe.</p>
-        <ol class="intro-steps">
-          <li><strong>Video</strong><span>Cualquier video, aunque haya varias personas.</span></li>
-          <li><strong>Movimiento 3D</strong><span>El esqueleto de una persona, cuadro a cuadro.</span></li>
-          <li><strong>Robot</strong><span>Un robot que aprende ese movimiento sin caerse.</span></li>
-        </ol>
+        <p class="lead">Toma un video de alguien moviéndose, saca su movimiento en 3D y se lo enseña a un robot humanoide. Sin trajes ni estudios de captura.</p>
+        <p class="flow" aria-label="Cómo funciona"><span>Video</span><i>→</i><span>Movimiento 3D</span><i>→</i><span>Robot</span></p>
         <div class="row">
           <button class="primary next" type="button">Elegir cómo empezar ↓</button>
           <a class="button" href="#/en-vivo">Probar en vivo</a>
         </div>
       </div>
-      <div class="intro-figure" aria-hidden="true">
-        ${LABELS.map(({ joint, name }) => `<span class="joint-label" data-joint="${joint}">${name} <b></b></span>`).join('')}
+      <div class="intro-figure">
+        ${LABELS.map(({ joint, name }) => `<span class="joint-label" aria-hidden="true" data-joint="${joint}">${name} <b></b></span>`).join('')}
+        <div class="activities" aria-label="Lo que está aprendiendo">
+          <span class="activities-title">Aprendiendo</span>
+          ${ACTIVITIES.map(([name], i) => `<button type="button" data-activity="${i}">${name}</button>`).join('')}
+        </div>
       </div>
     </section>
 
     <section class="slide choose" id="elegir" aria-labelledby="choose-title">
-      <header class="choose-head">
-        <h2 id="choose-title">Elige cómo empezar</h2>
-        <p>Las tres usan el mismo robot y la misma física.</p>
-      </header>
+      <h2 id="choose-title" class="choose-title">Elige cómo empezar</h2>
       <nav class="choices" aria-label="¿Qué quieres hacer?"></nav>
-      <p class="hint">Acerca el mouse a un robot para saludarlo.</p>
     </section>`;
 
   const $ = (selector) => root.querySelector(selector);
@@ -104,12 +99,20 @@ export function mount(root, { dots, api }) {
 
   // Slide 1: the walking figure and its joint labels.
   let scatter = 0; // 0 on slide 1, 1 on slide 2 (from the scroll)
+  let shownActivity = -1;
+  const activityButtons = [...root.querySelectorAll('[data-activity]')];
+  for (const button of activityButtons) button.onclick = () => figure.setActivity(Number(button.dataset.activity));
   const figure = createWalkingFigure({ count: SMALL_SCREEN ? 2600 : 5200 });
   const labels = [...root.querySelectorAll('.joint-label')];
   const scene = dots.addScene($('.intro-figure'), {
     ...figure,
     update(t, dt, rect) {
       figure.update(t, dt, rect);
+      const playing = figure.activity();
+      if (playing !== shownActivity) {
+        shownActivity = playing;
+        activityButtons.forEach((button, i) => button.setAttribute('aria-pressed', String(i === playing)));
+      }
       // Labels come in once the person has formed, and leave as it scatters.
       const shown = figure.formed() ** 4 * Math.max(0, 1 - scatter * 3);
       for (const label of labels) {
@@ -181,7 +184,7 @@ export function mount(root, { dots, api }) {
     card.classList.add('unavailable');
     card.removeAttribute('href');
     card.setAttribute('aria-disabled', 'true');
-    card.querySelector('p').textContent = 'El equipo que procesa los videos está apagado. Mientras tanto, usa la cámara o mira las simulaciones.';
+    card.querySelector('p').textContent = 'El servidor de videos está apagado ahora.';
     card.querySelector('.action').textContent = 'No disponible ahora';
   });
 

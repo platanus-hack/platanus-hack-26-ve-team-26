@@ -6,7 +6,7 @@ inicio: 2026-10-24 03:07
 estado: en curso
 ---
 
-# Vuelta al estilo claro e intro de dos slides
+# Vuelta al estilo claro, intro de dos slides y figura con actividades
 
 ## Objetivo
 
@@ -20,14 +20,20 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - `screens/home.js`: dos slides con scroll-snap. Slide 1: qué es Tridi, el problema, los tres pasos y la figura con etiquetas vivas (cabeza, muñeca, rodilla). Slide 2: las tres tarjetas de antes, que suben al aparecer.
 - Pantalla de carga y textos del robot otra vez en el tono claro ("Despertando a Tridi…", "¡Hola!").
 - Decisión: [`../decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md`](../decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md). Plan: M10 en `web/TAREAS.md`.
+- Segunda vuelta (César ya habló con Juan): menos texto y mejor uso del espacio. La slide 1 quedó en título, una frase, el flujo Video → Movimiento 3D → Robot y los botones; la figura ocupa 7 de 12 columnas. La slide 2 quedó en el título y las tarjetas, con textos cortos.
+- La figura ya no camina: pasa por bailar, boxeo, guitarra y coser, actividades que estiran la movilidad de un robot. Un esqueleto con parámetros (`rig` en `dots/figure.js`: giro e inclinación del torso, ángulos de brazos y piernas, cabeza) pone el pie más bajo en el piso, así que las rodillas dobladas agachan y los muslos horizontales sientan. La guitarra son puntos que salen del torso cuando toca. Una fila bajo la figura marca la actividad y permite saltar a otra.
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- La fila de actividades se partía en dos líneas (con `left: 50%` su ancho quedaba limitado a la mitad) y tapaba los pies: `width: max-content` y la cámara mira un poco más abajo.
+- La guitarra se confundía con el torso; ahora sale más adelante y es más grande.
 
 - En celular, la slide 1 dejaba los botones fuera de la pantalla. Se compactó: los tres pasos en una fila solo con su nombre, y textos más chicos.
 - Las clases viejas `.intro-text` e `.intro-grid` de la hoja restaurada le daban estilo de tarjeta al texto de la slide; la slide usa `.intro-copy` y las viejas se borraron (ningún archivo las usaba).
@@ -39,5 +45,4 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 
 ## Sigue
 
-- César: hablar con Juan sobre el estilo.
 - Pastor: pasar la raíz de Vercel a `web/`.

@@ -69,8 +69,8 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 Pedido de César: volver al estilo claro de antes de M9 y abrir con una intro de dos slides ([decisión](../docs/decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)).
 
 - [x] **W10.1 Estilo claro.** Vuelven Quicksand y Nunito, los robots de puntos con cara, las tarjetas inclinables y el fondo de puntos. Las funciones nuevas (robot único, carga rápida, política) se quedan.
-- [x] **W10.2 Slide 1: qué es Tridi.** Texto, el problema y los tres pasos, con una persona de puntos que se arma, camina con etiquetas vivas en sus articulaciones y se dispersa al bajar (`web/src/dots/figure.js`). En celular la figura queda tenue detrás del texto y los botones entran sin scroll.
-- [x] **W10.3 Slide 2: elige cómo empezar.** Las tres tarjetas con sus robots de puntos; suben al aparecer la slide.
+- [x] **W10.2 Slide 1: qué es Tridi.** Título, una frase y el flujo Video → Movimiento 3D → Robot. La figura de puntos se arma y pasa por actividades que entrenan la movilidad de un robot: bailar, boxeo, guitarra y coser (5,5 s cada una; entre una y otra los puntos se sueltan y se vuelven a armar). Debajo, una fila muestra la actividad actual y permite saltar a otra (`web/src/dots/figure.js`). En celular la figura queda tenue detrás del texto y los botones entran sin scroll.
+- [x] **W10.3 Slide 2: elige cómo empezar.** Solo el título y las tres tarjetas con textos cortos; suben al aparecer la slide.
 
 ## M9. Marca corporativa (reemplazada por M10)
 
