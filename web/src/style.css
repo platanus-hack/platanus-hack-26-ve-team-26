@@ -10,7 +10,7 @@
   /* Color */
   --bg: #08090b;
   --bg-deep: #0f1112;
-  --scene: #0f1112; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
+  --scene: #2b3034; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
   --ink: #f1f3ee;
   --ink-soft: #a9ada4;
   --muted: #7d8279;

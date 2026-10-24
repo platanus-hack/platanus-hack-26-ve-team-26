@@ -46,8 +46,12 @@ const TRAIL_LIFT_M = 0.004; // just above the floor and the grid, so neither hid
 const TRAIL_OPACITY = 0.7;
 const TRAIL_WIDTH_M = 0.04; // a ribbon: a one-pixel line vanished in the landing's frame (~75 px per meter)
 
-/** Dark stage colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
-export const SCENE_THEME = { background: 0x0f1112, ground: 0x15181a, gridMajor: 0x353b3e, gridMinor: 0x202527 }; // --scene in style.css
+/**
+ * Stage colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene
+ * in style.css. A charcoal room, not black: at 0x0f1112 the En vivo pane read as a dark hole around
+ * the robot. Still dark enough for the lime skeleton and the white robot to stand out.
+ */
+export const SCENE_THEME = { background: 0x2b3034, ground: 0x363c40, gridMajor: 0x5b6368, gridMinor: 0x454c51 }; // --scene in style.css
 
 export class SkeletonView {
   constructor(canvas) {

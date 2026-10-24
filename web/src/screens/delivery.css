@@ -15,7 +15,7 @@ html.is-delivery body::before {
 
 .dl {
   --bg: #08090b;
-  --panel: #0f1112; /* the 3D scene's background (skeleton.js SCENE_THEME): the canvas blends in */
+  --panel: #2b3034; /* the 3D scene's background (skeleton.js SCENE_THEME): the canvas blends in */
   --bar: #000;
   --fg: #f1f3ee;
   --fg-2: #a9ada4;
