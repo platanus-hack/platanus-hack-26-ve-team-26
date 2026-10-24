@@ -116,4 +116,20 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 
 ## Simulaciones precargadas
 
-Carpeta pública con pares `PoseClip` + `Policy` ya hechos (por ejemplo "Pastor caminando"), que la web muestra mientras un video nuevo se procesa.
+Clips (y, cuando existan, políticas) ya hechos que la web muestra siempre, también mientras un video nuevo se procesa.
+
+- **La lista** está en `web/src/preloaded.json`, en el orden de la galería; la primera se reproduce al abrir la página:
+
+  ```jsonc
+  [
+    {
+      "clip": "clip_2026-10-23_caminar-perfil_01",   // id del PoseClip, igual al nombre del archivo sin .json
+      "title": "Caminar",                            // lo que dice la tarjeta
+      "credit": "Video: Mixkit 4855, …"              // de dónde salió el video
+    }
+  ]
+  ```
+
+- **Los archivos** se quedan donde los deja su dueño: `data/clips/*.json` (Juan) y `web/clips/*.json` (sintéticos para pruebas). La web los empaqueta al compilar; no se copian.
+- **Agregar uno:** dejar el `PoseClip` en `data/clips/` y sumar una entrada a la lista. Si la entrada nombra un clip que no existe, la web la salta y avisa en la consola.
+- **Políticas:** cuando `training/` tenga la primera, cada entrada suma `"policy"` con el id de su `policy.json`.
