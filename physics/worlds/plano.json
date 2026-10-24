@@ -1,0 +1,11 @@
+{
+  "id": "plano",
+  "name": "Piso plano",
+  "description": "El mundo de referencia: piso parejo y el robot tal como es.",
+  "scene": "scene_mjx.xml",
+  "friction": [1.0, 1.0],
+  "wind_newtons": [0, 0],
+  "mass_scale": [1.0, 1.0],
+  "motor_scale": [1.0, 1.0],
+  "push_newtons": [0, 300]
+}

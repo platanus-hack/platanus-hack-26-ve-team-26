@@ -143,8 +143,10 @@ export class RobotView {
         return new THREE.CylinderGeometry(a, a, 2 * b, 24).rotateX(Math.PI / 2);
       case T.mjGEOM_BOX.value:
         return new THREE.BoxGeometry(2 * a, 2 * b, 2 * c);
+      case T.mjGEOM_HFIELD.value:
+        return heightFieldGeometry(model, model.geom_dataid[g]);
       default:
-        return null; // planes are the ground drawn above; height fields are not used yet
+        return null; // planes are the ground drawn above
     }
   }
 
@@ -200,5 +202,27 @@ function meshGeometry(model, id) {
     new THREE.Float32BufferAttribute(model.mesh_vert.slice(3 * v0, 3 * (v0 + model.mesh_vertnum[id])), 3),
   );
   geometry.setIndex(new THREE.BufferAttribute(new Uint32Array(model.mesh_face.slice(3 * f0, 3 * (f0 + model.mesh_facenum[id]))), 1));
+  return geometry;
+}
+
+/**
+ * A height field (the stones world's terrain) as a surface in the geom's frame. MuJoCo stores
+ * the elevations row by row, the first row at -y (checked with mj_ray on the tallest stone);
+ * PlaneGeometry lists its rows from +y, hence the flip. A millimeter of lift keeps the flat cells
+ * from flickering against the ground drawn under them.
+ */
+function heightFieldGeometry(model, id) {
+  const nrow = model.hfield_nrow[id];
+  const ncol = model.hfield_ncol[id];
+  const [sx, sy, sz] = model.hfield_size.slice(4 * id, 4 * id + 3);
+  const start = model.hfield_adr[id];
+  const data = model.hfield_data;
+  const geometry = new THREE.PlaneGeometry(2 * sx, 2 * sy, ncol - 1, nrow - 1);
+  const position = geometry.getAttribute('position');
+  for (let q = 0; q < nrow; q++) {
+    const row = nrow - 1 - q;
+    for (let c = 0; c < ncol; c++) position.setZ(q * ncol + c, data[start + row * ncol + c] * sz + 0.001);
+  }
+  geometry.computeVertexNormals();
   return geometry;
 }

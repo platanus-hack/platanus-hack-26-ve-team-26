@@ -34,6 +34,19 @@ function removeTree(fs, path) {
   fs.rmdir(path);
 }
 
+// The model values a world scales (applyWorld), copied once per load.
+function snapshot(model) {
+  const column = (field, stride, at) => Float64Array.from({ length: model.nu }, (_, a) => model[field][stride * a + at]);
+  return {
+    bodyMass: Float64Array.from(model.body_mass),
+    bodyInertia: Float64Array.from(model.body_inertia),
+    gain: column('actuator_gainprm', 10, 0), // kp
+    biasKp: column('actuator_biasprm', 10, 1), // -kp
+    biasKv: column('actuator_biasprm', 10, 2), // -kv
+    torqueLimit: Float64Array.from(model.jnt_actfrcrange),
+  };
+}
+
 export class Simulation {
   /**
    * @param mujoco  module returned by the @mujoco/mujoco loader
@@ -64,7 +77,45 @@ export class Simulation {
     this.keyId = this.id('KEY', keyName);
     this.pushBodyId = this.id('BODY', PUSH_BODY);
     this.policy = null;
+    this.defaults = snapshot(model); // what applyWorld scales from, so worlds never compound
+    this.wind = [0, 0];
     this.reset();
+  }
+
+  /**
+   * Puts the robot in a world (physics/worlds/*.json), with one value per parameter: training
+   * draws them from each range, the web shows the middle. Always starts from the model's own
+   * values, so applying worlds one after another does not compound.
+   * @param {{ friction: number, mass_scale: number, motor_scale: number, wind_newtons: number,
+   *   wind_angle?: number }} world  wind_angle in radians about the vertical, 0 = the robot's front
+   */
+  applyWorld({ friction, mass_scale, motor_scale, wind_newtons, wind_angle = Math.PI / 2 }) {
+    const { mujoco, model, data, defaults } = this;
+    // Floor grip: the contact pairs with the floor (and the stones) carry their own friction,
+    // which overrides the geoms'. Sliding friction in both tangent directions.
+    const ground = new Set(['floor', 'stones'].map((name) => mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM.value, name)).filter((id) => id >= 0));
+    for (let p = 0; p < model.npair; p++) {
+      if (!ground.has(model.pair_geom1[p]) && !ground.has(model.pair_geom2[p])) continue;
+      model.pair_friction[5 * p] = friction;
+      model.pair_friction[5 * p + 1] = friction;
+    }
+    // Heavier or lighter robot: every body's mass and inertia, then MuJoCo's derived constants.
+    for (let b = 0; b < model.nbody; b++) {
+      model.body_mass[b] = defaults.bodyMass[b] * mass_scale;
+      for (let k = 0; k < 3; k++) model.body_inertia[3 * b + k] = defaults.bodyInertia[3 * b + k] * mass_scale;
+    }
+    // Stronger or weaker motors: each position actuator's stiffness and damping (kp, kv) and each
+    // joint's torque limit.
+    for (let a = 0; a < model.nu; a++) {
+      model.actuator_gainprm[10 * a] = defaults.gain[a] * motor_scale;
+      model.actuator_biasprm[10 * a + 1] = defaults.biasKp[a] * motor_scale;
+      model.actuator_biasprm[10 * a + 2] = defaults.biasKv[a] * motor_scale;
+    }
+    for (let k = 0; k < defaults.torqueLimit.length; k++) model.jnt_actfrcrange[k] = defaults.torqueLimit[k] * motor_scale;
+    mujoco.mj_setConst(model, data);
+    // Wind: a steady sideways force on the torso, added to any push.
+    this.wind = [wind_newtons * Math.cos(wind_angle), wind_newtons * Math.sin(wind_angle)];
+    this.endPush();
   }
 
   // A new MjModel from `sceneFile`, owned by the caller (delete() it). Not the one simulated.
@@ -161,14 +212,19 @@ export class Simulation {
   push(angle = Math.random() * 2 * Math.PI, newtons = PUSH_NEWTONS) {
     const force = this.data.xfrc_applied; // [nbody, 6]: force xyz, torque xyz
     const i = 6 * this.pushBodyId;
-    force[i] = newtons * Math.cos(angle);
-    force[i + 1] = newtons * Math.sin(angle);
+    force[i] = (this.wind?.[0] ?? 0) + newtons * Math.cos(angle);
+    force[i + 1] = (this.wind?.[1] ?? 0) + newtons * Math.sin(angle);
     force[i + 2] = 0;
     this.pushUntil = this.data.time + PUSH_SECONDS;
   }
 
+  // Ends a push; the world's wind (if any) keeps blowing on the torso.
   endPush() {
-    this.data.xfrc_applied.fill(0);
+    const force = this.data.xfrc_applied;
+    force.fill(0);
+    const i = 6 * this.pushBodyId;
+    force[i] = this.wind?.[0] ?? 0;
+    force[i + 1] = this.wind?.[1] ?? 0;
     this.pushUntil = 0;
   }
 

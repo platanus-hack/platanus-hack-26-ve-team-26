@@ -1,0 +1,11 @@
+{
+  "id": "piedras",
+  "name": "Piedras",
+  "description": "Piedras bajas de hasta 3 cm en el piso: el pie cae inclinado.",
+  "scene": "scene_mjx_stones.xml",
+  "friction": [0.8, 1.2],
+  "wind_newtons": [0, 0],
+  "mass_scale": [0.95, 1.05],
+  "motor_scale": [0.9, 1.1],
+  "push_newtons": [0, 300]
+}

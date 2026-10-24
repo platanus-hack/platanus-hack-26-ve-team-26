@@ -1,0 +1,11 @@
+{
+  "id": "resbaloso",
+  "name": "Piso resbaloso",
+  "description": "Poco agarre, como un piso mojado o encerado.",
+  "scene": "scene_mjx.xml",
+  "friction": [0.25, 0.45],
+  "wind_newtons": [0, 0],
+  "mass_scale": [0.95, 1.05],
+  "motor_scale": [0.9, 1.1],
+  "push_newtons": [0, 200]
+}

@@ -8,9 +8,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs",
+    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs && node scripts/check-worlds.mjs",
     "retarget": "node scripts/retarget-clip.mjs",
-    "make-kinematic-model": "node scripts/make-kinematic-model.mjs"
+    "make-kinematic-model": "node scripts/make-kinematic-model.mjs",
+    "make-stones-scene": "node scripts/make-stones-scene.mjs"
   },
   "dependencies": {
     "@mujoco/mujoco": "3.16.0",

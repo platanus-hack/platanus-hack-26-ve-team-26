@@ -6,6 +6,11 @@ import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { RobotView } from './viewer.js';
+import { middleValues, WORLD_ORDER } from './worlds.js';
+
+// physics/worlds/*.json, in display order.
+const WORLD_FILES = import.meta.glob('../worlds/*.json', { eager: true, import: 'default' });
+export const WORLDS = Object.values(WORLD_FILES).sort((a, b) => WORLD_ORDER.indexOf(a.id) - WORLD_ORDER.indexOf(b.id));
 
 // The real-time ratio passed to onStats is averaged over this window so it reads steadily.
 const STATS_WINDOW_S = 1;
@@ -94,8 +99,14 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     sim.policy?.dispose();
     clip = null;
     sim.load(sceneFile, keyName);
+    if (world) sim.applyWorld(middleValues(world)); // a new model starts from its own values
     view.rebuild();
   }
+
+  // The world the robot is in (physics/worlds), null for the plain scene; and the last policy's
+  // bytes and metadata, so changing to a world with another scene can bring the policy back.
+  let world = null;
+  let lastPolicy = null;
 
   // Ends a clip or a camera copy and returns to the physical robot, standing.
   function stop() {
@@ -161,7 +172,9 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     async loadPolicy(onnx, meta) {
       const bytes = typeof onnx === 'string' ? new Uint8Array(await (await fetch(onnx)).arrayBuffer()) : new Uint8Array(onnx);
       if (typeof meta === 'string') meta = await (await fetch(meta)).json();
-      const sceneFile = meta.mjcf.slice(meta.mjcf.indexOf('/') + 1); // 'unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'
+      // The policy's scene ('unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'), or the current world's
+      // version of it (the same robot, another floor).
+      const sceneFile = world?.scene ?? meta.mjcf.slice(meta.mjcf.indexOf('/') + 1);
       const { loadOrt } = await import('./ort.js');
       const ort = await loadOrt();
       const previous = { sceneFile: sim.sceneFile, keyName: sim.keyName };
@@ -171,6 +184,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
         const policy = await createPolicy(ort, sim, bytes, meta);
         sim.policy?.dispose();
         sim.policy = policy;
+        lastPolicy = { bytes, meta };
         sim.reset();
       } catch (error) {
         if (sim.sceneFile !== previous.sceneFile) swapScene(previous.sceneFile, previous.keyName);
@@ -178,7 +192,32 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       }
     },
     /** Takes the policy off and goes back to the stiff standing hold. */
-    clearPolicy: () => swapScene('scene.xml', 'stand'),
+    clearPolicy: () => {
+      world = null;
+      lastPolicy = null;
+      swapScene('scene.xml', 'stand');
+    },
+    /**
+     * Puts the robot in a world from physics/worlds (an entry of WORLDS): floor, grip, wind,
+     * mass and motor strength, with the middle of each training range. A world on another scene
+     * (the stones) reloads the model and brings the policy back. Ends a clip or a camera copy.
+     */
+    async setWorld(next) {
+      world = next;
+      if (sim.sceneFile !== next.scene) {
+        swapScene(next.scene, 'home');
+        if (lastPolicy) {
+          const { loadOrt } = await import('./ort.js');
+          sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta);
+        }
+      } else {
+        stop();
+        sim.applyWorld(middleValues(next));
+      }
+      sim.reset();
+    },
+    /** The world the robot is in, or null. */
+    world: () => world,
     /**
      * Makes the G1 copy a person, one camera frame at a time. Pass what createLiveCapture's
      * onPose gives. A null pose or one too occluded keeps the last pose. reset() ends it.
