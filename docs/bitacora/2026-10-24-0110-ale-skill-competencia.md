@@ -36,6 +36,17 @@ Que el estudio de los otros equipos no dependa de que alguien se acuerde de pedi
 - Nuestras notas, sin maquillar: técnico 22/25 y ejecución 17/20 lo mejor; **impacto 12/20 y originalidad 10/15** lo peor. El impacto es el flanco por donde nos pasan cuatro equipos.
 - El skill y la pasada automática repuntúan en cada ronda, mirando también nuestro propio repo y deploy antes de ponernos nota.
 
+## Shipeado y verificado (11:50)
+
+Los 9 commits que tenía `ale/pitch` llegaron a `main` en `ca68a11`. Antes y después se comprobó que no tocaran nada ajeno:
+
+- **Los 16 archivos del ship son `docs/` (15) y el skill (1).** Cero archivos de `physics/`, `data/`, `web/` o `training/`: nada de Pastor, Juan ni César entró en el merge.
+- **`docs/estado.md` solo cambió dentro de la sección de Ale.** Las secciones de los otros tres quedaron intactas.
+- **`scripts/check-submission.sh` pasa en main** (exit 0): los archivos de entrega siguen válidos y no hay riesgo de "Submission Invalid".
+- **`npm run check` pasa en main**: física, retargeting, políticas, `check-worlds` y `check-scenes` en verde (el robot aguanta 2 s de pie en los tres lugares, los objetos sueltos reposan a 0,0 cm del piso, y chocando contra una caja de 2 kg la mueve 81 cm).
+- **El deploy responde 200 en 0,64 s** y el espejo quedó igual a main.
+- Se verificó además que **no se filtró nada del estudio de competencia** al repo público: cero menciones a equipos rivales o a los archivos de puntuación en `docs/pitch/`.
+
 ## Decisiones
 
 - **El skill nombra la rutina pero no el contenido.** Este repo es público: el skill dice que la pasada existe y cómo correrla; las fichas de los rivales y las recomendaciones de pitch se quedan en platanus-ideas. Ale lo pidió explícitamente sabiendo que el skill se publica.
