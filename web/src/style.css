@@ -956,6 +956,11 @@ select:disabled {
   font-weight: 700;
 }
 
+.live-debug {
+  margin: 0;
+  font: 12px var(--mono);
+  color: var(--muted);
+}
 .live-warning {
   margin: 0;
   padding: 8px 16px;

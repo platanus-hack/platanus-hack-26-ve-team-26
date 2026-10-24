@@ -40,6 +40,21 @@ const LOCAL_API = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/;
 // hero uses the same 0.5 s.
 const FOLLOW_S = 0.5;
 
+// "?debug" in the address (tridi-alpha.vercel.app/?debug#/en-vivo) shows, once a second, how far the robot is from the person and
+// what it added that the person did not do (physics/ mimic's `fixes`): to tell a misread from a
+// fix while testing arms in front of a real camera (docs/investigacion/2026-10-24-brazos-humanos-en-vivo.md).
+const DEBUG = new URLSearchParams(location.search).has('debug');
+// The fixes in Spanish, as the readout says them.
+const FIX_NAMES = {
+  'mirrored arm': 'brazo oculto espejado',
+  legs: 'piernas abiertas',
+  'left arm': 'brazo izq. abierto',
+  'right arm': 'brazo der. abierto',
+  'left arm on chest': 'brazo izq. frente al pecho',
+  'right arm on chest': 'brazo der. frente al pecho',
+  hands: 'manos separadas',
+};
+
 const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 export function mount(root, { api }) {
@@ -87,6 +102,7 @@ export function mount(root, { api }) {
         <p class="live-status" aria-live="polite"></p>
         <p class="live-warning" hidden></p>
         <p class="phone-note" hidden></p>
+        <p class="live-debug" ${DEBUG ? '' : 'hidden'}></p>
       </div>
     </section>`;
 
@@ -184,11 +200,17 @@ export function mount(root, { api }) {
     const { width, height } = isPhone() ? live.size() : { width: video.videoWidth, height: video.videoHeight };
     if (overlay.width !== width || overlay.height !== height) [overlay.width, overlay.height] = [width, height];
     drawSkeleton(ctx, pose?.landmarks, pose?.visible);
-    robot.view?.mimic(pose);
+    const copied = robot.view?.mimic(pose);
 
     const now = performance.now();
     if (now - lastReport < 1000) return; // words change once a second, not every frame
     lastReport = now;
+    if (DEBUG && copied) {
+      const fixes = (copied.fixes ?? []).map((f) => FIX_NAMES[f] ?? f).join(', ') || 'ninguno';
+      $('.live-debug').textContent = copied.tracked
+        ? `Distancia al cuerpo: ${(100 * copied.residual).toFixed(1)} cm · arreglos: ${fixes}`
+        : 'Sin seguimiento';
+    }
     const phone = isPhone();
     if (!robot.view) say('El robot todavía está cargando; ya te va a copiar.');
     else if (!pose) say(phone ? 'El teléfono no ve a nadie. Que se vea al menos de la cintura para arriba.' : 'No te veo. Que se vea al menos de la cintura para arriba.');
