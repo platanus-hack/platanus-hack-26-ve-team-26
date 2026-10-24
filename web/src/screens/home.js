@@ -82,7 +82,7 @@ const narrowShot = (shot) => ({ ...shot, shift: 0, dist: shot.dist * 1.6, aim: s
 const num = (value, digits = 2) => value.toFixed(digits).replace('.', ',');
 const steps = (n) => Math.round(n).toLocaleString('es');
 
-export function mount(root, { api }) {
+export function mount(root) {
   document.documentElement.classList.add('is-landing');
   root.innerHTML = `
   <div class="landing">
@@ -220,18 +220,12 @@ export function mount(root, { api }) {
             <span class="try-sub only-narrow">Muévete y el robot te copia</span>
             <span class="try-go">Abrir la cámara →</span>
           </a>
-          <a class="try" href="#/subir" data-warm="subir" data-route="subir">
+          <div class="try unavailable" aria-disabled="true">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="26" rx="3"/><path d="M24 31V17M18 22l6-6 6 6"/><path d="M14 40h20"/></svg>
             <b><span class="only-wide">Sube un video de una persona</span><span class="only-narrow">Subir un video</span></b>
-            <span class="try-sub only-narrow">Hasta 30 s · solo guardamos el movimiento</span>
-            <span class="try-go">Subir un video →</span>
-          </a>
-          <a class="try" href="#/simulaciones" data-warm="simulaciones">
-            <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="15" cy="11" r="4"/><path d="M15 15v12M9 20h12M15 27l-4 10M15 27l4 10"/><rect x="28" y="7" width="10" height="8" rx="2"/><path d="M33 15v12M27 19h12M33 27l-3 10M33 27l3 10"/></svg>
-            <b><span class="only-wide">Persona y robot, lado a lado</span><span class="only-narrow">Laboratorio</span></b>
-            <span class="try-sub only-narrow">Persona y robot, lado a lado</span>
-            <span class="try-go">Ver el laboratorio →</span>
-          </a>
+            <span class="try-sub only-narrow">Próximamente</span>
+            <span class="try-go">Próximamente</span>
+          </div>
           <a class="try" href="#/entrega" data-warm="entrega">
             <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="8" y="16" width="32" height="24" rx="2"/><path d="M8 24h32M24 6v14M18 14l6 6 6-6"/></svg>
             <b><span class="only-wide">La política y los datos que entregamos</span><span class="only-narrow">La entrega</span></b>
@@ -938,15 +932,6 @@ export function mount(root, { api }) {
     rootMargin: `-${Math.round(topbar.getBoundingClientRect().bottom)}px 0px 0px 0px`, // the bar floats below the top
   });
   barObserver.observe($('.hero'));
-
-  api.checked.then((ok) => {
-    if (ok || gone) return;
-    const card = $('[data-route="subir"]');
-    // Still a link: the upload screen explains it and can try the server again.
-    card.classList.add('unavailable');
-    card.querySelector('.try-go').textContent = 'Servidor apagado · ver por qué →';
-    card.querySelector('.try-sub').textContent = 'El servidor de videos está apagado';
-  });
 
   return () => {
     gone = true;

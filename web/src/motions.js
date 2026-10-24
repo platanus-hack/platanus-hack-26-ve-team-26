@@ -1,6 +1,5 @@
 // RobotMotions of the preloaded clips, already computed (physics/motions, `npm run retarget`
-// there): the robot starts moving at once instead of waiting seconds for the retargeting. Any
-// other clip (the synthetic one, an uploaded video) is computed in the browser by stage.js.
+// there): the robot starts moving at once instead of waiting seconds for the retargeting.
 const URLS = import.meta.glob('../../physics/motions/*.json', { query: '?url', import: 'default', eager: true });
 const urlById = new Map(Object.entries(URLS).map(([path, url]) => [path.split('/').pop().replace(/\.json$/, ''), url]));
 

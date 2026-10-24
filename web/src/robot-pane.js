@@ -1,4 +1,4 @@
-// A pane showing the app's one G1 (robot-host.js), shared by the simulations and live screens.
+// A pane showing the app's one G1 (robot-host.js), used by the live screen.
 // While the robot is still loading, the brand's loader (loader.js) turns in its place with a
 // progress bar; "Empujar" floats over the pane so it is always on screen without scrolling (the
 // pitch's key moment), and draws the push's arrow in the scene, as the landing does.

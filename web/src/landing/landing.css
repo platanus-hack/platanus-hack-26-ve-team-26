@@ -1075,12 +1075,12 @@ html.is-landing.lenis body {
 
 .tries {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 12px;
   margin-top: 12px;
 }
 
-/* The four ways to try it (and see what it delivers): real cards, each with its own icon, a short detail and a button, so
+/* The ways to try it (and see what it delivers): real cards, each with its own icon, a short detail and a button, so
    they read as different and clickable. */
 .try {
   display: grid;
@@ -1146,6 +1146,13 @@ html.is-landing.lenis body {
   border-color: var(--line-dark);
 }
 
+/* Not a link yet (uploading a video, coming soon): its label stays quiet on hover. */
+.try.unavailable .try-go {
+  border-color: var(--line-dark);
+  background: none;
+  color: var(--muted);
+}
+
 
 .footer {
   display: grid;
@@ -1205,10 +1212,6 @@ html.is-landing.lenis body {
 
   .topbar .btn {
     margin-left: auto;
-  }
-
-  .tries {
-    grid-template-columns: repeat(2, 1fr); /* four cards in a row are too narrow to read under 1000 px */
   }
 }
 
@@ -1548,7 +1551,7 @@ html.is-landing.lenis body {
   }
 
   .try.unavailable .try-go::after {
-    content: '!';
+    content: '';
   }
 
   /* Where we are: three short lines down a vertical track. */

@@ -1,4 +1,4 @@
-// Preloaded simulations for the gallery (W2). The list lives in preloaded.json and names
+// Preloaded clips (the landing's walk, and the upload screen's own). The list lives in preloaded.json and names
 // clips by id; the clip files stay where their owner keeps them, and Vite bundles them.
 import list from './preloaded.json';
 

@@ -1,13 +1,12 @@
-// Hash routes (#/, #/en-vivo, #/subir, #/simulaciones, #/simulaciones/<clip id>, #/entrega,
-// #/entrega/<clip id>, #/camara/<session id>): they work on any static host, with no server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
+// Hash routes (#/, #/en-vivo, #/entrega, #/entrega/<clip id>, #/camara/<session id>): they work on any static host, with no server rewrites. Every screen but home is a separate chunk loaded on first visit, so the menu
 // does not wait for MuJoCo, the robot or MediaPipe.
 import * as home from './screens/home.js';
 
 const ROUTES = {
   '': async () => home,
   'en-vivo': () => import('./screens/live.js'),
-  subir: () => import('./screens/upload.js'),
-  simulaciones: () => import('./screens/simulations.js'),
+  // Uploading a video is off for now (the home card says "Próximamente"); screens/upload.js is
+  // kept to bring it back: subir: () => import('./screens/upload.js').
   entrega: () => import('./screens/delivery.js'),
   camara: () => import('./screens/phone.js'), // the phone as the live camera, opened from the QR on #/en-vivo
 };
