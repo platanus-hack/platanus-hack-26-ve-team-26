@@ -13,6 +13,7 @@
 // it: the robot then does the clip itself, with physics, from its first pose, and the skeleton
 // follows the robot's clock (view.clipTime) instead of the other way around.
 import { SCENES, WORLDS } from 'tridi-physics';
+
 import { savedMotion } from './motions.js';
 import { FINAL_LEVEL, IMITATIONS, imitationOf, levelLabel, policyUrls } from './policies.js';
 import { mountRobotPane } from './robot-pane.js';
@@ -146,6 +147,7 @@ export function mountStage(root, dots) {
       root.querySelector('.push').disabled = false;
     }
     copying = false;
+    syncSliders(); // the new world's own values
     if (motion && !imitating()) startMotion();
     else setRobotLabel();
   }
@@ -183,6 +185,35 @@ export function mountStage(root, dots) {
   $('show').onchange = (event) => ($('stage').dataset.show = event.target.value);
   $('policy').onchange = (event) => loadLevel(event.target.value);
   $('world').onchange = (event) => setWorld(event.target.value);
+
+  // Conditions by hand: each slider sets one value at once (view.setConditions), over the world.
+  const sliders = [...root.querySelectorAll('input[data-condition]')];
+  const decimal = (value, digits) => value.toFixed(digits).replace('.', ',');
+  const showValue = (key, value) => {
+    const out = root.querySelector(`output[data-condition="${key}"]`);
+    if (key === 'friction') out.textContent = decimal(value, 2);
+    // The force comes from physics/ (view.conditions), so the drag formula lives in one place.
+    else if (key === 'wind_mps') out.textContent = value ? `${decimal(value, 0)} m/s · ${decimal(robot.view?.conditions().wind_newtons ?? 0, 0)} N` : 'sin viento';
+    else out.textContent = `×${decimal(value, 2)}`;
+  };
+  function syncSliders() {
+    const view = robot.view;
+    if (!view) return;
+    const current = view.conditions();
+    for (const slider of sliders) {
+      slider.value = current[slider.dataset.condition];
+      slider.disabled = false;
+      showValue(slider.dataset.condition, Number(slider.value));
+    }
+  }
+  for (const slider of sliders) {
+    slider.oninput = () => {
+      const value = Number(slider.value);
+      robot.view?.setConditions({ [slider.dataset.condition]: value });
+      showValue(slider.dataset.condition, value);
+    };
+  }
+  robot.ready.then(syncSliders);
   $('place').onchange = (event) => setPlace(event.target.value);
   $('play').onclick = () => {
     playing = !playing;
