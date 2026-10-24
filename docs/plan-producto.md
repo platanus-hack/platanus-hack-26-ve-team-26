@@ -1,6 +1,6 @@
 # Plan técnico del producto
 
-- **Fecha:** 2026-10-24 · **Quién:** Pastor · **Estado:** propuesta; falta que la acepte el equipo.
+- **Fecha:** 2026-10-24 · **Quién:** Pastor · **Estado:** propuesta; falta que la acepte el equipo. **Actualizado:** sábado 24, 10:00, con `walk-v4`, `jacks-v2` y lo que falta.
 
 Cómo se construye lo que promete el [pitch del producto](pitch/pitch-producto.md): el flujo completo, dónde corre cada parte, qué cambia en el contrato, qué falta construir en cada área y en qué orden, hasta el cierre del domingo a las 08:30. No asigna personas: el reparto lo decide el equipo.
 
@@ -23,10 +23,10 @@ flowchart LR
 | 1. Captura | La cámara graba desde que se enciende (hasta 30 s), o se sube un MP4 o un `.zip` (60 MB, 30 s por video) | Navegador (cámara) y Mac del servidor (videos) | Subida ✅. La cámara muestra la pose pero no graba |
 | 2. Esqueleto | `PoseClip`: elige a la persona y saca sus 33 puntos 3D por cuadro | Navegador (MediaPipe) o Mac del servidor (YOLO + ByteTrack + MediaPipe) | ✅ |
 | 3. Retargeting | `RobotMotion`: ángulos del G1 y recorrido de la pelvis por cuadro | Node en la Mac del servidor (para entrenar) y navegador (vista previa) | ✅ |
-| 4. Entrenamiento | PPO con la recompensa de imitación (DeepMimic). Empujones y mundos al azar en cada episodio. Cada checkpoint se exporta a ONNX | Mac del servidor, CPU | `MimicEnv` existe y acepta cualquier clip; todavía no aprende |
-| 5. Datos | Corre la política final en muchos mundos y guarda lo que hizo el robot | Mac del servidor | Por hacer |
-| 6. Mostrar | MuJoCo WASM + onnxruntime-web: el robot sigue el movimiento con sus motores; se lo puede empujar y cambiar de mundo | Navegador | Solo la política de pie |
-| 7. Entregar | Descargar la política y los datos | Servidor y web | Por hacer |
+| 4. Entrenamiento | PPO con la recompensa de imitación (DeepMimic). Empujones y mundos al azar en cada episodio. Cada checkpoint se exporta a ONNX | Mac del servidor, CPU | Cadena completa y probada (SRV-2). La caminata sigue 3,5 s de 11,8 (`walk-v4`) y los jumping jacks 1,3 s de 5,2 (`jacks-v2`). Solo en piso plano |
+| 5. Datos | Corre la política final en muchos mundos y guarda lo que hizo el robot | Mac del servidor | ✅ `training/rollout.py`, en los 4 mundos; vale cuando la política haga el clip |
+| 6. Mostrar | MuJoCo WASM + onnxruntime-web: el robot sigue el movimiento con sus motores; se lo puede empujar y cambiar de mundo | Navegador | ✅ Políticas de pie y de imitación (`g1-walk` en Simulaciones) |
+| 7. Entregar | Descargar la política y los datos | Servidor y web | El servidor sirve políticas y datos (SRV-3); la web no tiene los botones (WEB-3) |
 
 Entrenar un video toma decenas de minutos. Mientras tanto la web muestra las simulaciones precargadas y, a medida que salen, los checkpoints del robot del usuario: se lo ve mejorar.
 
@@ -81,14 +81,17 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
   - [x] Entrenar con la referencia limpia y comparar con `walk-v2`: igual (0,93 s contra 0,9 s a los 5 M pasos). La red aprende a no caerse, pero los episodios se cortan porque se aleja del recorrido: no da los pasos para avanzar con la referencia.
   - [x] Sumar a la observación la referencia a 0,1 y 0,25 s (`obs_dim` 190) para que la red pueda anticiparse al retraso de los motores. Ayuda poco: 1,23 s contra 1,03 s a los 10 M pasos, y el robot sigue quedándose atrás (la referencia va 0,5 m adelante cuando se corta).
   - [x] Premiar que la pelvis avance a la velocidad de la referencia: igual (1,27 s). El robot avanza a 0,47 m/s cuando la referencia va a 0,78 y se tambalea 0,50 m/s de costado: es equilibrio al caminar.
-  - [~] Más práctica: 30 M pasos con todo lo anterior (`walk-long`).
-  - Probar un movimiento en el lugar (jumping jacks, brazos), que no tiene recorrido del que alejarse.
+  - [x] Más práctica: 30 M pasos con todo lo anterior (`walk-long`): episodios de 1,69 s desde instantes al azar.
+  - [x] Referencias nuevas (sin piernas cruzadas, torso más quieto) y 20 M pasos más desde `walk-long` (`walk-v4`, 34 min): desde el inicio del clip sigue **3,5 s de 11,8** (antes 1,4 s); desde instantes al azar, 2,56 s de media (antes 0,83), y 8 de 40 episodios llegan al final. Es `training/policies/g1-walk`. Desde los 10 M pasos no mejora (3,68 → 3,54 s): más de lo mismo ya no alcanza.
+  - [~] Un movimiento en el lugar, que no tiene recorrido del que alejarse: `jacks-v2` (jumping jacks, desde cero, referencia nueva, 10 M pasos, 19 min) sigue **1,3 s de 5,2** desde el inicio; desde instantes al azar 3,2 s, y la curva todavía sube. Sigue: 20 a 30 M pasos más.
   - Reproducir la referencia más lenta al principio y acelerarla a medida que aprende.
   - Probar con 2 a 3 s de un ciclo de paso en vez del clip entero.
   - Los empujones, recién cuando camine.
+  - **Punto de control, sábado 12:00:** si la caminata no pasa de ~4 s, la demo se apoya en el movimiento que mejor salga (jacks o un ciclo de paso corto). El resto del flujo no cambia.
 - [x] **ENT-2. Cualquier clip.** `ppo.py --task mimic --motion <ruta>`: `MimicEnv` carga el `RobotMotion` de cualquier ruta, no solo de `physics/motions/`. `walk` queda como alias.
 - [ ] **ENT-3. Empujones y mundos en la imitación.** Prender los empujones de `MimicEnv` (hoy apagados) y sortear un mundo por episodio. *Necesita:* ENT-1 y SIM-3.
 - [x] **ENT-4. Un ONNX por checkpoint.** Exportar cada checkpoint al guardarlo (no solo al final), con `task`, `motion` y `worlds` en `policy.json`, y medir `followed_s` con la evaluación: es lo que la web muestra mientras entrena. *Necesita:* el contrato.
+- [~] **ENT-6. La escalera del aprendizaje.** El mismo clip con checkpoints de 0, 10 k, 100 k, 1 M y 10 M pasos, lado a lado: es el plano más fuerte del pitch. `jacks-v2` los tiene desde cero (0,74 → 0,74 → 0,74 → 0,76 → 1,26 s); `walk-v4` también, pero arranca de `walk-long`, no de cero. Están en `training/runs/`, que no se versiona: falta copiar los de la corrida elegida a `training/policies/` (como `g1-stand-step-*`) y que la web los ofrezca. *Necesita:* ENT-4.
 - [x] **ENT-5. Los datos.** `training/rollout.py`: la política final en N episodios por mundo, guardada con el formato del contrato. *Necesita:* ENT-3. Hecho sin esperar a ENT-3: ya corre la política en los 4 mundos aunque se haya entrenado solo en el plano.
 
 ### Simulador (`physics/`)
@@ -116,7 +119,7 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Pitch y entrega (`docs/`)
 
-- [ ] **DOC-1. El guion de 3 minutos** a partir del pitch del producto, cronometrado con `pitch/tools/cronometro.py`.
+- [~] **DOC-1. El guion de 3 minutos** (borrador 1 en `pitch/guion-3-minutos.md`; falta leerlo con reloj y ajustar la escalera a los checkpoints de ENT-6) a partir del pitch del producto, cronometrado con `pitch/tools/cronometro.py`.
 - [ ] **DOC-2. Los videos de las precargadas:** caminar, correr, jumping jacks y bailar, de 30 s como máximo, con el cuerpo entero en cuadro y caminando de perfil. Tienen que salir por el mismo flujo que el de un usuario.
 - [ ] **DOC-3. Video de respaldo de la demo y `README.md`.**
 
@@ -130,6 +133,15 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 | **Domingo de 04:00 a 08:30** | Nada nuevo: arreglos, `README.md`, `scripts/check-submission.sh` y el último ship |
 
 A las 12:00 se mira ENT-1. Si la caminata no aprende, se achica antes de seguir: un clip más corto o un movimiento en el lugar (jumping jacks). El resto del flujo no cambia.
+
+**Lo que falta, en orden de importancia** (sábado 24, 10:00). La cadena entera está armada y probada; quedan dos huecos y lo que los vuelve honestos:
+
+1. **ENT-1:** que una política haga su clip entero. Sin esto, la política y los datos que se entregan no valen.
+2. **WEB-2 y WEB-3:** entrenar un video desde la web y ver el resultado. El servidor ya tiene todo (SRV-1..3); falta la pantalla.
+3. **ENT-6:** versionar los checkpoints de la escalera para la web y el pitch.
+4. **ENT-3 y SIM-5:** empujones y mundos en la imitación, y el número de robustez medido. Hasta entonces, la política se entrenó solo en piso plano y el pitch lo dice así.
+5. **DOC-2 y WEB-4:** las precargadas por el mismo flujo, entrenadas de noche.
+6. **DOC-1 y DOC-3:** el guion con reloj, el video de respaldo y el `README.md`.
 
 ## Las precargadas
 

@@ -11,10 +11,14 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, render three.js; arranca `training/` ([decisión](decisiones/2026-10-23-robot-g1.md)).
 
 - **Funciona:** el G1 en MuJoCo WASM dentro del navegador, con three.js, a tiempo real ([`physics/README.md`](../physics/README.md)). Sobre eso: `view.mimic(pose)` (copia a una persona desde la cámara), `view.playClip(motion)` (reproduce un `RobotMotion`, con el reloj de la web), `view.loadPolicy(onnx, json)` (una política de `training/`: se equilibra y se recupera de empujones; la v2 aguanta los 250 N del botón desde los cuatro lados) y `npm run retarget` (un `PoseClip` completo → `physics/motions/`, con recorrido y rumbo de la pelvis). `npm run check` prueba física, retargeting y política en Node. **Integrado en `web/`:** la pantalla de simulaciones muestra al robot repitiendo el clip junto al esqueleto, con la política cargada (Empujar y un selector de checkpoints). **Deploy:** https://tridi-alpha.vercel.app.
-- **En curso:** —
+- **Imitación en el navegador (SIM-1, SIM-2):** `view.loadPolicy(onnx, json, { motion })` corre políticas de imitación con la misma observación que Python (`check-mimic`: 3e-8). También hechos SIM-4 (`retarget --out`), SIM-6 (cocina, depósito, vereda), SIM-7 (sin temblor) y el retargeting sin piernas cruzadas. Un robot caído queda quieto en vez de agitarse.
+- **En curso: ENT-1, que la imitación haga el clip entero.** Lo único que separa la cadena armada de un producto que entrega algo útil. Seguimiento desde el inicio del clip (`followed_s`):
+  - Caminata: `walk-v4` (20 M pasos sobre los 30 M de `walk-long`, con las referencias nuevas) sigue **3,5 s de 11,8** (antes 1,4 s), y 8 de 40 episodios llegan al final. Ya está en `training/policies/g1-walk` y en la web.
+  - Jumping jacks: `jacks-v2` (desde cero, referencia nueva, 10 M pasos, 19 min) sigue **1,3 s de 5,2**. Los episodios desde instantes al azar duran 3,2 s y la curva sigue subiendo: más pasos deberían ayudar.
+- **Escalera del aprendizaje:** hay checkpoints en 0, 10 k, 100 k, 1 M, 3 M y 10 M de `jacks-v2` (desde cero: 0,74 → 0,76 → 1,26 s) y de `walk-v4` (que no arranca de cero: parte de `walk-long`). Están en `training/runs/`, que no se versiona: para que la web y el pitch los usen hay que copiarlos a `training/policies/`, como ya se hizo con `g1-stand-step-*` (0, 3 M, 10 M, 20 M).
 - **Bloqueado por:** nada. Falta probar `mimic` con una webcam real.
-- **Propuesta para el equipo:** [pitch del producto](pitch/pitch-producto.md) (Physical AI: video → robot que aprende el movimiento por imitación en mundos variados → política + datos) y su [plan técnico](plan-producto.md): el flujo completo, el despliegue, los cambios de contrato y lo que falta construir por área y por horario, sin repartir. Falta que el equipo lo acepte y lo reparta.
-- **Sigue:** repartir el plan. Probar `mimic` (pantalla En vivo) con una webcam real.
+- **Propuesta para el equipo:** [pitch del producto](pitch/pitch-producto.md) y su [plan técnico](plan-producto.md), con lo que falta por área. Falta que el equipo lo acepte y lo reparta.
+- **Sigue:** punto de control de ENT-1 a las 12:00: si la caminata no pasa de ~4 s, apostar al movimiento en el lugar (`jacks-v2` con más pasos) o a un ciclo de paso de 2 a 3 s. Copiar a `training/policies/` los checkpoints de la escalera. Después, ENT-3 (empujones y mundos en la imitación) y SIM-5 (robustez medida).
 
 ---
 
