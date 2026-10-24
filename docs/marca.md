@@ -1,5 +1,7 @@
 # Marca y landing de Tridi
 
+> **Estilo vigente:** [instrumento de laboratorio](decisiones/2026-10-24-marca-instrumento-de-laboratorio.md) (papel, tinta, naranja señal `#ff4f1a`, Inter Tight + Geist Mono). Lo de abajo (público, mensaje, principios) sigue valiendo.
+
 La guía para la web: a quién le hablamos, cómo se ve, qué dice y qué no. La regla de fondo está en la [decisión](decisiones/2026-10-24-marca-b2b-robotica.md): **es un producto para empresas de robots humanoides, y se ve como tal.** Nombre provisional: Tridi.
 
 ## A quién le hablamos

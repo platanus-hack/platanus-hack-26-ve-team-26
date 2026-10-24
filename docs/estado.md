@@ -27,6 +27,7 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 - **Bloqueado por:** —
 - **Integración probada (24/10):** servidor + túnel: el clip sale en 25 s por internet. Los dos clips mueven al G1 con `mimic` (356/356 cuadros, 3,2 cm). La galería de César los muestra. Se arregló un salto de 6 m en `correr-perfil` (ajuste a la cámara atípico al entrar al cuadro). Detalle en la [bitácora](bitacora/2026-10-24-0010-juan-integracion.md).
 - **Decidió:** la web es un producto para empresas de humanoides, con estilo corporativo propio ([decisión](decisiones/2026-10-24-marca-b2b-robotica.md), [guía de marca](marca.md)); César la aplica en M9.
+- **Landing nueva (rama `juan/landing`, sin shippear):** marca "instrumento de laboratorio" (papel, tinta y naranja señal) y landing de 7 bloques con el pitch, donde toda la media es el G1 real, el esqueleto real y la curva de entrenamiento real ([decisión](decisiones/2026-10-24-marca-instrumento-de-laboratorio.md)). Falta que César la revise.
 - **Sigue:** César conecta `web/` con `resolveApiUrl` (la URL del servidor llega por `?api=`, que imprime `data/serve.sh`). Pastor: `playClip` con la trayectoria de la pelvis. Revisar por qué en vivo la velocidad sale 50% más alta que offline. Grabar precargadas propias de perfil. Límite clave: de frente el avance sale ≈ 0, hay que grabar de perfil.
 
 ---
