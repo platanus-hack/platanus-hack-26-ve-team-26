@@ -4,10 +4,11 @@
 
 Videos: chunked upload -> queue -> PoseClip, with progress per stage. Camera clips arrive already
 as PoseClips (POST /clips). Any clip can then be trained: a second queue, one at a time, runs
-retarget -> training (every checkpoint exported to ONNX) -> data, each as a subprocess, and serves
-the motion, the policies and the dataset. The API is in docs/contrato.md ("API del servidor de
-video"). Only PoseClips and what training makes from them are kept; videos are deleted once
-processed. Jobs and trainings live in memory: a restart forgets them (their files stay on disk).
+retarget -> training (every checkpoint exported to ONNX) -> data (the dataset, then the delivery),
+each as a subprocess, and serves the motion, the policies, the dataset and the delivery. The API is
+in docs/contrato.md ("API del servidor de video", "La entrega de un clip"). Only PoseClips and what
+training makes from them are kept; videos are deleted once processed. Jobs and trainings live in
+memory: a restart forgets them (their files stay on disk).
 """
 
 from __future__ import annotations
@@ -90,9 +91,16 @@ TRAIN_EVERY = int(os.environ.get("TRIDI_TRAIN_EVERY", 2_000_000))
 TRAIN_WAITING = int(os.environ.get("TRIDI_TRAIN_WAITING", 3))
 ROLLOUT_EPISODES = int(os.environ.get("TRIDI_ROLLOUT_EPISODES", 8))
 TRAIN_STEPS_PER_S = 11_400  # an M2, for the estimate before the first progress row
-DATA_STAGE_S = 60  # retarget + dataset rollout, a rough estimate for eta_s
+DATA_STAGE_S = 60  # retarget + dataset rollout + delivery (~2 s), a rough estimate for eta_s
 TRAIN_POLL_S = 2
 UPLOAD_EXTS = VIDEO_EXTS | {".zip"}
+
+# The files of a delivery (docs/contrato.md, "La entrega de un clip"): only these names are served.
+DELIVERY_FILES = {
+    "delivery.json": "application/json", "replay.json": "application/json", "policy.json": "application/json",
+    "motion.json": "application/json", "poseclip.json": "application/json", "scene.json": "application/json",
+    "policy.onnx": "application/octet-stream", "dataset.zip": "application/zip",
+}
 
 
 @dataclass
@@ -580,11 +588,11 @@ class StageFailed(RuntimeError):
     pass
 
 
-def _run_stage(t: Train, stage: str, cmd: list[str], watch=None) -> None:
+def _run_stage(t: Train, stage: str, cmd: list[str], watch=None, log_name: str | None = None) -> None:
     """Runs one step of the chain as a subprocess in its own process group (training spawns worker
-    processes, and cancelling must stop them all), logging to train/<id>/<stage>.log."""
+    processes, and cancelling must stop them all), logging to train/<id>/<log_name or stage>.log."""
     t.stage = stage
-    log_path = t.dir / f"{stage}.log"
+    log_path = t.dir / f"{log_name or stage}.log"
     with open(log_path, "w") as log:
         t.proc = subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
         while t.proc.poll() is None:
@@ -628,7 +636,7 @@ def _read_progress(t: Train) -> None:
 
 
 def _train(t: Train) -> None:
-    for sub in ("motions", "policies", "datasets"):
+    for sub in ("motions", "policies", "datasets", "deliveries"):
         (DATA_DIR / sub).mkdir(parents=True, exist_ok=True)
     t.dir.mkdir(parents=True, exist_ok=True)
     clip = DATA_DIR / "clips" / f"{t.clip_id}.json"
@@ -644,11 +652,25 @@ def _train(t: Train) -> None:
         raise StageFailed("el entrenamiento terminó sin exportar ninguna política")
     t.steps = t.total_steps
     final = policies / f"{t.checkpoints[-1]['policy_id']}.json"
+    dataset = DATA_DIR / "datasets" / f"{t.clip_id}.zip"
     _run_stage(t, "data", [
         "uv", "run", "--project", "training", "python", "-m", "training.rollout", str(final),
-        "--motion", str(motion), "--episodes", str(ROLLOUT_EPISODES),
-        "--out", str(DATA_DIR / "datasets" / f"{t.clip_id}.zip"),
+        "--motion", str(motion), "--episodes", str(ROLLOUT_EPISODES), "--out", str(dataset),
     ])
+    scene = DATA_DIR / "scenes" / f"{t.clip_id}.json"
+    try:
+        _run_stage(t, "data", [
+            "uv", "run", "--project", "training", "python", "-m", "training.deliver", str(final), "--clip", str(clip),
+            "--motion", str(motion), "--dataset", str(dataset), "--checkpoints", str(policies),
+            "--since", t.started_at,  # the same filter as _read_progress: older exports are not this training's
+            *(["--scene", str(scene)] if scene.exists() else []), "--out", str(DATA_DIR / "deliveries" / t.clip_id),
+        ], log_name="delivery")
+    except StageFailed as e:
+        if t.cancelled:
+            raise
+        # The policy and the dataset are already served: a broken delivery only loses its panel, so
+        # the training stays done instead of freeing the clip for another 30-minute training.
+        t.error = f"La política y el dataset están listos; la entrega no se armó: {e}"
 
 
 def _train_worker() -> None:
@@ -768,6 +790,20 @@ def get_dataset(clip_id: str) -> FileResponse:
     return FileResponse(path, media_type="application/zip", filename=f"{clip_id}.zip")
 
 
+@app.get("/deliveries/{clip_id}/{name}")
+def get_delivery_file(clip_id: str, name: str) -> FileResponse:
+    folder = DATA_DIR / "deliveries" / clip_id
+    path = folder / name
+    # No delivery.json, no delivery: training.deliver deletes it first and writes it last, so the
+    # other files are not served while they are being copied (or after a delivery that failed).
+    if (not CLIP_ID.match(clip_id) or name not in DELIVERY_FILES or not path.exists()
+            or not (folder / "delivery.json").exists()):
+        raise HTTPException(404, "ese archivo de la entrega no existe")
+    # The panel reads delivery.json and replay.json; everything else is a download.
+    download = name if name not in ("delivery.json", "replay.json") else None
+    return FileResponse(path, media_type=DELIVERY_FILES[name], filename=download)
+
+
 threading.Thread(target=_worker, daemon=True, name="tridi-worker").start()
 threading.Thread(target=_train_worker, daemon=True, name="tridi-train-worker").start()
 threading.Thread(target=_janitor, daemon=True, name="tridi-janitor").start()
@@ -781,7 +817,7 @@ def main() -> None:
     p.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     p.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     args = p.parse_args()
-    for sub in ("uploads", "jobs", "clips", "scenes", "motions", "policies", "datasets", "train"):
+    for sub in ("uploads", "jobs", "clips", "scenes", "motions", "policies", "datasets", "deliveries", "train"):
         (DATA_DIR / sub).mkdir(parents=True, exist_ok=True)
     print(json.dumps({"data_dir": str(DATA_DIR), "cors": CORS_ORIGINS}))
     uvicorn.run(app, host=args.host, port=args.port)

@@ -4,10 +4,11 @@
 
 Sends a PoseClip as if it came from the camera (default: the preloaded walk), checks every error
 path of POST /clips, trains it with a tiny budget through the real chain (retarget in Node ->
-training.ppo with ONNX export per checkpoint -> training.rollout), follows GET /train until done and
-downloads the motion, every policy and the dataset. Also checks that a clip is not trained twice,
-that the queue fills up, and cancelling. The robot will not walk after 8k steps: this checks the
-plumbing, not the learning. Exits 1 on the first failure.
+training.ppo with ONNX export per checkpoint -> training.rollout -> training.deliver), follows
+GET /train until done and downloads the motion, every policy, the dataset and every file of the
+delivery. Also checks that a clip is not trained twice, that the queue fills up, and cancelling. The
+robot will not walk after 8k steps: this checks the plumbing, not the learning. Exits 1 on the first
+failure.
 """
 
 from __future__ import annotations
@@ -129,6 +130,47 @@ def main() -> None:
         expect(npz["qpos"].shape[1:] == (36,) and npz["foot_force"].shape[1:] == (2, 3) and len(npz["episode"]) == len(npz["t"]),
                f"rollouts.npz with the contract's arrays ({len(npz['t'])} rows)")
     expect(client.get("/datasets/clip_nope.zip").status_code == 404, "a missing dataset is 404")
+
+    # --- The delivery (docs/contrato.md, "La entrega de un clip")
+    r = client.get(f"/deliveries/{clip_id}/delivery.json")
+    expect(r.status_code == 200, "GET /deliveries/{clip_id}/delivery.json")
+    d = r.json()
+    expect(d["clip_id"] == clip_id and d["policy"]["id"] == t["checkpoints"][-1]["policy_id"], "the delivery is of the final policy")
+    expect([c["steps"] for c in d["checkpoints"]] == [c["steps"] for c in t["checkpoints"]], "its ladder has every checkpoint")
+    expect([w["id"] for w in d["worlds"]] == [e["world"] for e in meta["episodes"]] and len(d["episodes"]) == 4,
+           "one world and one episode per world, in the rollout's order")
+    expect("content-disposition" not in r.headers, "delivery.json is read by the panel, not downloaded")
+    r = client.get(f"/deliveries/{clip_id}/replay.json")
+    expect("content-disposition" not in r.headers, "replay.json is read by the panel, not downloaded")
+    replay = r.json()
+    rows = [len(e["qpos"]) for e in replay["episodes"]]
+    # Every other row of n, plus the last one when it falls in between: n // 2 + 1 for any n.
+    expect(replay["hz"] == 25 and rows == [n // 2 + 1 for n in np.bincount(npz["episode"])]
+           and all(len(q) == 36 for e in replay["episodes"] for q in e["qpos"]), f"replay.json: every other row at 25 Hz ({sum(rows)} rows)")
+    last = [float(npz["pelvis_error"][npz["episode"] == i][-1]) for i in range(len(rows))]
+    # 0.0005 m: replay.json rounds the pelvis error to 1 mm.
+    expect(all(abs(e["pelvis_error"][-1] - x) <= 0.0005 + 1e-9 for e, x in zip(replay["episodes"], last)),
+           "replay.json keeps each episode's last row (where it ended)")
+    names = {f["name"] for f in d["files"]}
+    expect(names == {"policy.onnx", "policy.json", "dataset.zip", "motion.json", "poseclip.json", "scene.json"}, "files lists the six downloads")
+    for f in d["files"]:
+        r = client.get(f"/deliveries/{clip_id}/{f['name']}")
+        expect(r.status_code == 200 and len(r.content) == f["bytes"], f"{f['name']} downloads with its size ({f['bytes']} bytes)")
+        disposition = r.headers.get("content-disposition", "")
+        expect(disposition.startswith("attachment") and f'filename="{f["name"]}"' in disposition,
+               f"{f['name']} comes as a download ({disposition})")
+    scene_row = next(f for f in d["files"] if f["name"] == "scene.json")
+    expect("vacío" in scene_row["what"], f"an empty camera scene says so ({scene_row['what']})")
+    # A folder without delivery.json is a delivery being (re)built: none of its files is served.
+    ready = server.DATA_DIR / "deliveries" / clip_id / "delivery.json"
+    hidden = ready.with_name("delivery.json.hidden")
+    ready.rename(hidden)
+    served = client.get(f"/deliveries/{clip_id}/policy.onnx").status_code
+    hidden.rename(ready)
+    expect(served == 404, "without delivery.json no file of the folder is served")
+    expect(client.get(f"/deliveries/{clip_id}/delivery.json.tmp").status_code == 404, "a name outside the delivery is 404")
+    expect(client.get("/deliveries/clip_nope/delivery.json").status_code == 404, "a missing delivery is 404")
+    expect(client.get(f"/deliveries/{clip_id}/..%2F..%2Fclips%2F{clip_id}.json").status_code == 404, "paths outside the delivery are 404")
     expect(client.get("/policies/..%2F..%2Fetc.json").status_code == 404, "paths outside the folders are 404")
     print("all good")
 
