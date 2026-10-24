@@ -1,0 +1,11 @@
+[project]
+name = "tridi-training"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "mujoco==3.16.0",
+    "numpy>=2.5.4",
+    "onnx>=1.23.2",
+    "onnxruntime>=1.31.0",
+    "torch>=2.14.1",
+]
