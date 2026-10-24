@@ -85,6 +85,8 @@ def main() -> None:
     expect(clip_id.startswith("clip_") and "from-the-browser" not in clip_id, f"the server names it ({clip_id})")
     saved = client.get(f"/clips/{clip_id}.json").json()
     expect(saved["source"] == "camera" and saved["id"] == clip_id, "GET /clips returns it with the server's id")
+    scene = client.get(f"/scenes/{clip_id}.json").json()
+    expect(scene["id"] == clip_id and scene["objects"] == [], "a camera clip has an empty scene (no video on the server)")
 
     # --- Training queue
     expect(client.post("/clips/clip_nope/train").status_code == 404, "training a missing clip is 404")

@@ -71,6 +71,8 @@ class Lifted:
     boxes: np.ndarray  # [F, 4] subject box, xyxy pixels
     valid: np.ndarray  # [F] bool: subject detected and MediaPipe agrees with the tracker
     rejected: dict[str, int]  # why frames were dropped, for the log
+    camera_points: np.ndarray  # [F, 33, 3] the smoothed points in camera space (m, x right, y down, z away)
+    focal: float  # px, the assumed focal length (HFOV_DEG) the camera fit used
 
 
 def _square_crop(frame: np.ndarray, box: np.ndarray) -> tuple[np.ndarray, float, float, float]:
@@ -249,11 +251,11 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
             cam[k] = t
             valid[k] = True
     cap.release()
-    return assemble(world, cam, joints2d, boxes, valid, rejected, tr.fps, first)
+    return assemble(world, cam, joints2d, boxes, valid, rejected, tr.fps, first, f)
 
 
 def assemble(world: np.ndarray, cam: np.ndarray, joints2d: np.ndarray, boxes: np.ndarray, valid: np.ndarray,
-             rejected: dict[str, int], fps: float, first: int) -> Lifted:
+             rejected: dict[str, int], fps: float, first: int, focal: float) -> Lifted:
     """MediaPipe's per-frame output -> the clip: drop misreads, trim, smooth and rebuild the trajectory.
 
     Separate from the detection loop so the post-processing can be tuned on cached detections.
@@ -289,10 +291,13 @@ def assemble(world: np.ndarray, cam: np.ndarray, joints2d: np.ndarray, boxes: np
             root[:, axis] = camera[:, axis]
     root = savgol(root, int(round(ROOT_WINDOW_S * fps)) | 1, ROOT_ORDER)
     pos = body_rel + root[:, None, :]
+    # Where the points were in the camera's own space: the scene of the video (data/scene.py) is
+    # measured against the person's feet there.
+    camera_points = body_rel * np.array([1, -1, -1]) + _fill_gaps(cam, cam_ok)[:, None, :]
     # Smoothing moves the first frame a little; the contract's origin is exactly its hips' center.
     pos -= (pos[0, 23] + pos[0, 24]) / 2
 
     vis = joints2d[:, :, 2].copy()
     vis[~valid] = 0  # interpolated frames are flagged with zero visibility
     joints = np.concatenate([pos, vis[:, :, None]], axis=2)
-    return Lifted(np.arange(first + lo, first + hi + 1), joints, joints2d, boxes, valid, rejected)
+    return Lifted(np.arange(first + lo, first + hi + 1), joints, joints2d, boxes, valid, rejected, camera_points, focal)

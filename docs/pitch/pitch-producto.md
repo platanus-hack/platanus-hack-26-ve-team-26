@@ -50,13 +50,13 @@ Cada frase del pitch, contra el repo. Lo que dice "por hacer" no se presenta com
 
 | Afirmación del pitch | Hoy | Dónde verlo |
 | --- | --- | --- |
-| Encuentra a la persona entre varias y saca su esqueleto 3D | Hecho, desde video subido y desde la cámara | [`data/README.md`](../../data/README.md) |
+| Encuentra a la persona entre varias y saca su esqueleto 3D | Hecho, desde video subido y desde la cámara, suavizado en el tiempo (la pelvis del robot ya no salta: de 2,4 a 1,1 m/s de máximo en la caminata) | [`data/README.md`](../../data/README.md) |
 | La cámara empieza a grabar al encenderse | La cámara en vivo funciona; grabar y guardar el clip, por hacer (W4.3) | [`web/TAREAS.md`](../../web/TAREAS.md) |
 | Pasa el movimiento al cuerpo del robot | Hecho: 3,2 cm de error mediano en la caminata | [`physics/README.md`](../../physics/README.md) |
 | Practica millones de veces con física hasta aprender el movimiento | El entorno de imitación existe y acepta cualquier clip; todavía no aprende | `training/imitate.py`, [bitácora de Juan](../bitacora/2026-10-24-0100-juan-entrenamiento.md) |
 | Lo empujamos y no se cae | Aprendido en la política de pie (250 N desde 4 direcciones); en imitación, por hacer | [`training/README.md`](../../training/README.md) |
 | Piedras, viento, piso resbaloso, peso y motores al azar | Los mundos se ven y se sienten en la web (SIM-3); el entrenamiento todavía no los sortea (ENT-3) | [`physics/worlds/`](../../physics/worlds) |
-| Lugares realistas: cocina, depósito, vereda, con muebles sólidos y objetos que se empujan | Hecho en la web a mano (`view.setScene`); desde el video del usuario, por hacer (`data/`) | [`physics/scenes/`](../../physics/scenes) |
+| Lugares realistas: cocina, depósito, vereda, con muebles sólidos y objetos que se empujan | Hecho en la web a mano (`view.setScene`). Desde el video: `data/` detecta los muebles del primer cuadro y los ubica en el piso (`GET /scenes/{clip_id}.json`). Falta una precargada de cocina u oficina, y que `physics/` la cargue | [`physics/scenes/`](../../physics/scenes), [`data/README.md`](../../data/README.md#escena-del-video) |
 | Entrega la política | Hecho para la política de pie (ONNX corriendo en el navegador) | [`training/policies/`](../../training/policies) |
 | Entrega los datos corregidos por la física | El formato y la herramienta están (la política en los 4 mundos, `datasets/<clip_id>.zip`); falta una política que camine para que los datos valgan | [`training/rollout.py`](../../training/rollout.py) |
 | Cada video del usuario se entrena, en cola | La cola existe y encadena retargeting → entrenamiento → datos (probado con entrenamientos cortos); la web todavía no la usa (WEB-2) | [`data/README.md`](../../data/README.md) |

@@ -42,3 +42,34 @@ Dos prioridades para la demo, en `data/`: (1) que el robot no tiemble, filtrando
 
 - **Pastor:** `cd physics && npm run retarget -- ../data/clips/<clip>.json` para los tres clips y `npm run check`. En jumping jacks el retarget dice 94% al alcance (antes 98%).
 - Parte 2: la escena del video (contrato primero).
+
+## Parte 2: la escena del video
+
+### Qué se hizo
+
+- Shipeado el suavizado (`56f8350`). Pastor había shipeado su propio filtro de pantalla en `physics/` (`f19c720`) y el formato de escenas (SIM-6, `352a1cc`) mientras tanto.
+- Contrato (`d8d7107`, shipeado aparte): sobre el formato de escenas de Pastor, sin cambiarlo, se suma lo de un video. `floor.friction_hint`; `pos = [z, x]` del `PoseClip` en metros de la persona; `physics/` multiplica `pos` (no `size`) por la escala del recorrido (×0,83) para que el robot pase junto a los muebles donde pasó la persona. También `GET /scenes/{clip_id}.json`.
+- `data/scene.py`: YOLO11m en el primer cuadro, piso bajo los pies de la persona en el espacio de la cámara, objetos ubicados por el rayo de la base de su caja, fondo típico por tipo, rumbo según el recorrido y objetos corridos fuera del recorrido. `lift.py` guarda los puntos en el espacio de la cámara y la focal (`Lifted.camera_points`, `focal`).
+- `data.extract` escribe la escena en `data/scenes/`. El servidor la genera junto al `PoseClip` y la sirve; los clips de la cámara llevan una vacía. `check_server` y `check_training` lo prueban; `data/check_scene.py` prueba la geometría con una cámara sintética.
+
+### Qué funcionó
+
+- Geometría sintética: silla a 1 cm de su lugar y alto a 5 cm; la silla sobre el recorrido se corre 15 cm.
+- Videos reales: la altura de la cámara sale plausible (0,85 m en la caminata, 0,48 m sobre la arena en `decelera`, 3,8 m en la cámara de seguridad de `People-counting`), la silla de playa queda donde se ve y el auto a 40 m se descarta.
+- El "inodoro" que YOLO ve en `People-counting` es un molinete: queda fuera por el umbral de 0,35.
+
+### Qué no funcionó
+
+- **No hay precargada de cocina u oficina todavía.** YouTube pide sesión desde esta red, y `yt-dlp --cookies-from-browser chrome` no puede leer el perfil de Chrome (permiso de macOS, ni dentro ni fuera del sandbox ni en la Terminal de la app). Mixkit tiene oficinas llenas de gente sentada, sin nadie caminando de perfil. Pexels solo tiene tomas de frente y sin muebles. El mejor candidato es YouTube `YS91BvCJFsM` ("Alone Man walking in Office", 28 s: un hombre cruza de perfil una oficina con escritorios).
+- `check_server` con un `.mov` falla en "a done video stays for the 10-minute subject window" (`decelera_landscape.mov`). Ya fallaba en `main` antes de esta sesión (probado con `git stash`); con `.mp4` pasa todo. Queda pendiente.
+- La caja de una maceta vista desde arriba incluye las hojas (salía de 1,4 m): el ancho de los cilindros se limita al de su base típica.
+
+### Decisiones
+
+- Sin modelo de profundidad: el piso bajo los pies ya da la escala en metros. Un modelo de profundidad agrega una descarga y segundos por video, y su escala igual habría que anclarla en la persona.
+- El formato es el de Pastor (`id`, `title`, `movable`, `mass`, `why`); solo se sumó `floor`.
+
+### Sigue
+
+- **Juan:** bajar `YS91BvCJFsM` desde una terminal con acceso a Chrome (o grabar a alguien caminando de perfil frente a sillas y mesas en el evento), y dejarlo como precargada con `--id` y su escena en `data/scenes/`.
+- **Pastor:** `cd physics && npm run retarget -- ../data/clips/<clip>.json` para los tres clips regenerados y `npm run check`. Cargar `GET /scenes/{clip_id}.json` (o `data/scenes/`) con `view.setScene`, multiplicando `pos` por la escala del recorrido.

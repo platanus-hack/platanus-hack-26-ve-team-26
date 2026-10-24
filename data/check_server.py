@@ -84,6 +84,7 @@ def main() -> None:
     expect(client.post(f"/uploads/{up['upload_id']}/complete").status_code == 409, "complete with missing chunks -> 409")
     expect(client.get("/jobs/../../etc").status_code == 404, "ids are validated")
     expect(client.get("/clips/..%2Fserver.json").status_code == 404, "clip ids are validated")
+    expect(client.get("/scenes/clip_nope.json").status_code == 404, "a missing scene is 404")
     r = client.get("/jobs/0123456789abcdef0123456789abcdef")
     expect(r.status_code == 404 and "no existe" in r.json()["detail"], "unknown job -> 404 in Spanish")
 
@@ -108,6 +109,9 @@ def main() -> None:
         clip = client.get(f"/clips/{v['clip_id']}.json").json()
         expect(clip["source"] == "upload" and clip["source_file"] == v["name"] and len(clip["frames"][0]["joints"]) == 33,
                f"{v['name']}: PoseClip {clip['id']}, valid {v['valid_ratio']:.0%}, {len(v['people'])} people in frame 0")
+        scene = client.get(f"/scenes/{v['clip_id']}.json").json()
+        expect(scene["id"] == v["clip_id"] and isinstance(scene["objects"], list) and "friction_hint" in scene["floor"],
+               f"{v['name']}: scene with {len(scene['objects'])} objects ({', '.join(o['label'] for o in scene['objects']) or 'none'})")
         r = client.get(f"/jobs/{job_id}/videos/{n}/first-frame.jpg")
         expect(r.status_code == 200 and r.content[:2] == b"\xff\xd8", "first frame is a JPEG")
 

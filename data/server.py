@@ -38,6 +38,7 @@ from pydantic import BaseModel
 
 from .extract import VIDEO_EXTS, _clip_id, write_clip
 from .lift import lift_subject
+from .scene import empty_scene, scene_of, write_scene
 from .track import Subject, Tracking, select_subject, track_people
 
 DATA_DIR = Path(os.environ.get("TRIDI_DATA_DIR", Path(__file__).parent / "server_data"))
@@ -206,6 +207,7 @@ def _process_video(job: Job, video: Video) -> None:
     video.stage, video.progress = "pose3d", 0.0
     lifted = lift_subject(video.path, video.tracking, subject, progress)
     _, clip = write_clip(video.tracking, subject, lifted, video.name, DATA_DIR / "clips")
+    write_scene(scene_of(video.path, lifted, video.tracking.fps, clip["id"]), DATA_DIR / "scenes")
     video.clip_id = clip["id"]
     video.valid_ratio = clip["quality"]["valid_ratio"]
     video.stage, video.progress = "done", 1.0
@@ -512,6 +514,10 @@ async def post_clip(request: Request) -> dict:
         clip_id = _clip_id("camara", DATA_DIR / "clips")
         clip.update({"id": clip_id, "source": "camera", "source_file": None})
         (DATA_DIR / "clips" / f"{clip_id}.json").write_text(json.dumps(clip, separators=(",", ":")))
+    # The server never sees the camera's video, so its place is unknown: an empty scene, so that
+    # GET /scenes works for every clip.
+    write_scene(empty_scene(clip_id, "Clip de la cámara: el servidor no recibe su video, así que no se ve el lugar."),
+                DATA_DIR / "scenes")
     return {"clip_id": clip_id}
 
 
@@ -736,6 +742,11 @@ def _served(folder: str, name: str, pattern: re.Pattern, what: str) -> Path:
     return path
 
 
+@app.get("/scenes/{clip_id}.json")
+def get_scene(clip_id: str) -> FileResponse:
+    return FileResponse(_served("scenes", f"{clip_id}.json", CLIP_ID, "la escena"), media_type="application/json")
+
+
 @app.get("/motions/{clip_id}.json")
 def get_motion(clip_id: str) -> FileResponse:
     return FileResponse(_served("motions", f"{clip_id}.json", CLIP_ID, "el movimiento"), media_type="application/json")
@@ -770,7 +781,7 @@ def main() -> None:
     p.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     p.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     args = p.parse_args()
-    for sub in ("uploads", "jobs", "clips", "motions", "policies", "datasets", "train"):
+    for sub in ("uploads", "jobs", "clips", "scenes", "motions", "policies", "datasets", "train"):
         (DATA_DIR / sub).mkdir(parents=True, exist_ok=True)
     print(json.dumps({"data_dir": str(DATA_DIR), "cors": CORS_ORIGINS}))
     uvicorn.run(app, host=args.host, port=args.port)

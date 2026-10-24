@@ -18,9 +18,10 @@ uv run --project data python -m data.extract videos.zip                # lote: u
 uv run --project data python -m data.overlay data/clips/<clip>.npz video.mp4  # dibuja al sujeto sobre el video
 uv run --project data python -m data.extract video.mp4 --id clip_2026-10-23_caminar-perfil_01  # regenera una precargada con su mismo id
 uv run --project data python -m data.jitter data/clips/*.json                  # cuánto tiembla cada clip
+uv run --project data python -m data.check_scene                              # la geometría de la escena, sin video
 ```
 
-Sale `data/clips/<id>.json` (el `PoseClip`) y `<id>.npz` con lo mismo para entrenar: `joints [F, 33, 4]`, `t [F]` y `meta` (el JSON sin los frames). El `.npz` lleva además `valid [F]` (frames detectados, no interpolados), `frame_index`, `joints2d` y `boxes` (para el overlay y para dibujar sobre el video en la web).
+Sale `data/clips/<id>.json` (el `PoseClip`), `data/scenes/<id>.json` (el [lugar del video](#escena-del-video)) y `<id>.npz` con lo mismo para entrenar: `joints [F, 33, 4]`, `t [F]` y `meta` (el JSON sin los frames). El `.npz` lleva además `valid [F]` (frames detectados, no interpolados), `frame_index`, `joints2d` y `boxes` (para el overlay y para dibujar sobre el video en la web).
 
 ## Servidor para la web
 
@@ -72,6 +73,19 @@ Lo que no debía cambiar: el rango de la rodilla del robot queda igual (caminata
 
 - **En la cámara en vivo**, con la caminata de Mixkit 4855 como cámara en el navegador (modelo `full`, 30 fps), la aceleración de rodillas y tobillos baja de p95 84 a 43 y de p50 30 a 13 m/s². Sobre las detecciones de los tres clips, One Euro conserva el 94% del recorrido de los tobillos en la caminata (90% del offline en la carrera).
 - **Cómo se eligieron los valores:** se guardaron las detecciones de MediaPipe de los tres videos y se barrieron ventanas y órdenes contra estas métricas. Con 0,3 s y orden 3 en los puntos se quita lo mismo, pero la carrera pierde más altura del pie. Una trayectoria con 0,8 s deja patinar el pie de apoyo, y el promedio de 0,2 s (lo de antes) deja ~5 veces más aceleración horizontal en la pelvis.
+
+## Escena del video
+
+Para que la simulación recree el lugar (una cocina, una oficina), [`scene.py`](scene.py) mira el primer cuadro del clip y ubica en el piso los objetos que importan para un robot. El formato está en el [contrato](../docs/contrato.md#escenas-lugares-con-muebles-2026-10-24), en el mismo formato que las escenas a mano de `physics/scenes/`.
+
+- **Qué detecta:** YOLO11m (COCO) con confianza ≥ 0,35: silla, sofá, cama, mesa, inodoro, heladera, horno, lavaplatos (como la mesada que lo sostiene), banco, maceta, valija, hidrante, bicicleta, moto y auto. Quedan fuera las personas (se mueven) y lo que está apoyado sobre otro mueble (TV, microondas): su caja no toca el piso.
+- **Dónde está:** sin modelo de profundidad. El piso es el plano bajo los pies de la persona, en el espacio de la cámara (el mismo ajuste que da la trayectoria). La vertical sale del cuerpo, sin la inclinación de la marcha. El objeto se apoya donde el rayo por la base de su caja toca ese piso. Ancho y alto se miden con los rayos de las esquinas; el fondo, que no se ve, es un tamaño típico por tipo. La escala son los pies de la persona.
+- **Rumbo:** sigue el recorrido de la persona (la gente camina a lo largo de mesadas y paredes); quieta, los muebles miran a la cámara.
+- **Por donde caminó no hay nada:** un objeto a menos de 0,35 m del recorrido de las caderas es un error de profundidad. Se corre a lo largo del rayo de la cámara hasta dejar el paso libre.
+- **Fricción:** con heladera, horno, lavaplatos o inodoro, `friction_hint` 0,6 (baldosa); si no, `null`.
+- **Dónde queda:** `data.extract` la escribe en `scenes/` junto a la carpeta de los clips (`data/clips` → `data/scenes`). El servidor la sirve en `GET /scenes/{clip_id}.json`; los clips de la cámara llevan una escena vacía (el servidor no recibe su video). Si algo falla, la escena sale vacía con el motivo en `why`: nunca tumba el clip.
+- **Prueba:** `uv run --project data python -m data.check_scene` proyecta dos sillas con una cámara conocida a 1,5 m y exige encontrarlas: sale a 1 cm de donde está, con el alto a 5 cm. La que está sobre el recorrido se corre. Con videos reales: en `decelera_landscape` la cámara sale a 0,48 m (está sobre la arena) y la silla de playa 1,1 m detrás y 2,6 m a la izquierda de la persona; en `People-counting` (cámara de seguridad) la cámara sale a 3,8 m.
+- **Límites:** un solo cuadro, así que lo que la persona tapa no aparece. El rumbo de cada mueble no se mide. Un objeto cortado por abajo no se ubica (su base está fuera de la imagen). Con la cámara muy alta y mirando hacia abajo (cámaras de seguridad), la caja de una maceta incluye las hojas: el ancho de las macetas se limita a 0,6 m.
 
 ## Límites conocidos
 

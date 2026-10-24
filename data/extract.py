@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 
 from .lift import Lifted, lift_subject
+from .scene import scene_of, write_scene
 from .track import Subject, Tracking, select_subject, track_people
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"}
@@ -61,9 +62,14 @@ def extract(video: Path, source_file: str, out: Path, click: tuple[float, float]
     subject = select_subject(tracking, click)
     lifted = lift_subject(video, tracking, subject, progress)
     json_path, clip = write_clip(tracking, subject, lifted, source_file, out, clip_id)
+    # The place in the video, in a scenes/ folder next to the clips one (data/clips -> data/scenes).
+    progress("scene", 0, 1)
+    scene = scene_of(video, lifted, tracking.fps, clip["id"])
+    write_scene(scene, out.parent / "scenes")
     dropped = ", ".join(f"{k} {v}" for k, v in lifted.rejected.items() if v)
     progress.done(f"track #{subject.track_id} ({subject.selected_by}), valid {clip['quality']['valid_ratio']:.0%}"
-                  + (f", dropped: {dropped}" if dropped else ""))
+                  + (f", dropped: {dropped}" if dropped else "")
+                  + f", scene: {len(scene['objects'])} objects")
     return json_path
 
 
