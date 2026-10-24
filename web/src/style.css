@@ -636,10 +636,18 @@ select:disabled {
   color: var(--error);
 }
 
-/* Home without the video server: two choices, centered. */
-.choices.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: min(800px, 100%);
+/* Home without the video server: "Subir" stays, grayed, with the reason (screens/home.js). */
+.choice.unavailable {
+  cursor: default;
+}
+
+.choice.unavailable .choice-text {
+  opacity: 0.75;
+}
+
+.choice.unavailable .action {
+  background: var(--line);
+  color: var(--muted);
 }
 
 /* Live */
@@ -917,7 +925,6 @@ select:disabled {
 /* Tablets and phones: one column, the most important thing first. */
 @media (max-width: 900px) {
   .choices,
-  .choices.two,
   .intro-grid,
   .upload-grid,
   .sims-grid {

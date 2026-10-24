@@ -53,7 +53,7 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 ## M5. Subir archivos
 
 - [x] **W5.1 Drop zone.** `#/subir` (`web/src/screens/upload.js`): elegir o arrastrar; antes de subir se revisan tipo, 60 MB y 30 s, con el motivo en palabras simples. Indicación: "Graba de perfil y con el cuerpo entero en cuadro".
-- [x] **W5.2 Subida por partes.** `uploadVideo` de `data/live` (reintenta cada parte), con barra y botón Cancelar. Al abrir la página se revisa el servidor (`resolveApiUrl` y `checkApi`, `web/src/api.js`): si no responde, "Subir" desaparece del menú y quedan cámara y galería.
+- [x] **W5.2 Subida por partes.** `uploadVideo` de `data/live` (reintenta cada parte), con barra y botón Cancelar. Al abrir la página se revisa el servidor (`resolveApiUrl` y `checkApi`, `web/src/api.js`): si no responde, la tarjeta "Subir" se queda en el menú, gris, con "No disponible ahora" y el motivo, y no abre; cámara y galería siguen igual (pedido de Juan: no parpadea y en el pitch se ve que la función existe).
 - [x] **W5.3 Elegir sujeto.** Con dos o más personas, su cuadro con una caja por persona; la elegida va marcada y un click llama a `chooseSubject` y sigue el trabajo de nuevo.
 
 ## M6. Progreso

@@ -88,17 +88,17 @@ export function mount(root, { dots, api }) {
     tiltWithPointer(card, view);
     return view;
   });
-  // Without the video server, "Subir" goes away and the other two remain (the agreed fallback).
+  // Without the video server, "Subir" stays in place (no flicker, and the pitch still shows the
+  // feature) but says why it cannot be used and does not open. Camera and gallery remain.
   let gone = false;
   api.checked.then((ok) => {
     if (ok || gone) return;
-    const index = CHOICES.findIndex((choice) => choice.route === 'subir');
-    const card = nav.children[index];
-    dots.removeView(views[index]);
-    views.splice(index, 1);
-    card.remove();
-    nav.querySelectorAll('.step').forEach((step, i) => (step.textContent = i + 1));
-    nav.classList.add('two');
+    const card = nav.children[CHOICES.findIndex((choice) => choice.route === 'subir')];
+    card.classList.add('unavailable');
+    card.removeAttribute('href');
+    card.setAttribute('aria-disabled', 'true');
+    card.querySelector('p').textContent = 'El equipo que procesa los videos está apagado. Mientras tanto, usa la cámara o mira las simulaciones.';
+    card.querySelector('.action').textContent = 'No disponible ahora';
   });
   return () => {
     gone = true;
