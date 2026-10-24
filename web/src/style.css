@@ -513,6 +513,10 @@ select:disabled {
   font-weight: 600;
 }
 
+.mode button:disabled {
+  opacity: 0.4;
+}
+
 .mode button[aria-pressed='true'] {
   background: var(--accent);
   color: var(--accent-ink);

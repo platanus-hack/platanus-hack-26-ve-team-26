@@ -66,9 +66,13 @@ export function mountStage(root, dots) {
   const imitationFor = (clip) => IMITATIONS.find((imitation) => imitation.clip === clip?.id) ?? null;
   const overlay = createVideoOverlay(root.querySelector('#human-pane'));
 
-  // After any change (checkpoint, world, place): the puppet replay only without physics.
+  // A clip moves with physics only if a policy learned it (an imitation); any other clip is shown
+  // as before, the robot replaying its movement without physics.
+  const withPhysics = () => physics && imitationFor(current?.clip) !== null;
+
+  // After any change (checkpoint, world, place): the puppet replay unless the clip moves with physics.
   function resume() {
-    if (!physics && motion && !imitating()) startMotion();
+    if (!withPhysics() && motion && !imitating()) startMotion();
     else {
       copying = false;
       setRobotLabel();
@@ -100,9 +104,7 @@ export function mountStage(root, dots) {
       ? 'imita el video con física (en entrenamiento)'
       : copying
         ? 'repite el movimiento, sin física'
-        : physics && current && !imitationFor(current.clip)
-          ? 'de pie con física · todavía no aprendió este movimiento'
-          : `se equilibra solo (${levelLabel(level).toLowerCase()})`;
+        : `se equilibra solo (${levelLabel(level).toLowerCase()})`;
     label.textContent = text ?? `Robot · ${doing}${where}`;
   }
 
@@ -286,6 +288,16 @@ export function mountStage(root, dots) {
     robot.view?.setSpeed(speed);
     $('speed').textContent = `${String(speed).replace('.', ',')}×`;
   };
+  // The physics switch only means something for a clip a policy learned: elsewhere it says so.
+  function showMode(clip) {
+    const learned = imitationFor(clip) !== null;
+    root.querySelector('[data-physics="on"]').disabled = !learned;
+    root.querySelector('.mode-note').textContent = learned
+      ? 'Con física el robot lo hace solo, con sus motores (todavía en entrenamiento: se cae a los pocos segundos). Sin física lo repite como un títere.'
+      : 'Este movimiento todavía no tiene una política entrenada: el robot lo repite sin física, como referencia.';
+    root.querySelectorAll('[data-physics]').forEach((b) => b.setAttribute('aria-pressed', String((b.dataset.physics === 'on') === (learned && physics))));
+  }
+
   // Physics on or off (see `physics`).
   for (const button of root.querySelectorAll('[data-physics]')) {
     button.onclick = async () => {
@@ -304,7 +316,7 @@ export function mountStage(root, dots) {
   }
   $('reset').onclick = () => {
     skeleton.time = 0;
-    if (!physics && motion && !imitating()) startMotion();
+    if (!withPhysics() && motion && !imitating()) startMotion();
     else robot.view?.reset(); // the policy puts the robot back in its first pose (standing or the clip's)
   };
 
@@ -327,6 +339,7 @@ export function mountStage(root, dots) {
       $('human-label').textContent = `Persona · ${title}`;
       current = { clip, title };
       offerImitations(clip);
+      showMode(clip);
       overlay.show(clip.id).catch(console.error);
       motion = motions.get(clip.id) ?? null;
       physicsFor(clip);
