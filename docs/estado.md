@@ -6,14 +6,14 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 
 ---
 
-## Pastor: motor de física y render (`physics/`)
+## Pastor: física, render y entrenamiento (`physics/`, `training/`)
 
-Escena MuJoCo, modelo del robot, retargeting de `PoseClip` a `RobotMotion`, render three.js.
+Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, render three.js; arranca `training/` ([decisión](decisiones/2026-10-23-robot-g1.md)).
 
-- **Funciona:** —
+- **Funciona:** el G1 de pie en MuJoCo WASM dentro del navegador, con three.js, a tiempo real, y se cae si se lo empuja. `createSimView(canvas)` lista para la web ([`physics/README.md`](../physics/README.md)). `npm run check` prueba la física en Node.
 - **En curso:** —
-- **Bloqueado por:** —
-- **Sigue:** —
+- **Bloqueado por:** nada para empezar. Para imitar desplazamientos hace falta la trayectoria de la pelvis en `PoseClip` (pregunta abierta para Juan).
+- **Sigue:** entorno de entrenamiento con `scene_mjx.xml` (Python, MuJoCo 3.16.0) y una primera política que se sostenga de pie, con checkpoints desde el paso 0; retargeting de `PoseClip` a `RobotMotion`, empezando por un clip sintético.
 
 ---
 
