@@ -89,6 +89,22 @@ html.is-landing.lenis body {
   pointer-events: none;
 }
 
+/* One fixed veil behind the words (home.js updateWash): dark on the side the words are on, or a
+   floor under them on phones. Fixed, not per chapter, so no chapter's end shows as a line. */
+.film-wash {
+  --wash-left: 0;
+  --wash-right: 0;
+  --wash-floor: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(90deg, rgb(10 10 9 / calc(0.6 * var(--wash-left))), rgb(10 10 9 / calc(0.2 * var(--wash-left))) 32%, transparent 50%),
+    linear-gradient(270deg, rgb(10 10 9 / calc(0.6 * var(--wash-right))), rgb(10 10 9 / calc(0.2 * var(--wash-right))) 32%, transparent 50%),
+    linear-gradient(transparent 55%, rgb(10 10 9 / calc(0.8 * var(--wash-floor))) 85%);
+}
+
 .boot {
   position: absolute;
   right: var(--gutter);
@@ -440,7 +456,7 @@ html.is-landing.lenis body {
 /* Capture: video, skeleton and robot on one clock */
 
 .capture {
-  height: 420svh;
+  height: 200svh; /* one screen to arrive and one to watch: video, skeleton and robot show at once */
 }
 
 .capture-media {
@@ -504,23 +520,14 @@ html.is-landing.lenis body {
   width: min(40vw, 560px);
 }
 
-/* The three beats share one spot and take turns. */
-.beats {
-  display: grid;
-}
-
-.beats li {
-  grid-area: 1 / 1;
-}
-
-.beats p {
+.capture-caption p {
   margin-top: 16px !important;
 }
 
-/* Gym: the training runs with the scroll */
+/* Gym: three stops of the training, one per screen of scroll */
 
 .gym {
-  height: 460svh;
+  height: 300svh; /* three stages, one screen each (home.js GYM_STAGES) */
 }
 
 .gym-caption {
@@ -530,50 +537,61 @@ html.is-landing.lenis body {
   transform: translateY(-50%);
 }
 
-.counter {
+.gym-text {
+  margin-top: 16px !important;
+}
+
+/* The three stages: the one on screen lights up, the others wait dimmed. */
+.gym-stages {
   display: grid;
-  gap: 6px;
+  gap: 10px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
 }
 
-.counter b {
-  font: 500 clamp(44px, 5.4vw, 88px)/0.9 var(--display);
-  letter-spacing: -0.04em;
-  font-variant-numeric: tabular-nums;
-  color: var(--fg);
+.gym-stages li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 14px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-left: 3px solid transparent;
+  opacity: 0.4;
+  transition: opacity 0.35s ease, border-color 0.35s ease;
 }
 
-.counter span {
+.gym-stages li.on {
+  border-left-color: var(--signal);
+  opacity: 1;
+}
+
+.stage-steps {
+  grid-row: span 3;
+  align-self: center;
+  min-width: 7ch;
   font: 500 12px/1 var(--mono);
   text-transform: uppercase;
   color: var(--dim);
 }
 
-.gym-text {
-  margin-top: 24px !important;
+.stage-verdict {
+  font: 500 clamp(20px, 1.8vw, 26px)/1.1 var(--display);
+  letter-spacing: -0.02em;
 }
 
-.gym-readout {
-  display: flex;
-  gap: 32px;
-  margin-top: 28px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+.gym-stages li.on .stage-verdict {
+  color: var(--signal);
 }
 
-.gym-readout div {
-  display: grid;
-  gap: 6px;
+.stage-text {
+  font-size: 15px;
 }
 
-.gym-readout span {
-  font: 500 10px/1 var(--mono);
+.stage-numbers {
+  font: 500 11px/1.4 var(--mono);
   text-transform: uppercase;
   color: var(--dim);
-}
-
-.gym-readout b {
-  font: 500 22px/1 var(--display);
-  font-variant-numeric: tabular-nums;
 }
 
 .gym-status {
@@ -616,26 +634,6 @@ html.is-landing.lenis body {
   stroke-width: 1.6;
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
-}
-
-/* A dark wash on the side where the words are, so they read over any shot. */
-.gym .sticky::before,
-.capture .sticky::before,
-.policy .sticky::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.gym .sticky::before,
-.capture .sticky::before {
-  background: linear-gradient(90deg, rgb(10 10 9 / 0.6), rgb(10 10 9 / 0.2) 32%, transparent 50%);
-}
-
-.policy .sticky::before {
-  background: linear-gradient(270deg, rgb(10 10 9 / 0.6), rgb(10 10 9 / 0.2) 32%, transparent 50%);
 }
 
 /* Policy: the legs up close, the numbers beside them */
@@ -895,19 +893,21 @@ html.is-landing.lenis body {
     width: auto;
   }
 
-  /* A soft dark floor under low captions keeps them readable over the robot. */
-  .hero::after,
-  .sticky::after {
-    content: '';
-    position: absolute;
-    inset: 55% 0 0;
-    z-index: 1;
-    background: linear-gradient(transparent, rgb(10 10 9 / 0.8) 60%);
-    pointer-events: none;
-  }
 
   .hero-caption {
     bottom: 120px;
+  }
+
+  /* Gym on a phone: only the stage on screen, low, under the robot; the chart stays for wide screens. */
+  .gym-caption {
+    top: auto;
+    bottom: 24px;
+    transform: none;
+  }
+
+  .gym-stages li:not(.on),
+  .gym .chart-fig {
+    display: none;
   }
 
   .hero-caption .cta-row .hero-push {
@@ -919,11 +919,6 @@ html.is-landing.lenis body {
     bottom: auto;
   }
 
-  .gym .sticky::before,
-  .capture .sticky::before,
-  .policy .sticky::before {
-    display: none; /* the low captions have their own floor (::after) */
-  }
 
   .hud-push {
     display: inline-flex;

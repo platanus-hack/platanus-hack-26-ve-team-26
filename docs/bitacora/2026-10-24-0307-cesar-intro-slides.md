@@ -3,7 +3,7 @@ persona: César
 rama: cesar/web
 sesion: 2128dcdb-7eee-42c2-b4a0-ada7657dbaa2
 inicio: 2026-10-24 03:07
-estado: cerrada
+estado: en curso
 ---
 
 # Inicio de dos slides, WEB-1 y mundos (SIM-3)
@@ -28,18 +28,23 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - WEB-1 (plan del producto): la cámara de En vivo graba desde que se enciende, con contador hasta 30 s, "Parar y guardar" y guardado al apagarla o salir. El clip va a la galería como "Tu cámara · hh:mm" y se abre en Simulaciones, donde el robot lo repite (movimiento calculado en el navegador). El resultado tiene su propio bloque, porque la línea de estado se reescribe cada segundo. Falta mandarlo al servidor (`POST /clips`, SRV-1).
 - SIM-3 (mundos), en la carpeta de Pastor con commits propios: `physics/worlds/` (plano, piedras, resbaloso, viento) con el formato de "Mundos" del contrato que propuso Pastor (`9d2bab0`); `sim.applyWorld` (fricción en los pares de contacto con el piso, masas e inercias con `mj_setConst`, `kp`/`kv` y topes de torque, viento como fuerza en el torso por arrastre: 10 m/s ≈ 30 N); escena de piedras generada (`npm run make-stones-scene`: mapa de alturas de 161×161 celdas de 5 cm, piedras de hasta 3 cm, semilla fija) que el visor ahora dibuja; `view.setWorld` en `index.js` (con otra escena recarga el modelo y la política); `check-worlds` dentro de `npm run check`. En la web, selector "Mundo" en Simulaciones.
 - Estado al cierre de esta parte (24/10, ~05:30): el lector de mundos en Python para `training/` quedó delegado a Juan (con ENT-3). Juan rehízo la landing en `web/` (cinemática oscura, el G1 real como cámara, GSAP y Lenis; su [decisión de marca](../decisiones/2026-10-24-marca-instrumento-de-laboratorio.md)), así que las dos slides de esta sesión quedaron reemplazadas y su decisión marcada como tal. En el rebase conservó los estilos de grabación de WEB-1 y frases del inicio de César. También entraron SIM-1 y SIM-2 (Pastor) y SRV-1, SRV-2 y SRV-3 (Juan): WEB-2 y WEB-3 ya no están bloqueadas, y el contrato aceptó el formato de mundos de SIM-3.
+- Ajustes a la landing de Juan, pedidos por César: el piso es una calle (`web/src/landing/street.js`, textura dibujada por código: acera de losas de 1 m, bordillo, asfalto con línea discontinua, otra acera; la acera corre a lo largo de la caminata, que va hacia −z en three.js) y la cuadrícula se esconde mientras la landing tiene el robot; un velo fijo (`.film-wash`, `updateWash` en `home.js`) reemplaza los velos de cada sección, que dejaban una línea recta al terminar cada una; Capture pasó de 420svh a 200svh, con video, esqueleto y robot a la vez y un solo texto; Gym pasó de 460svh y cinco niveles por scroll continuo a 300svh y tres etapas con sus cifras medidas, y la curva se dibuja hasta la etapa en pantalla. En celular, Gym muestra solo la etapa activa, abajo.
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- Landing en 1280×800 y 375×812: la calle se ve bajo el robot en todas las tomas, el paso de Capture a Gym no deja franjas, las tres etapas cambian el checkpoint del robot y la curva, sin errores en la consola ni desborde.
 - SIM-3: `npm run check` de `physics/` pasa entero (check, retarget, policy, worlds). Cada mundo carga y sus parámetros llegan a MuJoCo. La política de hoy (entrenada en plano) aguanta 10 s de pie con los valores del medio de los cuatro mundos; con 40 N de viento se cayó a los 3,5 s. En el navegador: el selector cambia de mundo, el terreno de piedras se ve, el robot retoma el clip, Empujar funciona en Viento, y al volver al inicio el robot está en plano.
 - WEB-1 con la cámara falsa de Chrome (sin persona): empieza a grabar al encender, el contador avanza, Parar muestra "No se vio a nadie lo suficiente" con "Grabar otro", y la segunda grabación se detiene sola en 0:30. **No se probó con una persona real**: el camino que guarda el clip falta verlo con una webcam.
 - Robot de la slide 1, con Chrome sin GPU: empieza caminando, a los 9 s corre, el empujón cambia la etiqueta a "se recupera solo" y luego retoma el movimiento. Sin desborde en 390 px.
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- La primera textura de la calle salía casi blanca: la landing ilumina fuerte al robot (luz en la cámara y exposición 1,35) y lavaba el texto del hero. Se bajaron los tonos a la mitad.
+- En celular, las tres etapas y la curva tapaban al robot: ahí solo se ve la etapa activa.
 
 - La primera versión de los mundos usaba otros nombres (`name`, viento en N, `push_newtons`); en medio llegó la propuesta de contrato de Pastor con `title`, `wind_mps` y `push_n`, y se alineó a ella.
 - Para dibujar las piedras hubo que confirmar el orden de las filas del mapa de alturas: con `mj_ray` sobre la piedra más alta, la fila 0 está en −y.

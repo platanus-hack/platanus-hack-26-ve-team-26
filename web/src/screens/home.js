@@ -9,8 +9,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import * as THREE from 'three';
 import '../landing/landing.css';
 import curve from '../landing/training-curve.json';
+import { dressStreet } from '../landing/street.js';
 import { savedMotion } from '../motions.js';
-import { FINAL_LEVEL, LEVELS, policyUrls } from '../policies.js';
+import { FINAL_LEVEL, policyUrls } from '../policies.js';
 import { fetchClip, preloaded } from '../preloaded.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import { prefetch } from '../router.js';
@@ -30,6 +31,13 @@ const FALLEN_PELVIS_M = 0.45; // the standing G1 has its pelvis at 0.78 m
 const GYM_PUSH_EVERY_S = 2.5; // the Gym pushes the standing robot this often, so every level shows itself
 const GYM_RESTART_S = 1.6; // a fallen robot lies this long before it is stood up again
 const AFTER_PUSH_S = 5; // after a push in the hero, the robot stands this long before it is reset
+// The Gym in three stops of the real training, each a saved checkpoint, with what
+// training/README.md measured for it: seconds standing (of 20) and 250 N pushes held (of 4).
+const GYM_STAGES = [
+  { level: 'g1-stand-step-0', steps: 0, verdict: 'No sirve', up: '1,1 s', pushes: '0 de 4', text: 'Sin práctica se cae en un segundo.' },
+  { level: 'g1-stand-step-10000000', steps: 10e6, verdict: 'Más o menos', up: '9,6 s', pushes: '1 de 4', text: 'Ya se para, pero un empujón lo tumba casi siempre.' },
+  { level: 'g1-stand', steps: 40e6, verdict: 'Estable', up: '20 s', pushes: '4 de 4', text: 'Aguanta de pie y se recupera de los empujones.' },
+];
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const narrow = () => innerWidth < 860;
 
@@ -62,6 +70,7 @@ export function mount(root, { api }) {
       </div>
     </div>
     <div class="film-shade" aria-hidden="true"></div>
+    <div class="film-wash" aria-hidden="true"></div>
 
     <header class="topbar">
       <a class="wordmark" href="#/" aria-label="Tridi, inicio">
@@ -108,11 +117,8 @@ export function mount(root, { api }) {
         </div>
         <div class="caption capture-caption">
           <p class="product">Tridi Capture</p>
-          <ol class="beats">
-            <li><h2>Un video cualquiera</h2><p>Once segundos de celular. Sin trajes, sin estudio, sin marcadores.</p></li>
-            <li><h2>Su esqueleto, en 3D</h2><p>33 puntos por cuadro, 30 veces por segundo. Si hay más gente en el video, eliges a quién seguir.</p></li>
-            <li><h2>En el cuerpo del robot</h2><p>Otras medidas, otro peso, 29 articulaciones: 3,2 cm de error mediano. Aquí lo copia sin física todavía, por eso los pies patinan.</p></li>
-          </ol>
+          <h2>De un video de celular al cuerpo del robot</h2>
+          <p>Saca el esqueleto 3D de la persona, 33 puntos 30 veces por segundo, y lo pasa a las 29 articulaciones del robot con 3,2 cm de error. Aquí lo copia sin física todavía.</p>
         </div>
       </div>
     </section>
@@ -121,13 +127,17 @@ export function mount(root, { api }) {
       <div class="sticky">
         <div class="caption gym-caption">
           <p class="product">Tridi Gym</p>
-          <p class="counter"><b data-gym="steps">0</b><span>pasos de práctica</span></p>
-          <p class="gym-text">Nadie le escribe cómo pararse. Lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada ${num(GYM_PUSH_EVERY_S, 1)} segundos.</p>
-          <div class="gym-readout">
-            <div><span>aguanta de pie</span><b data-gym="up">—</b></div>
-            <div><span>momento del entrenamiento</span><b data-gym="level">—</b></div>
-          </div>
-          <p class="gym-status" data-gym="status">Sigue bajando: el entrenamiento avanza con el scroll.</p>
+          <p class="gym-text">Nadie le escribe cómo pararse: lo intenta, se cae y vuelve a intentarlo. Lo empujamos cada ${num(GYM_PUSH_EVERY_S, 1)} segundos.</p>
+          <ol class="gym-stages">
+            ${GYM_STAGES.map((stage, i) => `
+            <li data-stage="${i}">
+              <span class="stage-steps">${stage.steps ? `${stage.steps / 1e6} M` : '0'} pasos</span>
+              <b class="stage-verdict">${stage.verdict}</b>
+              <span class="stage-text">${stage.text}</span>
+              <span class="stage-numbers">${stage.up} de pie · ${stage.pushes} empujones</span>
+            </li>`).join('')}
+          </ol>
+          <p class="gym-status"><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></p>
           <figure class="chart-fig">
             <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a cerca de 20 s al final"></svg>
             <figcaption>Segundos de pie por intento · ${curve.minutes} minutos en una laptop · log real</figcaption>
@@ -230,6 +240,7 @@ export function mount(root, { api }) {
   let saved = null; // the viewer's camera as the app screens expect it, put back on unmount
   let lights = []; // the landing's extra lights
   let key = null; // the one of them that rides with the camera
+  let undressStreet = () => {}; // puts the floor back as the app screens expect it
 
   // The camera eases toward the shot of the chapter on screen, blending between neighbours.
   const shot = { ...SHOTS.hero };
@@ -363,7 +374,19 @@ export function mount(root, { api }) {
     const span = gymEl.offsetHeight - innerHeight;
     return Math.min(1, Math.max(0, (scrollY - top) / span));
   };
-  const gymLevel = () => LEVELS[Math.min(LEVELS.length - 1, Math.floor(gymProgress() * LEVELS.length))].id;
+  // The stage on screen: the chapter is split in three equal stretches of scroll.
+  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.floor(gymProgress() * GYM_STAGES.length));
+  const gymLevel = () => GYM_STAGES[gymStage()].level;
+  let shownStage = -1;
+  function showGymStage() {
+    const stage = gymStage();
+    if (stage === shownStage) return;
+    shownStage = stage;
+    $$('.gym-stages li').forEach((li, i) => li.classList.toggle('on', i === stage));
+    // The training log draws itself up to this stage's steps.
+    const upTo = GYM_STAGES[stage].steps / curve.steps;
+    gsap.to('.chart .line', { strokeDashoffset: 1 - Math.max(upTo, 0.02), duration: reducedMotion ? 0 : 0.9, ease: 'power2.out' });
+  }
   // Times are the simulation's own clock, not the wall's: a slow or hidden tab cannot fake them.
   function startGymRun() {
     view.stop();
@@ -405,8 +428,27 @@ export function mount(root, { api }) {
   let skeleton = null;
   const captureEl = $('.capture');
 
+  // ---- The wash: one fixed dark veil behind the words, on the side they are on ----
+  // A veil per chapter ended in a hard line where the chapter ended; one veil for the whole page,
+  // eased toward each chapter's side, leaves no edge. On phones the words sit low: a floor instead.
+  const washEl = $('.film-wash');
+  const WASH = { hero: [0, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
+  const wash = { left: 0, right: 0, floor: 0 };
+  function updateWash() {
+    const mid = scrollY + innerHeight * 0.5;
+    const chapter = chapters.findLast((c) => c.offsetTop <= mid) ?? chapters[0];
+    const [left, right] = WASH[chapter.dataset.shot] ?? [0, 0];
+    const goal = narrow() ? { left: 0, right: 0, floor: chapter.dataset.shot === 'close' ? 0 : 1 } : { left, right, floor: 0 };
+    const k = reducedMotion ? 1 : 0.08;
+    for (const side of Object.keys(wash)) wash[side] += (goal[side] - wash[side]) * k;
+    washEl.style.setProperty('--wash-left', wash.left.toFixed(3));
+    washEl.style.setProperty('--wash-right', wash.right.toFixed(3));
+    washEl.style.setProperty('--wash-floor', wash.floor.toFixed(3));
+  }
+
   // ---- Every frame ----
   let frameId = requestAnimationFrame(function frame() {
+    updateWash();
     if (view) {
       directCamera(view);
       setMode(modeAt());
@@ -418,7 +460,10 @@ export function mount(root, { api }) {
         }
         view.seek(video.currentTime);
       } else if (!video.paused) video.pause();
-      if (mode === 'gym') runGym();
+      if (mode === 'gym') {
+        showGymStage();
+        runGym();
+      }
       if (mode === 'stand' && hero.pushedAt && !hero.fallen && view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M) {
         hero.fallen = true; // the policy misses about 1 push in 15 (physics/README.md): say so
         hero.falls += 1;
@@ -448,6 +493,8 @@ export function mount(root, { api }) {
       saved.exposure = view.viewer.renderer.toneMappingExposure;
       view.viewer.renderer.toneMappingExposure = 1.35;
       lights.forEach((light) => view.viewer.scene.add(light));
+      // A street under the robot instead of the grid, while the landing has it.
+      undressStreet = dressStreet(view.viewer.scene, view.viewer.renderer);
       film.classList.add('ready');
       $$('.hero-push').forEach((button) => (button.disabled = false));
     },
@@ -459,6 +506,7 @@ export function mount(root, { api }) {
 
   // ---- Scroll choreography (GSAP) ----
   drawChart($('.chart')); // before the tweens, which animate its line
+  $('.chart .line').style.strokeDashoffset = '1'; // hidden until the Gym's first stage draws it
   const ctx = gsap.context(() => {
     if (reducedMotion) return;
     // Hero words: lines rise in on load; the whole caption drifts up and fades as you leave.
@@ -470,46 +518,16 @@ export function mount(root, { api }) {
       scrollTrigger: { trigger: '.hero', start: 'top top', end: 'bottom 40%', scrub: true },
     });
 
-    // Capture: the video opens full screen and shrinks into its frame, then the skeleton slides
-    // in under it, then the robot (the film behind) comes up. One beat of text per step.
-    const capture = gsap.timeline({
-      scrollTrigger: { trigger: '.capture', start: 'top top', end: 'bottom bottom', scrub: 0.6 },
+    // Capture: video, skeleton and robot are all on screen at once; the frames and the one text
+    // rise in as the chapter arrives.
+    gsap.from('.capture-media .frame, .capture-caption > *', {
+      opacity: 0,
+      y: 40,
+      stagger: 0.06,
+      scrollTrigger: { trigger: '.capture', start: 'top 75%', end: 'top 15%', scrub: true },
     });
-    capture
-      .from('.frame-video', {
-        scale: () => (narrow() ? 1 : 1.9),
-        x: () => (narrow() ? 0 : innerWidth * 0.22),
-        y: () => (narrow() ? 0 : innerHeight * 0.12),
-        duration: 1,
-        ease: 'power2.inOut',
-      }, 0)
-      .to('.film-shade', { '--shade': 0.55, duration: 0.6 }, 0) // the video in front, the robot waits dimmed
-      .from('.beats li:nth-child(1)', { opacity: 0, y: 30, duration: 0.4 }, 0.6)
-      .from('.frame-skeleton', { opacity: 0, y: 60, duration: 0.6 }, 1.2)
-      .to('.beats li:nth-child(1)', { opacity: 0, y: -20, duration: 0.2 }, 1.3)
-      .from('.beats li:nth-child(2)', { opacity: 0, y: 30, duration: 0.4 }, 1.5)
-      .to('.film-shade', { '--shade': 0, duration: 0.8 }, 2.0)
-      .to('.beats li:nth-child(2)', { opacity: 0, y: -20, duration: 0.2 }, 2.1)
-      .from('.beats li:nth-child(3)', { opacity: 0, y: 30, duration: 0.4 }, 2.3)
-      .to({}, { duration: 0.8 });
 
-    // Gym: the counter runs with the training, and the chart draws itself.
-    const counter = { value: 0 };
-    gsap.to(counter, {
-      value: curve.steps,
-      ease: 'none',
-      scrollTrigger: { trigger: '.gym', start: 'top top', end: 'bottom bottom', scrub: true },
-      onUpdate: () => {
-        $('[data-gym="steps"]').textContent = steps(counter.value);
-        const i = Math.min(LEVELS.length - 1, Math.floor(gymProgress() * LEVELS.length));
-        $('[data-gym="level"]').textContent = LEVELS[i].label.toLowerCase();
-      },
-    });
-    gsap.fromTo('.chart .line', { strokeDashoffset: 1 }, {
-      strokeDashoffset: 0,
-      ease: 'none',
-      scrollTrigger: { trigger: '.gym', start: 'top top', end: 'bottom bottom', scrub: true },
-    });
+    // Gym: its words come in; the stages and the chart move with the stage on screen (showGymStage).
     gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, scrollTrigger: { trigger: '.gym', start: 'top 60%', end: 'top top', scrub: true } });
 
     // Policy: the numbers come in one by one.
@@ -571,6 +589,7 @@ export function mount(root, { api }) {
       controls.enabled = true;
       lights.forEach((light) => view.viewer.scene.remove(light));
       view.viewer.renderer.toneMappingExposure = saved.exposure;
+      undressStreet();
     }
     robot.detach();
   };
