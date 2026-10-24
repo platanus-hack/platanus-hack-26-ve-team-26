@@ -8,11 +8,19 @@ Requiere [uv](https://docs.astral.sh/uv/). Desde la raíz del repo:
 
 ```bash
 uv run --project training python -m training.ppo --steps 20000000 --run stand      # ~30 min en una M2
-uv run --project training python -m training.evaluate training/runs/stand/step_*.pt  # de pie y empujones, por checkpoint
+uv run --project training python -m training.evaluate training/runs/stand/step_*.pt  # quieto (giro, desplazamiento, pisadas, brusquedad) y empujones, por checkpoint
+uv run --project training python -m training.watch training/runs/stand --steps 20000000  # el progreso en vivo de un run
 uv run --project training python -m training.export training/runs/stand/step_20000000.pt --id g1-stand
 uv run --project training python -m training.diagnose_reference [clip_id ...]        # ¿el G1 puede hacer este RobotMotion? Antes de imitarlo
 uv run --project training python -m training.ppo --task mimic --motion <clip_id o RobotMotion.json> --steps 10000000 --run <run>
 uv run --project training python -m training.browser_fixture training/policies/<id>.onnx  # estados para la prueba del navegador (physics/)
+```
+
+Una postura quieta (ver "La política de hoy"): los términos de quietud de `env.Stance` se activan con `--reward`, los empujones se espacian con `--push-every`, y al continuar un run `--std` vuelve a abrir la exploración:
+
+```bash
+uv run --project training python -m training.ppo --run stand-v7a --steps 12000000 --init <checkpoint.pt> \
+  --reward turn=0.3,feet=0.5,planted=0.1,rate=0.02 --push-every 4,8 --push-min 50 --push-max 300 --std 0.3
 ```
 
 `diagnose_reference.py` revisa una referencia de imitación sin política, en 2 s: pies contra el piso, objetivos de los pies de la recompensa, rangos de los motores, y la referencia jugada por los motores con la pelvis sostenida (error, retraso de cada motor y contacto de los pies).
@@ -69,9 +77,10 @@ Ninguno llega al final: `g1-walk` sigue 3,5 s del clip desde el inicio y se entr
 | Modelo | `physics/models/unitree_g1/scene_mjx.xml`, MuJoCo 3.16.0 | La variante para entrenar (cápsulas, motores más blandos), la misma versión que corre la web en WASM |
 | Decisión | 50 veces por segundo (5 pasos de física de 4 ms) | Atrapa un tropezón (una caída dura ~0,5 s) |
 | Acción | 29 números; objetivo de cada motor = pose de pie + 0,25 rad × acción, dentro de su rango | Una política sin entrenar solo tiembla alrededor de la pose de pie |
-| Recompensa | Erguido 0,4 + altura 0,3 + cerca de la pose de pie 0,2 + quieto 0,1, menos cambios bruscos | ~1 por paso de pie; todo positivo, así que caerse (que corta el episodio) es lo peor |
+| Recompensa | Erguido 0,4 + altura 0,3 + cerca de la pose de pie 0,2 + quieto 0,1, menos cambios bruscos | ~1 por paso de pie; todo positivo y nunca bajo 0, así que caerse (que corta el episodio) es lo peor |
+| Quietud (`Stance`, apagada por defecto) | Castigo cuadrático al giro de la pelvis; castigo a la velocidad de los pies y premio por tenerlos apoyados, solo si no hubo empujón en el último segundo; peso del cambio brusco | `g1-stand` aprendió a equilibrarse pivotando sobre un pie a 57°/s porque nada lo castigaba. Un paso es como se aguanta un empujón de 250 N (mueve la pelvis a 0,7 m/s, fuera del pie): cobrarlo desde el paso 0 es por lo que `stand-v5` nunca aprendió a darlo. Cuadrático y no `exp`: saturado no tiene gradiente |
 | Caída | Pelvis bajo 0,5 m o torso inclinado más de 60° | Desde ahí el G1 no se levanta |
-| Empujones | Cada 2-4 s, hasta 300 N durante 0,1 s, dirección al azar | El botón de la web empuja 250 N: queda dentro de lo aprendido |
+| Empujones | Cada 2-4 s (`--push-every`), hasta 300 N durante 0,1 s, dirección al azar | El botón de la web empuja 250 N: queda dentro de lo aprendido. Para una postura quieta, cada 4-8 s: con 5-9 empujones por episodio nunca se asienta |
 | Episodio | 20 s, arrancando con la pose de pie ±0,05 rad | Aprende a sostenerse desde muchas poses, no a repetir una |
 
 ## Para correr la política en el navegador (Pastor y César)
