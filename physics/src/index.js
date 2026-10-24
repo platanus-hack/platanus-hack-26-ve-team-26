@@ -125,6 +125,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
 
   return {
     sim,
+    // The three.js side (camera, controls, targetHeight), for a page that directs the camera itself.
+    viewer: view,
     play: () => (playing = true),
     pause: () => (playing = false),
     setSpeed: (value) => (speed = value),

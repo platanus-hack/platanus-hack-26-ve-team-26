@@ -63,6 +63,8 @@ export class RobotView {
 
     this.matrix = new THREE.Matrix4();
     this.followed = new THREE.Vector3();
+    // Height the camera aims at; a page directing the camera (createSimView's `viewer`) can change it.
+    this.targetHeight = TARGET_HEIGHT;
     this.resizeObserver = new ResizeObserver(() => this.resize());
     this.resizeObserver.observe(canvas);
     this.resize();
@@ -184,7 +186,7 @@ export class RobotView {
 
   follow() {
     const [x, y] = this.sim.bodyPosition('pelvis');
-    this.followed.set(x, TARGET_HEIGHT, -y); // MuJoCo (x, y, z) is three.js (x, z, -y)
+    this.followed.set(x, this.targetHeight, -y); // MuJoCo (x, y, z) is three.js (x, z, -y)
     const delta = this.followed.clone().sub(this.controls.target);
     this.controls.target.add(delta);
     this.camera.position.add(delta);

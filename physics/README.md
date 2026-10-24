@@ -35,6 +35,7 @@ await view.loadPolicy(onnxUrl, jsonUrl); // una política entrenada (training/po
 view.clearPolicy(); // quitarla y volver a los motores rígidos
 await view.setWorld(WORLDS[1]); // un mundo de physics/worlds: piso, agarre, viento, masas y motores (ver más abajo)
 view.dispose(); // al desmontar: corta el ciclo y libera WebGL y la memoria de MuJoCo
+view.viewer;    // el lado three.js (camera, controls, targetHeight): para una página que dirige la cámara (la landing)
 ```
 
 La web pone el `<canvas>` (con su tamaño en CSS) y los botones; `physics/` pone la escena, el robot, la física y el render. `loadClip` y `loadPolicy` llegan cuando existan `RobotMotion` y la primera `policy.onnx` (ver [`../docs/contrato.md`](../docs/contrato.md)).
