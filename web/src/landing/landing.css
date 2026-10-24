@@ -631,11 +631,11 @@ html.is-landing.lenis body {
 
 .gym .sticky::before,
 .capture .sticky::before {
-  background: linear-gradient(90deg, rgb(10 10 9 / 0.85), rgb(10 10 9 / 0.4) 38%, transparent 60%);
+  background: linear-gradient(90deg, rgb(10 10 9 / 0.6), rgb(10 10 9 / 0.2) 32%, transparent 50%);
 }
 
 .policy .sticky::before {
-  background: linear-gradient(270deg, rgb(10 10 9 / 0.85), rgb(10 10 9 / 0.4) 38%, transparent 60%);
+  background: linear-gradient(270deg, rgb(10 10 9 / 0.6), rgb(10 10 9 / 0.2) 32%, transparent 50%);
 }
 
 /* Policy: the legs up close, the numbers beside them */
@@ -893,9 +893,9 @@ html.is-landing.lenis body {
   .sticky::after {
     content: '';
     position: absolute;
-    inset: 45% 0 0;
+    inset: 55% 0 0;
     z-index: 1;
-    background: linear-gradient(transparent, rgb(10 10 9 / 0.92) 55%);
+    background: linear-gradient(transparent, rgb(10 10 9 / 0.8) 60%);
     pointer-events: none;
   }
 

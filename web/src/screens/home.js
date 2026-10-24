@@ -438,10 +438,14 @@ export function mount(root, { api }) {
       // Trailer lighting while the landing has the robot: a key light that rides with the camera
       // (directCamera moves it), so every shot is lit from the front whatever the angle, and a
       // rim from behind that draws the silhouette. Taken out again on unmount.
-      key = new THREE.PointLight(0xffffff, 6, 0, 1.2);
+      key = new THREE.PointLight(0xffffff, 9, 0, 1.2);
       const rim = new THREE.DirectionalLight(0xfff1e6, 2.2);
       rim.position.set(-3, 2.5, 2);
-      lights = [key, rim];
+      // Ambient sky light and a brighter exposure, so the dark scene never swallows the robot.
+      const sky = new THREE.HemisphereLight(0xffffff, 0x3a3833, 1.4);
+      lights = [key, rim, sky];
+      saved.exposure = view.viewer.renderer.toneMappingExposure;
+      view.viewer.renderer.toneMappingExposure = 1.35;
       lights.forEach((light) => view.viewer.scene.add(light));
       film.classList.add('ready');
       $$('.hero-push').forEach((button) => (button.disabled = false));
@@ -478,11 +482,12 @@ export function mount(root, { api }) {
         duration: 1,
         ease: 'power2.inOut',
       }, 0)
+      .to('.film-shade', { '--shade': 0.55, duration: 0.6 }, 0) // the video in front, the robot waits dimmed
       .from('.beats li:nth-child(1)', { opacity: 0, y: 30, duration: 0.4 }, 0.6)
       .from('.frame-skeleton', { opacity: 0, y: 60, duration: 0.6 }, 1.2)
       .to('.beats li:nth-child(1)', { opacity: 0, y: -20, duration: 0.2 }, 1.3)
       .from('.beats li:nth-child(2)', { opacity: 0, y: 30, duration: 0.4 }, 1.5)
-      .fromTo('.film-shade', { '--shade': 0.82 }, { '--shade': 0, duration: 0.8 }, 2.0)
+      .to('.film-shade', { '--shade': 0, duration: 0.8 }, 2.0)
       .to('.beats li:nth-child(2)', { opacity: 0, y: -20, duration: 0.2 }, 2.1)
       .from('.beats li:nth-child(3)', { opacity: 0, y: 30, duration: 0.4 }, 2.3)
       .to({}, { duration: 0.8 });
@@ -564,6 +569,7 @@ export function mount(root, { api }) {
       camera.updateProjectionMatrix();
       controls.enabled = true;
       lights.forEach((light) => view.viewer.scene.remove(light));
+      view.viewer.renderer.toneMappingExposure = saved.exposure;
     }
     robot.detach();
   };
