@@ -22,7 +22,10 @@ const MODEL_URL = (variant) =>
 const DEFAULT_MODEL = 'full';
 
 // 1280x720 is enough for a full body a few meters away; asking for more only slows the model.
-const CAMERA = { width: { ideal: 1280 }, height: { ideal: 720 } };
+// 60 frames per second where the camera has them: the 'full' model takes ~11 ms a frame on an M2
+// (docs/investigacion/2026-10-24-manos-y-dedos-en-vivo.md), so the camera's 30 was the limit, and
+// a fast arm moves half as far between two frames. A camera without 60 gives its best.
+const CAMERA = { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 60 } };
 
 export class CameraError extends Error {}
 
