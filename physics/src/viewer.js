@@ -173,9 +173,14 @@ export class RobotView {
   resize() {
     const { clientWidth: w, clientHeight: h } = this.canvas;
     if (!w || !h) return;
+    const size = this.renderer.getSize(new THREE.Vector2());
+    if (size.x === w && size.y === h) return;
     this.renderer.setSize(w, h, false);
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    // setSize clears the canvas, and the next draw is a frame away: draw now, or the browser shows
+    // an empty (black) frame, as phones did while the address bar hid during a scroll.
+    if (this.geoms) this.render();
   }
 
   // Copies the latest MuJoCo pose to three.js and draws a frame.
