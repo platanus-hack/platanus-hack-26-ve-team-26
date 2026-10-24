@@ -24,6 +24,8 @@ Primera fase de `training/`: entorno de RL legible sobre `scene_mjx.xml`, una po
 - ONNX igual a torch (3e-8 rad), 265 KB.
 - Primer entrenamiento `stand-v1`: 20 M pasos en 38,5 min. La política se sostiene 20 s sin empujones, aguanta los 4 empujones hasta 150 N, y con 250 N aguanta 2,2 de 4 (13,4 s de pie). Escalera para el pitch: 1,1 s (sin entrenar), 4,2 s (3 M), 9,6 s (10 M), 13,4 s (20 M). Exportada a `training/policies/` (`g1-stand.onnx` y los checkpoints `g1-stand-step-*`).
 
+- Segunda vuelta `stand-v2`: continúa la v1 con empujones de 100 a 350 N (20 M pasos más, 34,5 min). Ahora aguanta los 4 empujones de 250 N en los 5 arranques y 20 s de pie; con 300 N, 3,2 de 4. Reemplaza a `training/policies/g1-stand.onnx` (mismo nombre: el `loadPolicy` de Pastor no cambia).
+
 ## Qué no funcionó
 
 - La primera evaluación decía que todo se caía a los 4,4 s, hasta con 50 N. Era un bug de la evaluación, no de la política: con los empujones al azar apagados, `_push()` salía sin limpiar la fuerza y el empujón quedaba aplicado para siempre. Arreglado en `env.py`; el entrenamiento no lo tenía, porque ahí los empujones siempre están prendidos.
@@ -37,6 +39,6 @@ Primera fase de `training/`: entorno de RL legible sobre `scene_mjx.xml`, una po
 
 ## Sigue
 
-- Seguir entrenando desde `stand-v1` con empujones más fuertes, para que aguante los 4 de 250 N.
+- Imitación con los `RobotMotion` de Pastor (`physics/motions/`): que el G1 camine y corra. Antes de arrancarla, esperar el OK de Juan (su Mac también es el servidor de video).
 - Pastor/César: cargar `policy.onnx` en la web con el `obs` del README.
 - Imitación: recompensa por seguir un `RobotMotion` cuando Pastor lo tenga.

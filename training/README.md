@@ -52,15 +52,15 @@ Los checkpoints quedan en `training/runs/<run>/` (no se versionan) en los pasos 
 
 ## La política de hoy: `policies/g1-stand.onnx`
 
-Evaluada con `evaluate.py`: 5 arranques, 20 s cada uno, y el empujón de la web (250 N, 0,1 s, en el torso) a los 4, 8, 12 y 16 s desde adelante, la izquierda, atrás y la derecha.
+Dos vueltas en una M2: `stand-v1` (20 M pasos, 38,5 min, empujones al azar de 0 a 300 N) y `stand-v2`, que la continúa con empujones de 100 a 350 N (20 M pasos más, 34,5 min). Evaluada con `evaluate.py`: 5 arranques de 20 s, y el empujón de la web (250 N, 0,1 s, en el torso) a los 4, 8, 12 y 16 s desde adelante, la izquierda, atrás y la derecha.
 
-| Checkpoint (`policies/`) | De pie (de 20 s) | Empujones de 250 N aguantados (de 4) |
+| Política (`policies/`) | De pie (de 20 s) | Empujones de 250 N aguantados (de 4) |
 | --- | --- | --- |
 | Sin política (motores fijos en la pose de pie) | 1,1 s | 0 |
 | `g1-stand-step-0` (sin entrenar) | 1,1 s | 0 |
-| paso 1 M | 2,2 s | 0 |
-| `g1-stand-step-3000000` | 4,2 s | 0 |
-| `g1-stand-step-10000000` | 9,6 s | 1,2 |
-| `g1-stand-step-20000768` = `g1-stand` | 13,4 s | 2,2 |
+| `g1-stand-step-3000000` (v1, 3 M) | 4,2 s | 0 |
+| `g1-stand-step-10000000` (v1, 10 M) | 9,6 s | 1,2 |
+| `g1-stand-step-20000768` (v1, 20 M) | 13,4 s | 2,2 |
+| **`g1-stand`** (v2, 40 M en total) | **20 s** | **4** |
 
-Sin empujones se sostiene los 20 s. Aguanta los 4 empujones hasta 150 N; con 200 N aguanta 3,2 y con 250 N, 2,2. La escalera de checkpoints es la del pitch: el mismo robot sin entrenar, a medias y entrenado. La curva de recompensa está en `policies/g1-stand-progress.csv`.
+`g1-stand` aguanta todos los empujones hasta 250 N; con 300 N, 3,2 de 4; con 350 N, 1,2. La escalera de `g1-stand-step-*` es la del pitch: el mismo robot sin entrenar, a medias y entrenado. Curvas: `policies/g1-stand-progress.csv` (v1) y `policies/g1-stand-v2-progress.csv`.
