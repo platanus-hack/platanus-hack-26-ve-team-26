@@ -13,6 +13,13 @@ const PUSH_BODY = 'torso_link';
 const PUSH_NEWTONS = 250;
 const PUSH_SECONDS = 0.1;
 
+// Id of a named MuJoCo object; `type` is the suffix of its mjOBJ_ constant (BODY, JOINT, KEY...).
+export function idOf(mujoco, model, type, name) {
+  const id = mujoco.mj_name2id(model, mujoco.mjtObj[`mjOBJ_${type}`].value, name);
+  if (id < 0) throw new Error(`MuJoCo ${type.toLowerCase()} "${name}" not found`);
+  return id;
+}
+
 export class Simulation {
   /**
    * @param mujoco  module returned by the @mujoco/mujoco loader
@@ -36,13 +43,13 @@ export class Simulation {
   }
 
   id(type, name) {
-    const id = this.mujoco.mj_name2id(this.model, this.mujoco.mjtObj[`mjOBJ_${type}`].value, name);
-    if (id < 0) throw new Error(`MuJoCo ${type.toLowerCase()} "${name}" not found`);
-    return id;
+    return idOf(this.mujoco, this.model, type, name);
   }
 
+  // Back to the physical robot standing in its keyframe, leaving puppet mode.
   reset() {
     const { mujoco, model, data } = this;
+    this.puppeted = false;
     mujoco.mj_resetDataKeyframe(model, data, this.keyId);
     this.holdCurrentPose();
     this.endPush();
@@ -62,10 +69,22 @@ export class Simulation {
     for (let i = 0; i < model.nu; i++) ctrl[i] = qpos[qposadr[trnid[2 * i]]];
   }
 
+  // Puppet mode: the robot is placed exactly at `qpos` (a RobotMotion row) with no dynamics, so
+  // it shows a reference motion instead of reacting to physics. Only reset() leaves it.
+  puppet(qpos) {
+    const { mujoco, model, data } = this;
+    this.puppeted = true;
+    data.qpos.set(qpos);
+    data.qvel.fill(0);
+    mujoco.mj_forward(model, data);
+    this.simTarget = data.time;
+  }
+
   // Advances the physics by `seconds` of wall clock, in fixed MuJoCo steps.
-  // Returns the number of steps taken.
+  // Returns the number of steps taken (none in puppet mode).
   advance(seconds) {
     const { mujoco, model, data } = this;
+    if (this.puppeted) return 0;
     const dt = model.opt.timestep;
     this.simTarget += Math.min(seconds, MAX_CATCHUP_S);
     let steps = 0;
