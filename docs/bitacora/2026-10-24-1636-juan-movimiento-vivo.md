@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: cerrada
+estado: en curso
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
@@ -52,6 +52,14 @@ Juan: que la caminata se vea más natural, y que en vivo el robot vaya adonde va
 - **Robot inclinado al final de Capture:** no era el robot, era la cámara. Miraba hacia abajo y además corría la imagen de lado (film offset) para dejar sitio al texto: las verticales lejos del centro se inclinan, y al final de Capture la toma sube hacia la del Gym. `directCamera` (`home.js`) ahora deja la cámara nivelada y corre la imagen hacia arriba (descentrado vertical de la proyección), como una lente de arquitectura: mismo encuadre, verticales derechas. Comprobado en el navegador.
 - **Gym con las iteraciones:** 4 paradas en vez de 3: 0 (1,1 s, 0 de 4), 10 M (9,6 s, 1 de 4), 40 M = v2 "Estable" (20 s, 4 de 4, pero gira sobre un pie) y 60 M = `stand-v7d` "Quieto" (20 s, 3,6 de 4, el que usa la web). La v2 se recuperó de git (`abea922`) como `training/policies/g1-stand-v2`; también está en el selector de Simulaciones. La parada final decía "40 M, 4 de 4", que ya no era cierto. Los minutos de laptop salen del log (73 min hasta 40 M) más los 20 M siguientes a 11.400 pasos/s: 102 min. El Gym mide 5 pantallas en vez de 4. No se metió la de 48 M (`g1-stand-quiet`): se ve igual que la de 60 M y aguanta menos.
 - **Menos texto:** Capture, Gym (texto, explicación de pasos, pie del gráfico), Policy (la nota) y el cierre, más cortos. Se fueron "4 de 4 empujones" de Policy y del cierre (ahora sale de la última parada: 3,6 de 4).
+
+## El robot de Capture ya no camina torcido
+
+- **Lo que quedaba:** la cámara nivelada no era todo. El robot mismo iba ladeado: en la caminata la cintura tenía −6,5° de giro lateral fijo y las dos caderas ~8° hacia el mismo lado (los tobillos lo compensaban), así que el torso se inclinaba 6° a su izquierda todo el clip (correr, 9°; jumping jacks, 5,6°). De perfil, el eje izquierda-derecha de la persona es la profundidad de MediaPipe, su eje con más ruido y con sesgo.
+- **Arreglo, `physics/src/level.js`:** una persona caminando se balancea un poco en cada paso pero en promedio va derecha. Se quita el promedio de 2 s (más que un ciclo de paso, ~1,1 s) del giro común de las caderas (los tobillos giran al revés para que las suelas sigan planas) y de la inclinación lateral del torso medida con cinemática (el ángulo de la articulación de la cintura solo se pasaba en jumping jacks, −3,4°, porque ahí la cintura además gira y se dobla). Después los pies vuelven al piso. En `smoothForDisplay` con promedio centrado; en `mimic` con uno causal, antes de `root.js`, que ahora apoya el pie más bajo.
+- **Solo en lo que se ve:** `physics/motions/` no cambia, porque son las referencias con las que se entrenaron las políticas (y Pastor sigue entrenando con ellas).
+- **Medido:** torso en promedio a 0,1° (caminar), 0,3° (correr) y 0,3° (jacks) en vez de 6,0, 9,0 y 5,6; en vivo, 0,1°. Pruebas en `check-smooth` y `check-root`; todo `npm run check` pasa. En el navegador, al final de Capture el robot de frente va derecho.
+- En el árbol hay cambios de `web/` que no son de esta sesión (una marca nueva: `brand.js`, `index.html`, `style.css`…): no se tocaron ni se commitearon.
 
 ## Sigue
 
