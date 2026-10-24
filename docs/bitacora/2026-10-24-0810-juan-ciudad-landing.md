@@ -32,6 +32,8 @@ La ciudad de César (`f7a6baa`) se veía lejos: edificios a 21 m, la calle corr�
 
 - Sin autos en movimiento: el carril pasa por donde están las cámaras de Policy y del cierre en celular (z = −4,4 a −6,4).
 
+- En `main` como `c336a26` ([PR #78](https://github.com/platanus-hack/platanus-hack-26-ve-team-26/pull/78)), y en el espejo `Torpass/tridi` para el deploy. Se hizo ship desde un worktree temporal (`juan/landing-city`): `ship.sh` pide árbol limpio y termina en `git reset --hard`, y este checkout tenía cambios sin commitear de otra sesión (entrega, `data/`, `training/`) que no se tocaron.
+
 ## Sigue
 
 - César: revisar la ciudad (es su `city.js`, reescrito).
