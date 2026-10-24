@@ -1617,3 +1617,44 @@ html.is-landing.lenis body {
     animation: none;
   }
 }
+
+/* Phones: every chapter is one screen, with no scroll-driven stretches (they felt stuck under a
+   finger), and arrows move between chapters, and through the Gym's stages (home.js step). */
+.phone-arrows {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .capture,
+  .gym,
+  .policy {
+    height: 100svh;
+  }
+
+  .phone-arrows {
+    position: fixed;
+    right: 14px;
+    bottom: calc(14px + env(safe-area-inset-bottom));
+    z-index: 30;
+    display: grid;
+    gap: 8px;
+  }
+
+  .phone-arrows button {
+    display: grid;
+    place-items: center;
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: rgb(8 9 11 / 0.72);
+    backdrop-filter: blur(8px);
+    color: var(--signal);
+    font: 600 20px/1 var(--display);
+  }
+
+  .phone-arrows button:disabled {
+    opacity: 0.25;
+  }
+}

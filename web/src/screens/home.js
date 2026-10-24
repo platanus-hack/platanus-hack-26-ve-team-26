@@ -200,6 +200,11 @@ export function mount(root, { api }) {
       </div>
     </section>
 
+    <nav class="phone-arrows" aria-label="Secciones">
+      <button type="button" class="arrow-up" aria-label="Sección anterior">↑</button>
+      <button type="button" class="arrow-down" aria-label="Sección siguiente">↓</button>
+    </nav>
+
     <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand">
       <div class="closing-inner" id="probar" data-offset="-112">
         <p class="product">Para equipos de humanoides</p>
@@ -589,7 +594,13 @@ export function mount(root, { api }) {
   const STOP_PX = 4; // Lenis lands on fractional pixels: this close to a stop is on it
   const held = new Set(); // the stops that already held the scroll
   const gymStops = () => GYM_STAGES.map((_, i) => layout.gymTop + (i + 0.5) * layout.gymStep);
-  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - layout.gymTop) / layout.gymStep)));
+  // On phones the Gym is one screen tall and its stage moves with the arrows or the axis (phone.stage),
+  // not with the scroll: long scroll-driven stretches felt stuck under a finger.
+  const phone = { stage: 0 };
+  const gymStage = () =>
+    narrow() || !layout.gymStep
+      ? phone.stage
+      : Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - layout.gymTop) / layout.gymStep)));
   // Where space stops after the hero: each chapter's top plus data-rest (a share of the screen,
   // where its words are all in), the Gym's checkpoints instead of the Gym, and the ways to try it
   // instead of the closing (where the top bar's "Probar" lands too).
@@ -634,11 +645,41 @@ export function mount(root, { api }) {
   }
   $$('.axis-stop').forEach((stop, i) =>
     on(stop, 'click', () => {
+      if (narrow()) return void (phone.stage = i);
       const top = gymStops()[i];
       if (lenis) lenis.scrollTo(top, { duration: 1 });
       else window.scrollTo({ top });
     }),
   );
+  // Phone arrows: one screen per chapter, and inside the Gym one stage per tap.
+  const chapterIndex = () => Math.max(0, chapters.findLastIndex((c) => c.offsetTop <= scrollY + innerHeight * 0.4));
+  const goTo = (chapter) => {
+    const top = chapter.offsetTop;
+    if (lenis) lenis.scrollTo(top, { duration: 0.8 });
+    else window.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
+  };
+  function step(direction) {
+    const i = chapterIndex();
+    if (chapters[i] === gymEl) {
+      const next = phone.stage + direction;
+      if (next >= 0 && next < GYM_STAGES.length) return void (phone.stage = next);
+    }
+    const target = chapters[i + direction];
+    if (!target) return;
+    if (target === gymEl) phone.stage = direction > 0 ? 0 : GYM_STAGES.length - 1;
+    goTo(target);
+  }
+  on($('.arrow-up'), 'click', () => step(-1));
+  on($('.arrow-down'), 'click', () => step(1));
+  const updateArrows = () => {
+    const i = chapterIndex();
+    const inGym = chapters[i] === gymEl;
+    $('.arrow-up').disabled = i === 0 && !(inGym && phone.stage > 0);
+    $('.arrow-down').disabled = i === chapters.length - 1;
+  };
+  on(window, 'scroll', updateArrows, { passive: true });
+  updateArrows();
+
   let shownStage = -1;
   function showGymStage() {
     const stage = gymStage();
