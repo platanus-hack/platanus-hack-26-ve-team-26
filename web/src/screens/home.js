@@ -147,7 +147,7 @@ export function mount(root, { api }) {
             <li><b>20 ms</b><span>entre una decisión y la siguiente</span></li>
             <li><b>&lt; 1 ms</b><span>lo que tarda en decidir</span></li>
           </ul>
-          <p class="policy-note">Junto con la red, los datos: el movimiento de la persona corregido para que un robot sí pueda hacerlo.</p>
+          <p class="policy-note">Hoy entregamos la política de pie, que corre aquí, en tu navegador. Lo siguiente es entregar también los datos: el movimiento de la persona corregido por la física, para entrenar tu propio robot.</p>
         </div>
       </div>
     </section>
@@ -155,16 +155,17 @@ export function mount(root, { api }) {
     <section class="chapter closing" id="equipos" data-shot="close" data-mode="stand">
       <div class="closing-inner">
         <p class="product">Para equipos de humanoides</p>
+        <p class="lede">La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento.</p>
         <h2 class="manifesto">Los robots ya tienen cuerpo. Les falta experiencia.</h2>
         <p class="closing-text">Enseñarle un movimiento nuevo a un humanoide hoy exige trajes de captura, un estudio y mucho tiempo. Con Tridi, cualquier video de una persona se vuelve práctica para tu robot.</p>
         <ol class="roadmap" aria-label="Dónde estamos">
           <li class="done"><span>Hoy</span><b>Pararse y recuperarse de empujones de ${PUSH_N} N</b></li>
           <li class="now"><span>Entrenando</span><b>Caminar como la persona del video</b></li>
-          <li><span>Lo que viene</span><b>Cualquier movimiento, de cualquier video, sobre piedras, viento y piso resbaloso</b></li>
+          <li><span>Lo que viene</span><b>Practicar sobre piedras, viento y piso resbaloso, que ya existen en el simulador, y aprender cualquier movimiento de cualquier video</b></li>
         </ol>
         <nav class="tries" aria-label="Probar Tridi">
           <a class="try" href="#/en-vivo" data-warm="en-vivo"><span>Cámara</span><b>Muévete y el robot te copia</b></a>
-          <a class="try" href="#/subir" data-warm="subir" data-route="subir"><span>Video</span><b>Sube un video de hasta 30 s</b></a>
+          <a class="try" href="#/subir" data-warm="subir" data-route="subir"><span>Video</span><b>Sube un video: solo guardamos el movimiento</b></a>
           <a class="try" href="#/simulaciones" data-warm="simulaciones"><span>Laboratorio</span><b>Persona y robot, lado a lado</b></a>
         </nav>
       </div>
@@ -520,7 +521,7 @@ export function mount(root, { api }) {
     const words = $('.manifesto');
     words.innerHTML = words.textContent.split(' ').map((w) => `<span class="w"><span>${w}</span></span>`).join(' ');
     gsap.from('.manifesto .w > span', { yPercent: 110, stagger: 0.04, ease: 'power3.out', scrollTrigger: { trigger: '.manifesto', start: 'top 85%', end: 'top 45%', scrub: true } });
-    gsap.from('.closing-text, .roadmap li, .try', { opacity: 0, y: 40, stagger: 0.06, scrollTrigger: { trigger: '.closing-text', start: 'top 90%', end: 'top 40%', scrub: true } });
+    gsap.from('.lede, .closing-text, .roadmap li, .try', { opacity: 0, y: 40, stagger: 0.06, scrollTrigger: { trigger: '.closing-text', start: 'top 90%', end: 'top 40%', scrub: true } });
   }, root);
 
   // The skeleton of Capture is built when the chapter comes near.

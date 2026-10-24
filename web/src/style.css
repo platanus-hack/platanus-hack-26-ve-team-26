@@ -554,6 +554,56 @@ select:disabled {
   color: #8a4b00;
 }
 
+/* Recording: a pulsing red dot and the time, while the camera records (screens/live.js). */
+.recording {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.rec-time {
+  color: var(--ink);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e5484d;
+  animation: rec 1.2s ease-in-out infinite;
+}
+
+@keyframes rec {
+  50% {
+    opacity: 0.3;
+  }
+}
+
+.saved {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.saved[hidden],
+.saved .button[hidden],
+.recording[hidden] {
+  display: none;
+}
+
+.saved-text {
+  margin: 0;
+  font-weight: 700;
+}
+
 /* Upload */
 
 .upload-grid {
