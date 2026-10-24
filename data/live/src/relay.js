@@ -12,7 +12,7 @@
 // The One Euro filter runs once, on the phone (inside createLiveCapture); the Mac plays the frames
 // as they are. Works in the browser and in Node 18+ (fetch), like upload.js; scripts/check-relay.mjs
 // runs both halves against the real server.
-import { BODY, MIN_VISIBILITY, buildPoseClip } from './poseclip.js';
+import { BODY, MIN_VISIBILITY, buildPoseClip, cameraTranslation } from './poseclip.js';
 import { UploadError } from './upload.js';
 
 // The phone posts every 100 ms (3 frames at 30 fps, ~5 KB). One request per frame would be 30 a
@@ -293,6 +293,7 @@ export function createPhoneCapture(baseUrl, sessionId, { onPose, onImage, onStat
     while (played[0] < now - 1000) played.shift();
     if (frame.jpeg) onImage?.(`data:image/jpeg;base64,${frame.jpeg}`);
     const pose = toPose(frame);
+    if (pose) pose.camera = cameraTranslation(pose.world, pose.landmarks, size.width, size.height);
     onPose?.(pose);
     if (!samples) return;
     if (!pose) samples.push({ t: frame.t, valid: false });

@@ -159,6 +159,25 @@ export function fitTranslation(world, image, f, c) {
   return t && t[2] > 0 ? t : null; // the person must be in front of the camera
 }
 
+/**
+ * Where the hips are relative to the camera for one live frame, in meters, MediaPipe camera axes
+ * (x right, y down, z away): fitTranslation with the same assumed field of view as a recording.
+ * What onPose gives as `camera`, so whoever copies the person can move them across the floor and
+ * see them leave it (a jump). null when the fit fails (the body cut by the image edge).
+ * @param world      33 MediaPipe world landmarks {x, y, z}
+ * @param landmarks  33 normalized image landmarks {x, y, visibility}
+ */
+export function cameraTranslation(world, landmarks, width, height) {
+  if (!width || !height) return null;
+  const f = Math.max(width, height) / (2 * Math.tan(((HFOV_DEG * Math.PI) / 180) / 2));
+  return fitTranslation(
+    world.map((p) => [p.x, p.y, p.z]),
+    landmarks.map((p) => [p.x * width, p.y * height, p.visibility ?? 0]),
+    f,
+    [width / 2, height / 2],
+  );
+}
+
 function solve3(m, b) {
   const det = (a) =>
     a[0][0] * (a[1][1] * a[2][2] - a[1][2] * a[2][1]) -
