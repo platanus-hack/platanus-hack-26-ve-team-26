@@ -52,6 +52,13 @@ Que el estudio de los otros equipos no dependa de que alguien se acuerde de pedi
 
 **La escalera se cuenta por lo que es: aprender a sostenerse de pie y aguantar empujones, no imitar el clip.** El borrador 2 decía "el robot intentó parecerse a ese video"; `training/env.py` entrena otra cosa (recompensa de erguido, altura, pose y quietud) y la imitación de hoy es retargeting cinemático. Con un jurado que interroga a un agente dentro del repo, esa frase era un error verificable.
 
+## Qué se hizo después (11:40)
+
+- **[`docs/videos-para-datos.txt`](../videos-para-datos.txt): 188 enlaces de YouTube** para alimentar el pipeline, agrupados en 15 categorías (referencias de animación de perfil, rehabilitación y marcha clínica, Parkinson, análisis de marcha, trote, saltar la cuerda, salsa, bachata, merengue, Just Dance, motricidad gruesa infantil, ejercicio funcional, tai chi, boxeo de sombra y zumba).
+- Sacados de búsquedas reales en YouTube leyendo `ytInitialData` desde el navegador, no de memoria. **Los 188 verificados uno por uno con el endpoint `oembed`: ninguno caído.**
+- El archivo arranca con los seis criterios de selección que salen de `data/README.md` y `physics/`: de perfil (de frente el avance sale ≈ 0), cuerpo entero con pies visibles, cámara quieta, una sola persona o varias separadas, clips de 10-30 s, y movimiento lento antes que acrobacias.
+- La primera sección son **referencias de animación grabadas a propósito de lado**, con fondo limpio y una sola persona: es el material más fácil para `data.extract` y por eso va primero.
+
 ## Sigue
 
 - ~~Decidir el empujón de la demo.~~ Resuelto por la política v2: aguanta los cuatro de 250 N, que es lo que empuja el botón de la web. Si alguna vez se quiere una caída del entrenado en vivo, hay que subir a 350 N (ahí aguanta 1,2 de 4).

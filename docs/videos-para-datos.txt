@@ -1,0 +1,531 @@
+VIDEOS DE YOUTUBE PARA SACAR DATOS DE MOVIMIENTO (Tridi)
+========================================================================
+
+Armado por Ale el 2026-10-24. Son enlaces reales, sacados de busquedas en YouTube,
+no inventados. Si alguno esta caido, bórralo y avisa.
+
+PARA QUE SIRVE
+  Material para alimentar el pipeline: video -> PoseClip -> RobotMotion -> entrenamiento.
+  Se baja el video y se corre:
+      python -m data.extract <video.mp4> [--click x,y]
+  El --click es para elegir al sujeto cuando hay varias personas en el cuadro.
+
+LO QUE MAS IMPORTA AL ELEGIR (de data/README.md y physics/)
+  1. DE PERFIL. De frente el avance de la pelvis sale casi cero y el robot camina en el sitio.
+     Por eso la primera seccion de este archivo es la mas util de todas.
+  2. CUERPO ENTERO en cuadro, con los pies visibles. Si se cortan los pies, el apoyo se pierde.
+  3. CAMARA QUIETA. Un travelling o un zoom se le suma al movimiento de la persona.
+  4. UNA SOLA PERSONA, o varias bien separadas para poder hacer click en una.
+  5. CLIPS CORTOS. Con 10-30 s alcanza; un video largo da para cortar muchos clips.
+  6. MOVIMIENTO LENTO Y CONTINUO antes que acrobacias. Tai chi es mas facil que breakdance.
+
+UN AVISO
+  Son videos de terceros. Para probar el pipeline y para la demo esta bien; si alguna
+  vez esto se publica como dataset, hay que revisar licencias y pedir permiso.
+  Para el pitch, lo mejor sigue siendo grabar a alguien del publico en vivo.
+
+TOTAL: ver el contador al final.
+
+
+------------------------------------------------------------------------
+PERFIL PURO — referencias de animacion (LO MEJOR PARA EMPEZAR)
+------------------------------------------------------------------------
+  Grabadas a proposito de lado y de cuerpo entero, fondo limpio, una sola persona.
+  Es exactamente lo que data/extract necesita. Varias traen camara lenta y rejilla.
+
+  https://www.youtube.com/watch?v=GBkJY86tZRE
+      Walk Cycle Animation Reference | Athletic Male | Front and Side | Realtime
+  https://www.youtube.com/watch?v=Mol0lrRBy3g
+      Man walk cycle / happy walking side view reference
+  https://www.youtube.com/watch?v=F-Xy3_ln_BY
+      Casual Walk Animation Reference | Male | Realtime 60fps
+  https://www.youtube.com/watch?v=KLk22vSIdR4
+      Casual Walk Animation Reference | Female | Realtime 60fps
+  https://www.youtube.com/watch?v=G8Veye-N0A4
+      Female Walk Cycle | Front & Side Views in Slow Motion with Grid Overlay
+  https://www.youtube.com/watch?v=vq9A5FD8G5w
+      Male Walk Cycle | Front & Side Views in Slow Motion with Grid Overlay
+  https://www.youtube.com/watch?v=L3_em686qEE
+      Walk Cycle Animation Reference | Larger Male | Front and Side | Slow Motion + Grid
+  https://www.youtube.com/watch?v=ldOKoOUJRiY
+      Side View Full Body Vanilla Walk Reference Video
+  https://www.youtube.com/watch?v=490Mf8EEe7s
+      Man walk cycle happy walking side view reference 1080p
+  https://www.youtube.com/watch?v=RmvMIKcTvqI
+      Young Adult Male Angry Walk - Slow Motion. Body Mechanics
+  https://www.youtube.com/watch?v=HVS6wMY8uNM
+      Character Walk Reference
+  https://www.youtube.com/watch?v=YKlFUWVMX_Y
+      Run Reference
+  https://www.youtube.com/watch?v=cVjIqr8CTtQ
+      100 Different Ways to Walk by Kevin Parry (100 marchas distintas en un solo video)
+  https://www.youtube.com/watch?v=1Wk339c-lPg
+      Pixar walk cycle
+
+  (14 en esta seccion)
+
+------------------------------------------------------------------------
+REHABILITACION Y MARCHA CLINICA (prioridad de Ale)
+------------------------------------------------------------------------
+  Marcha patologica, reeducacion y bipedestacion. Casi siempre de perfil y a velocidad baja,
+  que es la condicion mas facil para el retargeting. Ojo: hay pacientes reales en camara.
+
+  https://www.youtube.com/watch?v=XPSChqMsubk
+      Como Reaprender a Caminar | 5 Ejercicios de Reeducacion de la Marcha
+  https://www.youtube.com/watch?v=eg9PIKdzUMg
+      Rehabilitacion de la marcha natural
+  https://www.youtube.com/watch?v=Lq5PifSGMpc
+      Reeducacion de fases de la marcha asistida
+  https://www.youtube.com/watch?v=GHDkjI_MuV0
+      Ejercicios para la reeducacion de la marcha
+  https://www.youtube.com/watch?v=fGYDc5QUB3s
+      Reeducacion de la marcha
+  https://www.youtube.com/watch?v=hsYDy56tjdU
+      Fisioterapia en casa: reentreno de la marcha
+  https://www.youtube.com/watch?v=YfF0mvi0SQs
+      4 ejercicios de rehabilitacion para pacientes en bipedestacion
+  https://www.youtube.com/watch?v=YIyDe5y1tIA
+      Rehabilitacion hemiplejia (1) - volteos y transferencias
+  https://www.youtube.com/watch?v=F5n8I1JDHZE
+      Rehabilitacion hemiplejia (2) - control de tronco
+  https://www.youtube.com/watch?v=Lg-4wJkvKOQ
+      Control de tronco en bipedestacion - hemiplejia (3)
+  https://www.youtube.com/watch?v=IX4SNlb3Hzk
+      Ejercicios en casa para pacientes con ACV (taller)
+  https://www.youtube.com/watch?v=vuAU7EAAQkM
+      Equilibrio y marcha en enfermedades degenerativas y ataxias
+  https://www.youtube.com/watch?v=Wx4QxfPBz_U
+      12 ejercicios clave para ataxia | marcha y coordinacion
+  https://www.youtube.com/watch?v=5HIbO41ncdo
+      Physical therapist helping a stroke patient walk
+  https://www.youtube.com/watch?v=1usIR9ij7Zo
+      Gait Training For Stroke Rehabilitation
+  https://www.youtube.com/watch?v=g__BYaS9viw
+      Physical Therapy Restores Walking After Stroke
+  https://www.youtube.com/watch?v=McksqV8iDcQ
+      5 Stroke Recovery Exercises to Help You Walk Better
+  https://www.youtube.com/watch?v=X8p171_qQdY
+      High Intensity Gait Training | Stroke Rehab
+  https://www.youtube.com/watch?v=3USCw_90X2w
+      Los 3 ejercicios mas efectivos para caminar de nuevo tras un ACV
+
+  (19 en esta seccion)
+
+------------------------------------------------------------------------
+PARKINSON — marcha con bloqueos y pasos cortos
+------------------------------------------------------------------------
+  Patron de marcha muy distinto al sano: util para probar que el pipeline no asume una caminata ideal.
+
+  https://www.youtube.com/watch?v=V7eIT21ypFw
+      Parkinson: ejercicios de marcha para zancada, postura y rigidez
+  https://www.youtube.com/watch?v=aAmEJ3Grku0
+      Parkinson: camina sin bloqueos con estos ejercicios de marcha
+  https://www.youtube.com/watch?v=HcLVIAR0zOk
+      Camine con mas seguridad | rutina de marcha para Parkinson
+  https://www.youtube.com/watch?v=gucvsjHKOD0
+      Ejercicios para mejorar la marcha del paciente con parkinson
+  https://www.youtube.com/watch?v=cDG59p08PXM
+      Rehabilitacion de la marcha en la enfermedad de Parkinson
+  https://www.youtube.com/watch?v=mPe3lbqUDXo
+      Parkinson: ejercicios para caminar mejor | pasos cortos y congelamiento
+  https://www.youtube.com/watch?v=bmUiVGauZGA
+      15 minutos: rutina de ejercicios para Parkinson en casa
+  https://www.youtube.com/watch?v=72abbu1b6nk
+      Ejercicio y rehabilitacion en enfermedad de Parkinson
+  https://www.youtube.com/watch?v=KMrFmGXTL0c
+      5 ejercicios para adultos mayores con Parkinson
+
+  (9 en esta seccion)
+
+------------------------------------------------------------------------
+ANALISIS DE LA MARCHA — biomecanica (perfil garantizado)
+------------------------------------------------------------------------
+  Videos didacticos de fisioterapia: el sujeto camina de lado a la camara, cuerpo entero, fondo plano.
+
+  https://www.youtube.com/watch?v=54gaLmoTNbM
+      Analisis de la marcha vista de perfil
+  https://www.youtube.com/watch?v=Bac2PpVWAOg
+      Evaluacion de marcha vista lateral
+  https://www.youtube.com/watch?v=yS1eqzmz65Y
+      Analisis de marcha - biomecanica - vista frontal, lateral y posterior
+  https://www.youtube.com/watch?v=XW13r2EhwPI
+      Fisioterapia - Analisis de la marcha
+  https://www.youtube.com/watch?v=Nx3xhE8eyx4
+      Analisis de marcha - Fisioterapia
+  https://www.youtube.com/watch?v=o8LtGvHcY1s
+      Fase de apoyo de la marcha
+  https://www.youtube.com/watch?v=Wzh_wD8pMeY
+      Todas y cada una de las fases de la marcha
+  https://www.youtube.com/watch?v=Ro1m6ndQ5JU
+      Biomecanica del ciclo de marcha
+  https://www.youtube.com/watch?v=C2NH213NbzY
+      Analisis de la marcha humana: que mirar cuando camina el paciente
+  https://www.youtube.com/watch?v=X-2qj16N5IQ
+      Analisis muscular de la marcha
+  https://www.youtube.com/watch?v=Oeyz0RVPodU
+      Evaluacion de la marcha
+  https://www.youtube.com/watch?v=oPYjTmMVecs
+      Trastornos de la marcha: evaluacion y diagnostico
+  https://www.youtube.com/watch?v=pVThexcDtIU
+      Analisis de la marcha
+  https://www.youtube.com/watch?v=ppuS_q06gUU
+      Analisis de la marcha - estudio baropodometrico
+  https://www.youtube.com/watch?v=uh7riepyJl4
+      Analisis del movimiento de la marcha: plano sagital
+  https://www.youtube.com/watch?v=1u6d1CX7o9c
+      Gait Cycle & Gait Analysis
+  https://www.youtube.com/watch?v=6ZTNtgkaDyU
+      Video Gait Analysis in New Jersey
+  https://www.youtube.com/watch?v=oHV9qvtrCA0
+      Running and Walking Video Gait Analysis
+  https://www.youtube.com/watch?v=x-_gmqWZJWY
+      What is Run 3D gait analysis
+
+  (19 en esta seccion)
+
+------------------------------------------------------------------------
+TROTE Y CARRERA — camara lenta de perfil
+------------------------------------------------------------------------
+  Zancada completa, perfil, muchos con camara lenta. Buen material para un clip corto y limpio.
+
+  https://www.youtube.com/watch?v=NDdiS79SfNQ
+      Analisis de carrera vista lateral camara lenta
+  https://www.youtube.com/watch?v=I_zIBD8QJ-s
+      Tecnica de carrera ritmo sprint, toma lateral, slow motion
+  https://www.youtube.com/watch?v=51o5eZwNnkA
+      Running assessment sagittal view
+  https://www.youtube.com/watch?v=hx94GCDug9o
+      Slow motion treadmill running for gait analysis
+  https://www.youtube.com/watch?v=KE59zFq0qtE
+      Analisis de la marcha al correr: desglose del plano sagital
+  https://www.youtube.com/watch?v=TubFpq8olz4
+      Physio Professionals running gait analysis
+  https://www.youtube.com/watch?v=aFC3a2kbH28
+      Running gait analysis | Precision Physical Therapy
+  https://www.youtube.com/watch?v=U_gckvSD4Zg
+      11 mph running gait in super slow motion (5000 fps)
+  https://www.youtube.com/watch?v=9p7NT_elwk4
+      Eliud Kipchoge slow motion, tecnica de carrera
+  https://www.youtube.com/watch?v=iPRBBiNkVWI
+      Haile Gebrselassie a camara lenta
+  https://www.youtube.com/watch?v=D7aYSaRWT8I
+      Patrick Makau corriendo a camara lenta
+  https://www.youtube.com/watch?v=njgUnJ2vPQA
+      Movimiento lento, tecnica de un velocista
+  https://www.youtube.com/watch?v=mZPFfmAfwlU
+      Simplicidad en tecnica de carrera - Pose Running
+  https://www.youtube.com/watch?v=w4hmiOZi09g
+      Tecnica ideal de carrera
+  https://www.youtube.com/watch?v=zfWB5RcdSMY
+      Tecnica de carrera
+  https://www.youtube.com/watch?v=1KAF1r9e4yE
+      Estudio de la carrera a camara lenta
+  https://www.youtube.com/watch?v=lFEMHkxXCKk
+      Pase de valla para 400 vallas en camara lenta
+  https://www.youtube.com/watch?v=8uxWfUITRMM
+      Running slow motion analysis, front view (de FRENTE: solo para probar el limite)
+  https://www.youtube.com/watch?v=xSztYEkBzO4
+      Tecnica de carrera ritmo sprint, toma frontal (de FRENTE: solo para probar el limite)
+
+  (19 en esta seccion)
+
+------------------------------------------------------------------------
+SALTAR LA CUERDA
+------------------------------------------------------------------------
+  Cuerpo entero, salto vertical y repetitivo. Los de saltos laterales mueven la pelvis de lado.
+
+  https://www.youtube.com/watch?v=BJiWQxBwJ0I
+      Tutorial para aprender a saltar la cuerda desde cero (principiantes)
+  https://www.youtube.com/watch?v=atN2WhrLVIg
+      Guia maestra para aprender a saltar la cuerda, principiantes
+  https://www.youtube.com/watch?v=AyZTUWP4ofI
+      Tutorial para aprender a saltar la cuerda como un boxeador
+  https://www.youtube.com/watch?v=HOU4Tadyxko
+      Como saltar la cuerda como boxeador de lado a lado
+  https://www.youtube.com/watch?v=HqFZLAJDGh0
+      Como saltar la cuerda de lado a lado, saltos laterales
+  https://www.youtube.com/watch?v=Nt3aaah143Q
+      Domina las laterales saltando la cuerda
+  https://www.youtube.com/watch?v=GawIa5p6sOM
+      Aprende el salto lateral en menos de 30 segundos
+  https://www.youtube.com/watch?v=pLhgFvut4nI
+      Tips basicos y laterales, saltar la cuerda como boxeador
+  https://www.youtube.com/watch?v=nJWheCYAmBE
+      Como hacer el salto cruzado con la cuerda
+  https://www.youtube.com/watch?v=WzHQfk9QQZw
+      Tutorial para aprender a saltar la cuerda cruzado
+  https://www.youtube.com/watch?v=p5KocOpZOnY
+      Tutorial EB swing, trucos para saltar la cuerda
+  https://www.youtube.com/watch?v=Wk3M8GvIvRM
+      Como saltar la comba al estilo boxeador
+  https://www.youtube.com/watch?v=xzBcNN_I0S4
+      3 tips para aprender a saltar la cuerda rapido
+
+  (13 en esta seccion)
+
+------------------------------------------------------------------------
+SALSA
+------------------------------------------------------------------------
+  Pasos basicos de frente a la camara: buenos para brazos y torso, flojos para el avance de la pelvis.
+
+  https://www.youtube.com/watch?v=XDu_iwJqnOc
+      Pasos basicos de salsa - clase para principiantes
+  https://www.youtube.com/watch?v=RK74cc5j1pg
+      1 - Pasos basicos de salsa, bien explicado paso a paso
+  https://www.youtube.com/watch?v=IbBBYxbtz-w
+      1. Pasos basicos de salsa - Alfonso y Monica
+  https://www.youtube.com/watch?v=zH-_329hL4c
+      Como aprender a bailar salsa - pasos para principiantes #1
+  https://www.youtube.com/watch?v=qmxro3w79dw
+      Aprender a bailar salsa - pasos para principiantes
+  https://www.youtube.com/watch?v=azxnf3ScGts
+      10 pasos basicos de salsa para bailar solo - Pau Andrea
+  https://www.youtube.com/watch?v=tE18rzWcnBE
+      Como bailar salsa paso a paso - tutorial, 4 pasos
+  https://www.youtube.com/watch?v=ViRdeZ5hnlw
+      Aprende salsa facil: primeros pasos para principiantes
+  https://www.youtube.com/watch?v=2FsZl11VmIw
+      Tutorial de salsa definitivo para dos pies izquierdos
+  https://www.youtube.com/watch?v=ZV4fOOYk9Rg
+      Aprende a bailar salsa nivel basico
+  https://www.youtube.com/watch?v=Cr7Psmqcubo
+      Paso basico, sencillo y facil para aprender a bailar salsa
+  https://www.youtube.com/watch?v=9cmBGuo04lI
+      Secuencia de salsa para principiantes - clase de 15 min
+  https://www.youtube.com/watch?v=c1pB0NjYO2A
+      Rutina de baile de salsa facil de seguir, 20 minutos
+  https://www.youtube.com/watch?v=NNRwFN-FlZQ
+      10 pasos basicos de salsa en 2 minutos
+  https://www.youtube.com/watch?v=5sF5Sv_ueds
+      Easy salsa tutorial - steps on grid
+
+  (15 en esta seccion)
+
+------------------------------------------------------------------------
+BACHATA
+------------------------------------------------------------------------
+  Mucho desplazamiento lateral y cadera. Preferir los que graban de cuerpo entero.
+
+  https://www.youtube.com/watch?v=DcgSb1aYUO0
+      1. Pasos basicos de bachata - Alfonso y Monica
+  https://www.youtube.com/watch?v=UJKfBFZYVVA
+      Clase 1 - curso de bachata desde cero: basico, lateral, giros
+  https://www.youtube.com/watch?v=xk8acAfySSs
+      Como bailar bachata desde 0 en 15 minutos - Pau Andrea
+  https://www.youtube.com/watch?v=L2FEwD8TtGc
+      10 pasos basicos de bachata para bailar solo - Pau Andrea
+  https://www.youtube.com/watch?v=k9g6Mdhd_pg
+      10 pasos basicos de bachata para bailar solo, parte 2
+  https://www.youtube.com/watch?v=xhrdh-uFkog
+      Tutorial basico de bachata para principiantes - Demetrio y Nicole
+  https://www.youtube.com/watch?v=d-eDPK2BJs0
+      Pasos basicos de bachata - Marco y Sara style
+  https://www.youtube.com/watch?v=uYnK-3aQGyk
+      Iniciacion a la bachata, pasos basicos sola
+  https://www.youtube.com/watch?v=A-ukSg9341c
+      Clase de bachata para chicas, basicos desde cero
+  https://www.youtube.com/watch?v=wVWLsoBN0YA
+      Como bailar bachata sola: paso basico, cadera y brazos
+  https://www.youtube.com/watch?v=8_BKrQXYg1A
+      Como bailar bachata sensual paso a paso
+
+  (11 en esta seccion)
+
+------------------------------------------------------------------------
+MERENGUE
+------------------------------------------------------------------------
+  Paso simple y muy repetitivo: bueno como clip corto y predecible.
+
+  https://www.youtube.com/watch?v=4GcP62qKWdY
+      Como bailar merengue, bien explicado paso a paso
+  https://www.youtube.com/watch?v=MkcsJE1nNGo
+      Pasos de baile merengue desde cero
+  https://www.youtube.com/watch?v=BZ4dlwtFJZM
+      5 pasos sencillos de merengue que cualquiera puede hacer
+  https://www.youtube.com/watch?v=LeLkN8z98fE
+      Aprende a bailar merengue, pasos sencillos
+  https://www.youtube.com/watch?v=A9YyCsxVXeA
+      Como bailar merengue, aprende solo, 4 pasos
+  https://www.youtube.com/watch?v=Sjm5YBfgdo0
+      Como bailar merengue en una fiesta en 5 minutos
+  https://www.youtube.com/watch?v=Pl2NSshCld8
+      Como bailar merengue en pareja (DOS personas: probar el selector de sujeto)
+  https://www.youtube.com/watch?v=3la2jrzPOu8
+      Merengue tutorial by Oleg Astakhov
+
+  (8 en esta seccion)
+
+------------------------------------------------------------------------
+JUST DANCE — coreografias frontales de cuerpo entero
+------------------------------------------------------------------------
+  El avatar y el jugador salen de frente y completos. Util para brazos; el avance es casi nulo.
+
+  https://www.youtube.com/watch?v=rZZYny89lbU
+      Just Dance 2026: APT. by ROSE & Bruno Mars - full gameplay
+  https://www.youtube.com/watch?v=Xea9RKGGOK4
+      Just Dance 2025: Poker Face by Lady Gaga - full gameplay 4K 60fps
+  https://www.youtube.com/watch?v=1EyDbL_MMfk
+      Just Dance 2026: Abracadabra by Lady Gaga - full gameplay
+  https://www.youtube.com/watch?v=hBxymLUl96o
+      Just Dance 2026: All Star by Smash Mouth - full gameplay
+  https://www.youtube.com/watch?v=cYmMggZjC8M
+      Just Dance 2026: Good Luck, Babe! by Chappell Roan
+  https://www.youtube.com/watch?v=q5mvQLHacyY
+      Just Dance 2026: Bluey Medley - full gameplay
+  https://www.youtube.com/watch?v=AZ6xsfigt_g
+      No Scrubs by TLC | Just Dance: Decades of Hits
+  https://www.youtube.com/watch?v=4BlQ160VxnU
+      Just Dance Decades of Hits - adventure mode
+  https://www.youtube.com/watch?v=dDqiGFEli6U
+      Just Dance 2024 full story mode gameplay, no commentary
+  https://www.youtube.com/watch?v=x3NlbIY9alo
+      Just Dance 4 full songlist + DLC, longplay
+
+  (10 en esta seccion)
+
+------------------------------------------------------------------------
+MOTRICIDAD GRUESA — ninos
+------------------------------------------------------------------------
+  Saltos, circuitos y desplazamientos. Cuerpos chicos y camara movida: mas dificil, buen caso limite.
+
+  https://www.youtube.com/watch?v=d6MtEBnWYm0
+      15 ejercicios de motricidad gruesa para ninos
+  https://www.youtube.com/watch?v=NFMYxSSnAwU
+      Motricidad gruesa en ninos, rutina en edades tempranas
+  https://www.youtube.com/watch?v=u1J7mnJ-uyE
+      Actividades para desarrollar la motricidad gruesa
+  https://www.youtube.com/watch?v=hGR92HzAHMA
+      Mejorar la psicomotricidad gruesa: 5 ejercicios de saltos
+  https://www.youtube.com/watch?v=j9jgWDiUM2Y
+      Motricidad gruesa: circuito
+  https://www.youtube.com/watch?v=taLyytcRO-A
+      Reto: circuito motriz de animales
+  https://www.youtube.com/watch?v=FiADDGUewwE
+      Circuito de psicomotricidad: pliometria, motricidad, velocidad, ninos de 3 anos
+  https://www.youtube.com/watch?v=5MpeHZzM1p8
+      Psicomotriz para ninos #40: circuitos con botellas
+  https://www.youtube.com/watch?v=leGXZLok7Nc
+      17 actividades de psicomotricidad para casa
+  https://www.youtube.com/watch?v=Bt4FwMHfmC4
+      7 ejercicios para mejorar concentracion y habilidad en ninos
+  https://www.youtube.com/watch?v=VK3aXHqcHsQ
+      Lento muy lento: movimiento y activacion fisica infantil
+
+  (11 en esta seccion)
+
+------------------------------------------------------------------------
+EJERCICIO FUNCIONAL — sentadillas, burpees, jumping jacks
+------------------------------------------------------------------------
+  Movimientos de cuerpo entero, repetitivos y con el peso cambiando de apoyo.
+
+  https://www.youtube.com/watch?v=In_OJlBFKTU
+      Calentamiento, sentadillas, jumping jacks y saltos de rana
+  https://www.youtube.com/watch?v=Bwz3T0Yyrtw
+      Squat to jumping jack - sentadilla a salto tijera
+  https://www.youtube.com/watch?v=2FNn4TVXWKI
+      Sentadilla abre y cierra + jumping jacks
+  https://www.youtube.com/watch?v=c1Wbqzsqip0
+      Jumping jacks con sentadilla
+  https://www.youtube.com/watch?v=gWdCdtdnvAQ
+      Burpee to jumping jack combo
+  https://www.youtube.com/watch?v=UxOXRxHBLhM
+      Jumping jack burpees
+  https://www.youtube.com/watch?v=31rSWoxG9rI
+      Jumping jacks & burpee tucks
+  https://www.youtube.com/watch?v=L0OlJLb8zy4
+      En rutina: jumping jacks y burpees
+  https://www.youtube.com/watch?v=EToJiDJmvNk
+      Tabata: burpees / jumping jacks / shoulder tap / squat jacks
+  https://www.youtube.com/watch?v=gGB3p6_NgCc
+      HIIT: skipping, burpees, jumping jacks, push up, crunch
+  https://www.youtube.com/watch?v=WNflI2nEp3g
+      Jumping jacks, sentadillas, lagartijas y burpees en familia
+  https://www.youtube.com/watch?v=EuY0HZSp8dQ
+      Rutina en menos de 60 segundos
+
+  (12 en esta seccion)
+
+------------------------------------------------------------------------
+TAI CHI — movimiento lento y continuo
+------------------------------------------------------------------------
+  El caso mas facil para el retargeting: velocidad baja, sin saltos, postura estable.
+  Varios estan grabados de espaldas, que para la pelvis se comporta parecido al perfil.
+
+  https://www.youtube.com/watch?v=R044clj6ZUs
+      Tai Chi forma 24 - demostracion
+  https://www.youtube.com/watch?v=Hqlo4i0RTSg
+      Tai Chi forma 24 (estilo Yang)
+  https://www.youtube.com/watch?v=Udxvcd1gClQ
+      Tai Chi forma de 24 movimientos estilo Yang
+  https://www.youtube.com/watch?v=c-rFY2bGKNE
+      Tai Chi forma de 24 movimientos completa y con nombres
+  https://www.youtube.com/watch?v=z8GiTOT6vJQ
+      Taichi forma de 24 movimientos, guia sencilla completa
+  https://www.youtube.com/watch?v=8aGKpPqwiQg
+      Tai Chi 24 movimientos, vista desde atras, estilo Yang
+  https://www.youtube.com/watch?v=FUpeJ3Bkr9o
+      Forma de 24 movimientos, vista completa desde atras
+  https://www.youtube.com/watch?v=e4VIw41R-PU
+      Yang-Style 24 Form, back view demonstration
+  https://www.youtube.com/watch?v=_wxgYNVbL1E
+      Tai Chi 24 formas por Sifu Zou Yunjian
+  https://www.youtube.com/watch?v=M1hbUPDr33o
+      Tai Chi 24 Yang en espanol
+
+  (10 en esta seccion)
+
+------------------------------------------------------------------------
+BOXEO DE SOMBRA
+------------------------------------------------------------------------
+  Tren superior muy activo con los pies casi fijos: el caso opuesto a la caminata.
+
+  https://www.youtube.com/watch?v=rdi5rX_rd58
+      How to shadow box
+  https://www.youtube.com/watch?v=WRBdhcoqa_w
+      4 ways how to do shadow boxing like a champion
+  https://www.youtube.com/watch?v=tUjqUmIbEX8
+      Shadow boxing explained by olympic medalist
+  https://www.youtube.com/watch?v=J4j3AOVWuHE
+      Quick shadow boxing tutorial by olympian
+  https://www.youtube.com/watch?v=HLaJIoXcSG0
+      3 shadow boxing tips for beginner boxers
+  https://www.youtube.com/watch?v=KZu7XlgqtiI
+      Beginner shadowboxing workout
+  https://www.youtube.com/watch?v=bz3Bv1y-mYo
+      Shadow boxing workout, follow along
+  https://www.youtube.com/watch?v=KBRDGqMa3Wk
+      Manny Pacquiao shadow boxing a los 45
+
+  (8 en esta seccion)
+
+------------------------------------------------------------------------
+ZUMBA Y CARDIO DANCE
+------------------------------------------------------------------------
+  Clases completas y largas: sirven para cortar muchos clips de 10-30 s de un mismo video.
+
+  https://www.youtube.com/watch?v=prRLkWaA-EA
+      Zumba para principiantes, clase completa
+  https://www.youtube.com/watch?v=1QIzBPv_fqM
+      Zumba fitness baile ejercicio para principiantes, clase completa
+  https://www.youtube.com/watch?v=un9inxYgTTA
+      Mini rutina de 30 minutos de latin dance de Zumba para principiantes
+  https://www.youtube.com/watch?v=CBex0TABy4I
+      Zumba para principiantes con Gabriel Tristan
+  https://www.youtube.com/watch?v=y9X6dC2J5a8
+      Clase completa: full body dance workout, cardio dance fitness
+  https://www.youtube.com/watch?v=ZiT33JKydL4
+      Cardio dance, clase completa
+  https://www.youtube.com/watch?v=s-aQ3EAMm8M
+      Zumba fitness baile ejercicio completa
+  https://www.youtube.com/watch?v=-5Dxp1MF-IY
+      Zumba fitness baile para adelgazar en casa, clase completa
+  https://www.youtube.com/watch?v=TggOof1E3XU
+      30 minutos de cumbias, baile para principiantes
+  https://www.youtube.com/watch?v=jHSW_BsnbqQ
+      30 minutos de cumbias, baile para principiantes (2023)
+
+  (10 en esta seccion)
+
+========================================================================
+TOTAL DE ENLACES: 188
+========================================================================
