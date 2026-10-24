@@ -17,7 +17,7 @@ Las láminas son [`deck/tridi-deck.html`](deck/tridi-deck.html) y su PDF; cada u
 ### 0:00–0:09 · Lámina 1, portada
 
 > "**Physical AI is the new sexy.**
-> Pensar ya se resolvió en un servidor. Moverse se resuelve en el piso."
+> Pensar ya se resolvió en un servidor. Moverse se resuelve caminando."
 
 ### 0:09–0:16 · Lámina 2, por qué esto es otro juego
 
@@ -47,17 +47,11 @@ Las láminas son [`deck/tridi-deck.html`](deck/tridi-deck.html) y su PDF; cada u
 
 ---
 
-## Los 2 minutos de demo
+## Los 2 minutos de video
 
-El video corre y ustedes hablan encima. **No hay que narrar lo que se ve: hay que decir lo que no se ve.**
+**Cambió el enfoque (decisión del equipo, 24 de octubre):** ya no es un recorrido por las funciones con narración encima. Es un **video de storytelling**: las 36 horas contadas a través de lo que le pasó al robot, de no sostenerse a dar sus primeros pasos sobre pisos que no son perfectos. Guion plano por plano en [`guion-video-2-minutos.md`](guion-video-2-minutos.md).
 
-| Tramo | En el video | Lo que hay que decir |
-| --- | --- | --- |
-| **1:00–1:35 · Capture** | El video de celular, el esqueleto encima, el movimiento entrando al G1 | Que no hay trajes ni estudio. Que si hay varias personas, eliges a quién seguir. **3,2 cm de error mediano** sobre 29 articulaciones. Y que ahí **todavía está copiando: los pies patinan** |
-| **1:35–2:20 · Gym** | El mismo robot sin entrenar, a medias y entrenado, con los empujones | Que **nadie le escribe cómo pararse**, y que se le empuja cada 2,5 segundos mientras entrena. **40 millones de pasos, 73 minutos en una laptop, sin GPU.** Que la curva es el log real |
-| **2:20–3:00 · Policy** | La política corriendo en el navegador y el empujón | **265 KB**, decide cada 20 ms para 29 motores, y **corre en el navegador de ellos**. Remate: **"un video de un robot no se deja empujar"** |
-
-**Si el video falla:** la web está desplegada y hace lo mismo en vivo. Pasar a `tridi-alpha.vercel.app` y seguir con la lámina 7 a la vista.
+**Consecuencia para quien presenta:** durante esos 2 minutos **no se habla**. El video trae su propia voz en off. Lo que antes era la tabla de narración ahora está dentro del video, así que el equipo solo tiene que estar listo para la lámina 8 apenas termine.
 
 ## Al terminar
 

@@ -72,7 +72,7 @@ S.append(slide(1, "dark split cover", """
   <div class="words">
     <p class="kicker">Platanus Hack 26 · Three Dimensions</p>
     <h1>Physical&nbsp;AI<br>is the<br>new sexy</h1>
-    <p class="knife">Pensar ya se resolvió en un servidor.<br><em>Moverse se resuelve en el piso.</em></p>
+    <p class="knife">Pensar ya se resolvió en un servidor.<br><em>Moverse se resuelve caminando.</em></p>
     <p class="meta"><span>Tridi</span><span>Cesar · Juan · Pastor · Ale</span></p>
   </div>
   <figure class="shot"><img src="img/g1-de-pie.jpg" alt="El Unitree G1 simulado, de pie"></figure>""",
