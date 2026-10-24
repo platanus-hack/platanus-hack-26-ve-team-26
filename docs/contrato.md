@@ -274,13 +274,13 @@ Lo que el cliente se lleva cuando termina el entrenamiento de un video, reunido 
 }
 ```
 
-`replay.json`, para ver cada episodio sin bajar el dataset: el mismo `rollouts.npz` a 25 Hz (la mitad), redondeado a 0,1 mm y 0,001 rad.
+`replay.json`, para ver cada episodio sin bajar el dataset: el mismo `rollouts.npz` a 25 Hz (una fila de cada dos), redondeado a 0,1 mm y 0,001 rad. La fila `i` está a (2i + 1)/50 s del inicio del episodio; si la última fila del episodio quedó fuera al tomar una de cada dos, se agrega al final y está a `seconds` del episodio.
 
 ```jsonc
 {
   "hz": 25,
   "episodes": [
-    { "qpos": [[...36]],                      // la pose, como en RobotMotion: se reproduce con view.playClip
+    { "qpos": [[...36]],                      // la pose, como en RobotMotion, tal cual: se muestra sin limpiar (view.playClip apoyaría en el piso al robot que se cayó)
       "foot_force": [[310.2, 0.0]],           // N, fuerza vertical de cada pie (izquierdo, derecho)
       "pose_error": [0.12],                   // rad
       "pelvis_error": [0.03] }                // m
