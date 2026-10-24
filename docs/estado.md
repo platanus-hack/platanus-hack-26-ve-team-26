@@ -21,10 +21,10 @@ Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, rend
 
 Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` limpio.
 
-- **Funciona:** flujo de ramas, commits y bitácora del equipo. Idea, roles y contrato en borrador.
+- **Funciona:** `python -m data.extract <video|zip> [--click x,y]` saca el `PoseClip` (JSON + `.npz`) de un sujeto entre varias personas; `data.overlay` lo comprueba sobre el video. Precargadas `caminar-perfil` y `correr-perfil` en `data/clips/`. Uso y límites en [`../data/README.md`](../data/README.md).
 - **En curso:** —
 - **Bloqueado por:** —
-- **Sigue:** —
+- **Sigue:** fase 2, cámara en vivo en JS para `web/`. Grabar precargadas propias de perfil. Límite clave: de frente el avance sale ≈ 0, hay que grabar de perfil.
 
 ---
 
