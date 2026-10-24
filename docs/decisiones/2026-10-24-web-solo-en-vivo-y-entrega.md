@@ -11,7 +11,7 @@ La web tenía cuatro formas de probar Tridi: cámara en vivo, subir un video, "P
 - El cierre de la landing muestra tres tarjetas: **Muévete y el robot te copia** (`#/en-vivo`), **Sube un video de una persona** (desactivada, "Próximamente") y **La política y los datos que entregamos** (`#/entrega`).
 - Se borró Simulaciones: `screens/simulations.js`, `gallery.js`, `stage.js`, `training.js` y `props.js`, y la ruta `#/simulaciones` (una dirección vieja abre la landing). Lo compartido queda: `looks/`, `skeleton.js`, `motions.js`, `video-overlay.js`, `robot-pane.js`.
 - `#/subir` se apagó en el router, pero `screens/upload.js` queda para volver a prenderlo. Sus enlaces "Verlo en simulaciones" habrá que cambiarlos entonces.
-- En vivo ya no graba: sin "Parar y guardar", contador ni clip guardado. Sin laboratorio, el clip no tenía dónde verse ni entrenarse.
+- ~~En vivo ya no graba~~ **Revertido el mismo día:** grabar y entrenar es el flujo central. En vivo vuelve a grabar (webcam o teléfono, hasta 30 s, "Parar y guardar") y el clip guardado trae debajo el paso siguiente, "Entrenar al robot" (`web/src/training.js`): lo manda al servidor, lo entrena y abre su entrega.
 
 ## Consecuencias
 

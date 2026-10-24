@@ -43,6 +43,8 @@ Juan reporta en En vivo: el robot no distingue palmas hacia adelante o hacia atr
 
 - **Palmas y dedos solos (B7 hecho):** sin casilla; en laptop el modelo de manos corre siempre, en cada cuadro mientras ve una mano y cada 6 si no (así de lejos cuesta un sexto). Manos Dex3 de Menagerie (`physics/models/dex3`, mismo commit que el G1, mallas 16,3 → 3,3 MB) dibujadas sobre las muñecas en vez de las de goma mientras el robot copia (`physics/src/dex3.js`); los dedos salen de `physics/src/fingers.js`, un IK por dedo en el marco de la mano (el medio sigue a medio, anular y meñique). `check-fingers`: abierta, puño, pulgar arriba, señalar y pinza vuelven con menos de 3° en las dos manos y con la mano girada; un pulgar arriba humano queda a 30° (el tope del pulgar del Dex3), con 1,6 ms por cuadro para dos manos. Probado en tridi-alpha: se bajan las 16 mallas y el modelo de manos, el robot copia sin errores. **Sin probar con dedos reales**: el video de prueba es de cuerpo entero y no hay webcam en el panel.
 
+- **Error mío: se perdió grabar y entrenar.** Al sacar Simulaciones quité también la grabación de En vivo, y con ella el paso de entrenar que venía después: solo quedaban prender y apagar la cámara. Vuelve en `web/src/screens/live.js` (grabación como antes, también con el teléfono) y `web/src/training.js` (restaurado, ahora con la caja de entrenar adentro: `trainBoxHTML` y `mountTrainBox`). Probado en tridi-alpha con la cámara falsa: graba, "Parar y guardar" guarda 25 s con 100 % visible y aparece "Entrenar al robot" habilitado. No lo apreté: lanza un entrenamiento real de ~30 min en la Mac.
+
 ## Decisiones
 
 - B3 (pesar más el codo) no se hizo: con geometría exacta los codos ya salían bien; la causa era profundidad y espejo.
