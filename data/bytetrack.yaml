@@ -1,0 +1,10 @@
+# ByteTrack settings for following the subject (Ultralytics defaults unless noted).
+tracker_type: bytetrack
+track_high_thresh: 0.25
+track_low_thresh: 0.1
+new_track_thresh: 0.25
+# 2 s at 30 fps instead of 1 s: someone crossing in front of the subject hides them for about
+# a second, and keeping the lost track alive longer avoids a new id when they reappear.
+track_buffer: 60
+match_thresh: 0.8
+fuse_score: True
