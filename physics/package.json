@@ -8,11 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs",
+    "check": "node scripts/check.mjs && node scripts/check-retarget.mjs && node scripts/check-policy.mjs",
     "retarget": "node scripts/retarget-clip.mjs"
   },
   "dependencies": {
     "@mujoco/mujoco": "3.16.0",
+    "onnxruntime-web": "1.30.0",
     "three": "0.186.1"
   },
   "devDependencies": {

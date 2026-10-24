@@ -68,6 +68,16 @@ export class RobotView {
     this.resize();
   }
 
+  // Redraws the robot after the Simulation loaded another model (its geoms are not the same).
+  rebuild() {
+    for (const { object } of this.geoms) {
+      this.world.remove(object);
+      object.geometry.dispose();
+      object.material.dispose();
+    }
+    this.geoms = this.buildGeoms();
+  }
+
   dispose() {
     this.resizeObserver.disconnect();
     this.controls.dispose();

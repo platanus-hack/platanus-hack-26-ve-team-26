@@ -9,9 +9,9 @@ const FRAME_S = 1 / 60;
 const STANDING_MIN_Z = 0.7;
 const FALLEN_MAX_Z = 0.4;
 
-function run(sim, seconds) {
+async function run(sim, seconds) {
   let steps = 0;
-  for (let t = 0; t < seconds; t += FRAME_S) steps += sim.advance(FRAME_S);
+  for (let t = 0; t < seconds; t += FRAME_S) steps += await sim.advance(FRAME_S);
   return steps;
 }
 
@@ -20,15 +20,15 @@ const mass = sim.model.body_mass.reduce((a, b) => a + b, 0);
 console.log(`G1: nq=${sim.model.nq} nu=${sim.model.nu} mass=${mass.toFixed(1)} kg dt=${sim.model.opt.timestep * 1000} ms`);
 
 let start = performance.now();
-const steps = run(sim, 10);
+const steps = await run(sim, 10);
 const wall = (performance.now() - start) / 1000;
 const standZ = sim.bodyPosition('pelvis')[2];
 console.log(`stand 10 s: pelvis z=${standZ.toFixed(3)} m, ${steps} steps, ${(steps / wall).toFixed(0)} steps/s (x${(10 / wall).toFixed(1)} real time)`);
 
 sim.reset();
-run(sim, 0.5);
+await run(sim, 0.5);
 sim.push();
-run(sim, 3);
+await run(sim, 3);
 const pushedZ = sim.bodyPosition('pelvis')[2];
 console.log(`push + 3 s: pelvis z=${pushedZ.toFixed(3)} m`);
 

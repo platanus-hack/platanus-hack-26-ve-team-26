@@ -29,16 +29,34 @@ export class Simulation {
    */
   constructor(mujoco, files, sceneFile, keyName) {
     this.mujoco = mujoco;
+    this.files = files;
+    this.load(sceneFile, keyName);
+  }
+
+  /**
+   * Builds the model from `sceneFile` (replacing the current one) and stands the robot in its
+   * keyframe. The caller redraws anything built from the old model (RobotView.rebuild) and
+   * drops what held it (a retargeter, a policy).
+   */
+  load(sceneFile, keyName) {
+    const { mujoco } = this;
     const vfs = new mujoco.MjVFS();
+    let model;
     try {
-      for (const [path, bytes] of Object.entries(files)) vfs.addBuffer(path, bytes);
-      this.model = mujoco.MjModel.from_xml_path(sceneFile, vfs);
+      for (const [path, bytes] of Object.entries(this.files)) vfs.addBuffer(path, bytes);
+      model = mujoco.MjModel.from_xml_path(sceneFile, vfs);
     } finally {
       vfs.delete();
     }
-    this.data = new mujoco.MjData(this.model);
+    this.data?.delete();
+    this.model?.delete();
+    this.model = model;
+    this.data = new mujoco.MjData(model);
+    this.sceneFile = sceneFile;
+    this.keyName = keyName;
     this.keyId = this.id('KEY', keyName);
     this.pushBodyId = this.id('BODY', PUSH_BODY);
+    this.policy = null;
     this.reset();
   }
 
@@ -50,8 +68,10 @@ export class Simulation {
   reset() {
     const { mujoco, model, data } = this;
     this.puppeted = false;
+    this.steps = 0; // physics steps since the reset, to time the policy's decisions
     mujoco.mj_resetDataKeyframe(model, data, this.keyId);
     this.holdCurrentPose();
+    this.policy?.reset(this);
     this.endPush();
     mujoco.mj_forward(model, data);
     this.simTarget = data.time;
@@ -80,29 +100,40 @@ export class Simulation {
     this.simTarget = data.time;
   }
 
-  // Advances the physics by `seconds` of wall clock, in fixed MuJoCo steps.
-  // Returns the number of steps taken (none in puppet mode).
-  advance(seconds) {
-    const { mujoco, model, data } = this;
+  // Advances the physics by `seconds` of wall clock, in fixed MuJoCo steps. With a policy, it
+  // decides every `policy.decimation` steps and writes the motor targets before them: its
+  // inference is asynchronous, which is why this is. Returns the number of steps taken (none in
+  // puppet mode).
+  async advance(seconds) {
+    const { mujoco } = this;
     if (this.puppeted) return 0;
-    const dt = model.opt.timestep;
+    const dt = this.model.opt.timestep;
     this.simTarget += Math.min(seconds, MAX_CATCHUP_S);
     let steps = 0;
-    while (data.time < this.simTarget - dt / 2) {
-      if (this.pushUntil && data.time >= this.pushUntil) this.endPush();
-      mujoco.mj_step(model, data);
+    while (this.data.time < this.simTarget - dt / 2) {
+      if (this.policy && this.steps % this.policy.decimation === 0) {
+        const { model } = this;
+        const at = this.steps;
+        await this.policy.act(this);
+        // Whoever called reset(), puppet(), load() or delete() during the await owns the state
+        // now, and the action was computed for the old one.
+        if (this.puppeted || this.deleted || this.model !== model || this.steps !== at) return steps;
+      }
+      if (this.pushUntil && this.data.time >= this.pushUntil) this.endPush();
+      mujoco.mj_step(this.model, this.data);
+      this.steps++;
       steps++;
     }
     return steps;
   }
 
-  // Horizontal shove on the torso in a random direction.
-  push() {
-    const angle = Math.random() * 2 * Math.PI;
+  // Horizontal shove on the torso, in a random direction unless `angle` (rad, about the vertical,
+  // 0 = the robot's front) says otherwise, with the web button's force unless `newtons` does.
+  push(angle = Math.random() * 2 * Math.PI, newtons = PUSH_NEWTONS) {
     const force = this.data.xfrc_applied; // [nbody, 6]: force xyz, torque xyz
     const i = 6 * this.pushBodyId;
-    force[i] = PUSH_NEWTONS * Math.cos(angle);
-    force[i + 1] = PUSH_NEWTONS * Math.sin(angle);
+    force[i] = newtons * Math.cos(angle);
+    force[i + 1] = newtons * Math.sin(angle);
     force[i + 2] = 0;
     this.pushUntil = this.data.time + PUSH_SECONDS;
   }
@@ -120,6 +151,7 @@ export class Simulation {
   }
 
   delete() {
+    this.deleted = true;
     this.data.delete();
     this.model.delete();
   }

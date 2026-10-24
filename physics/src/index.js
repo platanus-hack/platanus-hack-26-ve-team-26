@@ -2,6 +2,7 @@
 // simulates in real time and draws every frame until dispose().
 import { loadG1 } from './load.js';
 import { motionDuration, sampleMotion } from './motion.js';
+import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { RobotView } from './viewer.js';
@@ -35,31 +36,54 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   let last = performance.now();
   let stats = { wall: 0, sim: 0 };
 
-  function frame(now) {
-    const wall = Math.max(0, (now - last) / 1000); // the first frame's timestamp can predate `last`
-    last = now;
-    if (clip) {
-      // Same clock as the web's skeleton (wall time x speed), so both stay in step.
-      if (playing) clipTime = clip.loop ? (clipTime + wall * speed) % clip.duration : Math.min(clipTime + wall * speed, clip.duration);
-      sim.puppet(sampleMotion(clip.motion, clipTime, row));
-    } else if (playing) {
-      const before = sim.data.time;
-      sim.advance(wall * speed);
-      stats.sim += sim.data.time - before;
+  let disposed = false;
+
+  async function frame(now) {
+    try {
+      const wall = Math.max(0, (now - last) / 1000); // the first frame's timestamp can predate `last`
+      last = now;
+      if (clip) {
+        // Same clock as the web's skeleton (wall time x speed), so both stay in step.
+        if (playing) clipTime = clip.loop ? (clipTime + wall * speed) % clip.duration : Math.min(clipTime + wall * speed, clip.duration);
+        sim.puppet(sampleMotion(clip.motion, clipTime, row));
+      } else if (playing) {
+        const before = sim.data.time;
+        await sim.advance(wall * speed);
+        stats.sim += sim.data.time - before;
+      }
+      if (disposed) return;
+      stats.wall += wall;
+      view.render();
+      if (stats.wall >= STATS_WINDOW_S) {
+        onStats?.({
+          realtime: stats.sim / stats.wall,
+          pelvisHeight: sim.bodyPosition('pelvis')[2],
+          puppet: sim.puppeted,
+          policy: sim.policy?.id ?? null,
+        });
+        stats = { wall: 0, sim: 0 };
+      }
+    } catch (error) {
+      console.error(error); // keep drawing: one bad frame should not freeze the page
     }
-    stats.wall += wall;
-    view.render();
-    if (stats.wall >= STATS_WINDOW_S) {
-      onStats?.({ realtime: stats.sim / stats.wall, pelvisHeight: sim.bodyPosition('pelvis')[2], puppet: sim.puppeted });
-      stats = { wall: 0, sim: 0 };
-    }
-    frameId = requestAnimationFrame(frame);
+    if (!disposed) frameId = requestAnimationFrame(frame);
   }
   frameId = requestAnimationFrame(frame);
 
   // Built on first use: only the camera needs them.
   let tracker = null;
   let retargeter = null;
+
+  // Loads another model into the Simulation. Whatever was built from the old one goes: the
+  // retargeter and the policy, and the drawn robot is rebuilt.
+  function swapScene(sceneFile, keyName) {
+    sim.policy?.dispose();
+    retargeter?.delete();
+    tracker = retargeter = null;
+    clip = null;
+    sim.load(sceneFile, keyName);
+    view.rebuild();
+  }
 
   // Ends a clip or a camera copy and returns to the physical robot, standing.
   function stop() {
@@ -105,6 +129,37 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     seek: (seconds) => (clipTime = Math.min(Math.max(seconds, 0), clip?.duration ?? 0)),
     stop,
     /**
+     * Gives the robot a trained policy (training/policies/): from then on it balances itself, and
+     * "push" shows it recovering. The policy was trained on its own model of the G1 (softer motors,
+     * policy.json's `mjcf`), so this switches the robot to that model; the standing hold of the
+     * default model would not work on it.
+     * @param onnx  policy.onnx: a URL, or its bytes
+     * @param meta  policy.json: the object, or a URL
+     * Loading another policy of the same model only swaps the network. onnxruntime-web (14 MB of
+     * WebAssembly) is downloaded the first time.
+     */
+    async loadPolicy(onnx, meta) {
+      const bytes = typeof onnx === 'string' ? new Uint8Array(await (await fetch(onnx)).arrayBuffer()) : new Uint8Array(onnx);
+      if (typeof meta === 'string') meta = await (await fetch(meta)).json();
+      const sceneFile = meta.mjcf.slice(meta.mjcf.indexOf('/') + 1); // 'unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'
+      const { loadOrt } = await import('./ort.js');
+      const ort = await loadOrt();
+      const previous = { sceneFile: sim.sceneFile, keyName: sim.keyName };
+      if (sim.sceneFile !== sceneFile) swapScene(sceneFile, 'home');
+      else stop();
+      try {
+        const policy = await createPolicy(ort, sim, bytes, meta);
+        sim.policy?.dispose();
+        sim.policy = policy;
+        sim.reset();
+      } catch (error) {
+        if (sim.sceneFile !== previous.sceneFile) swapScene(previous.sceneFile, previous.keyName);
+        throw error;
+      }
+    },
+    /** Takes the policy off and goes back to the stiff standing hold. */
+    clearPolicy: () => swapScene('scene.xml', 'stand'),
+    /**
      * Makes the G1 copy a person, one camera frame at a time. Pass what createLiveCapture's
      * onPose gives. A null pose or one too occluded keeps the last pose. reset() ends it.
      * @returns { tracked, residual } residual is the worst distance (m) between a limb and where
@@ -120,7 +175,9 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       return { tracked, residual };
     },
     dispose() {
+      disposed = true;
       cancelAnimationFrame(frameId);
+      sim.policy?.dispose();
       view.dispose();
       retargeter?.delete();
       sim.delete();

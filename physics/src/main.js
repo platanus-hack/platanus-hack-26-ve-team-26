@@ -3,6 +3,9 @@
 import { createSimView } from './index.js';
 
 // The RobotMotion of Juan's walking clip (npm run retarget), played on the robot.
+// The trained policies of training/ (policy.onnx + policy.json each), by name.
+const POLICY_URLS = import.meta.glob('../../training/policies/*.{onnx,json}', { query: '?url', import: 'default', eager: true });
+const policyUrl = (name, ext) => POLICY_URLS[`../../training/policies/${name}.${ext}`];
 const WALK_URL = new URL('../motions/clip_2026-10-23_caminar-perfil_01.json', import.meta.url).href;
 
 const $ = (id) => document.getElementById(id);
@@ -17,11 +20,11 @@ async function start() {
   try {
     view = await createSimView($('view'), {
       onProgress: showProgress,
-      onStats: ({ realtime, pelvisHeight, puppet }) => {
+      onStats: ({ realtime, pelvisHeight, puppet, policy }) => {
         const { model } = view.sim;
         $('stats').textContent = puppet
           ? `${model.nu} motores · reproduciendo un movimiento, sin dinámica · pelvis a ${pelvisHeight.toFixed(2)} m`
-          : `${model.nu} motores · ${Math.round(1 / model.opt.timestep)} pasos/s de física · tiempo real x${realtime.toFixed(2)} · pelvis a ${pelvisHeight.toFixed(2)} m`;
+          : `${model.nu} motores${policy ? ` · política ${policy}` : ''} · ${Math.round(1 / model.opt.timestep)} pasos/s de física · tiempo real x${realtime.toFixed(2)} · pelvis a ${pelvisHeight.toFixed(2)} m`;
       },
     });
   } catch (error) {
@@ -32,7 +35,7 @@ async function start() {
   $('loading').hidden = true;
   // In development the console can drive the robot (view.mimic with a made-up pose) without a camera.
   if (import.meta.env.DEV) window.tridi = view;
-  for (const id of ['camera', 'clip', 'push', 'reset']) $(id).disabled = false;
+  for (const id of ['camera', 'clip', 'policy', 'push', 'reset']) $(id).disabled = false;
   $('push').onclick = () => {
     stopCamera();
     view.push();
@@ -42,6 +45,23 @@ async function start() {
     view.reset();
   };
   $('camera').onclick = () => (live ? stopCamera() : startCamera());
+  $('policy').onchange = async (event) => {
+    const name = event.target.value;
+    stopCamera();
+    $('policy').disabled = true;
+    $('camera-stats').textContent = name ? 'Cargando la política (la primera vez baja 14 MB)…' : '';
+    try {
+      if (name) await view.loadPolicy(policyUrl(name, 'onnx'), policyUrl(name, 'json'));
+      else view.clearPolicy();
+      $('camera-stats').textContent = '';
+    } catch (error) {
+      $('camera-stats').textContent = `No se pudo cargar la política: ${error.message}`;
+      event.target.value = '';
+      console.error(error);
+    } finally {
+      $('policy').disabled = false;
+    }
+  };
   $('clip').onclick = async () => {
     stopCamera();
     view.playClip(await (await fetch(WALK_URL)).json());
