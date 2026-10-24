@@ -65,6 +65,54 @@ Lo produce `training/`. Lo corre la web con onnxruntime-web junto a MuJoCo WASM.
 - `policy.json`: `{ "id", "robot", "mjcf", "obs_dim", "nu", "trained_on": [clip_ids], "steps", "created_at" }`.
 - `mjcf` es la escena con que se entrenó, relativa a `physics/models/` (por ejemplo `"unitree_g1/scene_mjx.xml"`). Una política solo funciona sobre ese modelo, así que la web carga esa escena antes de correrla.
 
+## API del servidor de video (`data/server.py`)
+
+Lo corre `data/` (Juan); lo llama la web para subir videos (W5) y seguir el progreso (W6). JSON salvo donde se indica. La URL base la configura la web (cambia según dónde corra el servidor).
+
+**Subida por partes.** Un archivo (`.mp4`, `.mov`, `.m4v`, `.webm` o un `.zip` de esos) se parte en pedazos de `chunk_size` bytes; el último puede ser más corto. Si un pedazo falla se reenvía el mismo: reenviar pisa, no duplica.
+
+| Método y ruta | Cuerpo | Respuesta |
+| --- | --- | --- |
+| `POST /uploads` | `{ "filename": "pastor-corre.mp4", "size": 52428800 }` | `201 { "upload_id", "chunk_size", "total_chunks" }` |
+| `PUT /uploads/{upload_id}/chunks/{index}` | bytes del pedazo (`application/octet-stream`), `index` desde 0 | `{ "received": [0, 1, 2], "total_chunks" }` |
+| `GET /uploads/{upload_id}` | | `{ "received": [...], "total_chunks" }`, para retomar una subida cortada |
+| `POST /uploads/{upload_id}/complete` | | `202 { "job_id" }`: arma el archivo y lo pone en la cola |
+
+**Progreso.** La web consulta `GET /jobs/{job_id}` cada ~0,5 s:
+
+```jsonc
+{
+  "job_id": "…",
+  "state": "queued" | "running" | "done" | "failed",
+  "position": 0,                      // trabajos antes que este en la cola (0 = es el siguiente o ya corre)
+  "videos": [                         // uno por video (un .zip trae varios)
+    {
+      "name": "pastor-corre.mp4",
+      "stage": "waiting" | "tracking" | "pose3d" | "done" | "failed",
+      "progress": 0.42,               // 0 a 1 dentro de la etapa
+      "frame_size": [1280, 720],      // null hasta que empieza
+      "people": [                     // personas del primer frame, al terminar "tracking"
+        { "track_id": 3, "box": [x0, y0, x1, y1], "selected": true }
+      ],
+      "clip_id": "clip_…",            // al terminar "pose3d"
+      "valid_ratio": 0.94,
+      "error": null                   // mensaje en español si "failed"
+    }
+  ]
+}
+```
+
+Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando personas (`tracking`) → pose 3D (`pose3d`) → retargeting y entrenamiento (fuera de este servidor).
+
+**Elegir otro sujeto (W5.3).**
+
+| Método y ruta | Cuerpo | Respuesta |
+| --- | --- | --- |
+| `GET /jobs/{job_id}/videos/{n}/first-frame.jpg` | | el primer frame, en sus píxeles originales, para dibujar `people` encima |
+| `POST /jobs/{job_id}/videos/{n}/subject` | `{ "x": 640, "y": 360 }`, píxeles del primer frame | `202`; el video vuelve a `pose3d` con esa persona (`selected_by: "user"`), sin repetir el tracking |
+
+**Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. `GET /health` responde `{ "ok": true, "queue": 0 }`.
+
 ## Simulaciones precargadas
 
 Carpeta pública con pares `PoseClip` + `Policy` ya hechos (por ejemplo "Pastor caminando"), que la web muestra mientras un video nuevo se procesa.
