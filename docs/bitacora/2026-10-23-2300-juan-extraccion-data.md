@@ -6,7 +6,7 @@ inicio: 2026-10-23 23:00
 estado: en curso
 ---
 
-# data/: video → PoseClip (fase 1) y cámara en vivo (fase 2)
+# data/: video → PoseClip, cámara en vivo y servidor de video
 
 ## Objetivo
 
@@ -47,10 +47,22 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - No funcionó al principio: 0,10 m/s en el navegador. Causa: saltar a otro punto del video cortaba el stream (10 muestras en 5 s), y la integración por pie apoyado pierde pasos con huecos. También el pane del navegador oculto pausa `requestAnimationFrame`. Se agregó `fps()` y la demo avisa bajo 20 fps.
 - Límite: en vivo no hay tracker; con varias personas MediaPipe elige a cualquiera (en la prueba del grupo, al de la derecha).
 
+## Servidor de video (`data/server.py`)
+
+- API primero en el contrato (dos commits de contrato shipeados antes del código): subida por partes, `GET /jobs/{id}` con etapas `tracking` y `pose3d`, primer cuadro con personas y elegir otra con un click, `GET /clips/{id}.json`.
+- FastAPI con un solo trabajador en cola (YOLO y MediaPipe ya ocupan la GPU). Al elegir otra persona se reusa el tracking: solo se repite la pose 3D (38 s en vez de ~60 s).
+- `data/serve.sh`: servidor + túnel rápido de Cloudflare. Probado desde internet: `/health`, preflight CORS desde `tridi-alpha.vercel.app` y error en español. Se apagó después de probar.
+- `data/check_server.py`: prueba de punta a punta con los modelos reales, `.zip` con 2 videos buenos, uno roto y un `.txt`, un pedazo reenviado, errores 400/404/409/413/415/416/422 y cambio de sujeto. Pasa.
+- Cliente JS `data/live/src/upload.js` probado en Node contra el servidor local.
+- Se arregló: el video de carrera no tiene a nadie en el cuadro 0, así que no había a quién hacer click. Ahora se elige en el primer cuadro con personas (`first_frame`), también en el CLI.
+- Los mensajes de error del pipeline pasaron a español, porque la web los muestra tal cual.
+- Ojo: la decisión de deploy de Pastor dice "servidor en Render"; Juan eligió su Mac con túnel por la GPU. El código sirve para los dos. Queda como pregunta abierta la URL fija.
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.
 - Grabar a Pastor/César caminando y corriendo de perfil con el teléfono (focal conocida) para precargadas propias.
 - César: integrar `createLiveCapture` en W4 (ver `data/live/README.md`).
-- Juan: servidor de videos (FastAPI en la Mac + túnel) para W5/W6, y probar la demo con la webcam real.
+- César: W5/W6 con `uploadVideo` y `watchJob` (`data/live/README.md`).
+- Decidir la URL fija del servidor (pregunta abierta) y probar la demo de `data/live` con la webcam real.
 - Shipeado a `main` como `14045b3`. Al rebasear entró el G1 de Pastor; su pregunta de la traslación de la pelvis quedó respondida en [`../preguntas-abiertas.md`](../preguntas-abiertas.md): ya viene en el `PoseClip`. Ojo Pastor: el contrato usa y arriba, MuJoCo z arriba.

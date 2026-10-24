@@ -20,6 +20,21 @@ uv run --project data python -m data.overlay data/clips/<clip>.npz video.mp4  # 
 
 Sale `data/clips/<id>.json` (el `PoseClip`) y `<id>.npz` con lo mismo para entrenar: `joints [F, 33, 4]`, `t [F]` y `meta` (el JSON sin los frames). El `.npz` lleva además `valid [F]` (frames detectados, no interpolados), `frame_index`, `joints2d` y `boxes` (para el overlay y para dibujar sobre el video en la web).
 
+## Servidor para la web
+
+La web sube videos al servidor ([`server.py`](server.py)), que los procesa en cola con lo mismo que el CLI y reporta el progreso por etapas. La API está en el [contrato](../docs/contrato.md#api-del-servidor-de-video-dataserverpy); el cliente JS para la web es `uploadVideo`, `watchJob` y `chooseSubject` de [`live/`](live/README.md).
+
+```bash
+data/serve.sh             # servidor en la Mac + túnel de Cloudflare; imprime la URL pública para la web
+uv run --project data python -m data.server              # solo el servidor, en http://127.0.0.1:8000
+uv run --project data python -m data.check_server video1.mp4 video2.mp4  # prueba de punta a punta
+```
+
+- **Dónde corre:** en la Mac de Juan (MPS: ~40 s por video de 10 s) con un túnel rápido de Cloudflare (`brew install cloudflared`). El túnel no pide cuenta, pero **su URL cambia cada vez que arranca**: hay que pasársela a la web. El mismo código corre en Render (lee `PORT`) si se decide moverlo, pero sin GPU es varias veces más lento.
+- **Un video a la vez:** la cola tiene un solo trabajador, porque YOLO y MediaPipe ya ocupan toda la GPU.
+- **Límites por estar en internet:** 2 GB por subida (`TRIDI_MAX_UPLOAD_MB`), solo extensiones de video o `.zip`, ids aleatorios validados, y CORS solo para la web desplegada y los servidores de desarrollo (`TRIDI_CORS_ORIGINS`).
+- **Los trabajos viven en memoria:** si el servidor se reinicia, la web pierde el progreso de lo que estaba en cola. Los clips quedan en `data/server_data/clips/` (no se versiona).
+
 ## Cómo funciona
 
 | Paso | Archivo | Qué hace |
