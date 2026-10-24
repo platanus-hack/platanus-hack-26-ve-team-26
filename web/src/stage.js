@@ -16,6 +16,7 @@ import { SCENES, WORLDS } from 'tridi-physics';
 
 import { savedMotion } from './motions.js';
 import { FINAL_LEVEL, IMITATIONS, imitationOf, levelLabel, policyUrls } from './policies.js';
+import { dressWorld } from './looks/index.js';
 import { dressPlace, setFloor } from './props.js';
 import { mountRobotPane } from './robot-pane.js';
 import { SkeletonView } from './skeleton.js';
@@ -49,6 +50,13 @@ export function mountStage(root, dots) {
 
   const imitating = () => imitationOf(level) !== null;
 
+  // What the world looks like (looks/): redone after every change of world or place.
+  let look = null;
+  function refreshLook() {
+    look?.undo();
+    look = robot.view ? dressWorld(robot.view) : null;
+  }
+
   function setRobotLabel(text) {
     const world = robot.view?.world();
     const place = robot.view?.scene();
@@ -68,6 +76,7 @@ export function mountStage(root, dots) {
     if (imitating() && robot.view) skeleton.time = robot.view.clipTime();
     else if (playing) skeleton.advance(wall * speed);
     if (copying && robot.view) robot.view.seek(skeleton.time);
+    look?.update(wall);
     skeleton.render();
     frameId = requestAnimationFrame(frame);
   });
@@ -141,6 +150,7 @@ export function mountStage(root, dots) {
     try {
       await view.setWorld(WORLDS.find((world) => world.id === id));
       await dressPlace(view); // a new world rebuilds the drawn geoms: dress the place again
+      refreshLook();
     } catch (error) {
       console.error(error);
       setRobotLabel('No se pudo cambiar de mundo.');
@@ -166,6 +176,7 @@ export function mountStage(root, dots) {
       await view.setScene(SCENES.find((scene) => scene.id === id) ?? null);
       await dressPlace(view); // real models over the place's boxes and cylinders
       setFloor(view, id); // and its floor: tiles, concrete or sidewalk
+      refreshLook();
     } catch (error) {
       console.error(error);
       setRobotLabel('No se pudo armar el lugar.');
@@ -180,6 +191,7 @@ export function mountStage(root, dots) {
 
   robot.ready.then(async (view) => {
     if (!view) return;
+    refreshLook();
     view.setSpeed(speed);
     if (!playing) view.pause();
     await copyCurrent(); // the robot moves right away
@@ -263,6 +275,8 @@ export function mountStage(root, dots) {
       const view = robot.view;
       // The app shares one robot: the next screen starts on flat, empty ground. One rebuild at a time.
       if (view) {
+        look?.undo();
+        look = null;
         setFloor(view, null); // the viewer's own floor again
         const flat = view.world() && view.world().id !== 'plano' ? view.setWorld(WORLDS.find((world) => world.id === 'plano')) : Promise.resolve();
         flat.then(() => view.scene() && view.setScene(null));
