@@ -18,11 +18,11 @@ const FOOT_JOINTS = [27, 28, 29, 30, 31, 32];
 const MIN_VISIBILITY = 0.5;
 const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next to a limb
 const JOINT_RADIUS = 0.03;
-const HUMAN_COLOR = 0x4c7cf3; // the app's accent: the human is blue, the robot is gray
+const HUMAN_COLOR = 0xff4f1a; // the brand's signal: the human is orange, the robot keeps its own colors
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
-/** Light, cool scene colors shared by the skeleton and the robot (createSimView's `theme`). */
-export const SCENE_THEME = { background: 0xeef2f7, ground: 0xe4eaf2, gridMajor: 0xc3cfdf, gridMinor: 0xd6dee9 };
+/** Warm paper scene colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
+export const SCENE_THEME = { background: 0xe6e3dc, ground: 0xdedad2, gridMajor: 0xb3aea3, gridMinor: 0xcdc8be };
 
 export class SkeletonView {
   constructor(canvas) {
@@ -37,7 +37,7 @@ export class SkeletonView {
     const scene = (this.scene = new THREE.Scene());
     scene.background = new THREE.Color(SCENE_THEME.background);
     scene.fog = new THREE.Fog(SCENE_THEME.background, 8, 25);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xc9d3e2, 2));
+    scene.add(new THREE.HemisphereLight(0xffffff, 0xd6d1c6, 2));
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(2, 4, 1.5);
     scene.add(sun);
@@ -58,6 +58,9 @@ export class SkeletonView {
     // A unit cylinder along y, stretched and turned into each bone every frame.
     this.bones = new THREE.InstancedMesh(new THREE.CylinderGeometry(BONE_RADIUS, BONE_RADIUS, 1, 8), material, BONES.length);
     this.joints = new THREE.InstancedMesh(new THREE.SphereGeometry(JOINT_RADIUS, 12, 8), material, 33);
+    // three.js culls an InstancedMesh by a bounding sphere computed once, around the first
+    // matrices (the origin); a clip that walks a few meters away would vanish. Never cull it.
+    this.bones.frustumCulled = this.joints.frustumCulled = false;
     this.body.add(this.bones, this.joints);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);

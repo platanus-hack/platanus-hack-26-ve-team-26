@@ -1,22 +1,35 @@
-/* Tridi: white and cool tones, one deep ink and one ice-blue accent. Soft rounded type
-   (Quicksand for the name and titles, Nunito for reading). Big targets and plain words:
-   anyone, at any age, should know where to tap. */
+/* Tridi: a lab instrument. Warm paper and ink, one signal orange for what moves or can be
+   touched, a tight grotesk (Inter Tight) for words and a mono (Geist Mono) for numbers and
+   labels. The landing adds its own layout in landing/landing.css. */
 
 :root {
-  --bg: #f4f7fb;
-  --bg-deep: #e6edf6;
-  --surface: rgb(255 255 255 / 0.72);
-  --ink: #101b2d;
-  --muted: #56647a;
-  --line: #d9e1ec;
-  --accent: #4c7cf3;
-  --accent-ink: #ffffff;
-  --accent-soft: #e5ecfd;
-  --error: #c2413a;
-  --radius: 24px;
-  --shadow: 0 24px 60px -28px rgb(24 44 84 / 0.35);
-  --title: 'Quicksand Variable', 'Nunito Variable', system-ui, sans-serif;
-  --text: 'Nunito Variable', system-ui, -apple-system, sans-serif;
+  --paper: #eeece7;
+  --scene: #e6e3dc; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
+  --ink: #0d0d0b;
+  --ink-2: #171715;
+  --ink-soft: #3a3935;
+  --muted: #6e6b64;
+  --muted-light: #6e6b64;
+  --muted-dark: #8f8c84;
+  --line: rgb(13 13 11 / 0.14);
+  --line-dark: rgb(238 236 231 / 0.16);
+  --signal: #ff4f1a;
+  --signal-ink: #d93a08; /* the signal as text on paper: same hue, enough contrast */
+  --display: 'Inter Tight Variable', system-ui, -apple-system, sans-serif;
+  --mono: 'Geist Mono Variable', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* The app screens' names for the same palette. */
+  --bg: var(--paper);
+  --bg-deep: #e4e1da;
+  --surface: rgb(255 255 255 / 0.6);
+  --accent: var(--signal);
+  --accent-ink: var(--ink);
+  --accent-soft: #ffe3d8;
+  --error: #c2261a;
+  --radius: 4px;
+  --shadow: 0 24px 60px -32px rgb(13 13 11 / 0.35);
+  --title: var(--display);
+  --text: var(--display);
   color-scheme: light;
 }
 
@@ -31,7 +44,7 @@ body {
 }
 
 body {
-  background: radial-gradient(120% 90% at 50% 0%, #ffffff 0%, var(--bg) 55%, var(--bg-deep) 100%) fixed;
+  background: var(--bg);
   color: var(--ink);
   font: 18px/1.5 var(--text);
   -webkit-font-smoothing: antialiased;
@@ -54,7 +67,7 @@ body::before {
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(76 124 243 / 0.1), transparent 60%);
+  background: radial-gradient(600px circle at var(--mx, 50%) var(--my, -20%), rgb(255 79 26 / 0.06), transparent 60%);
 }
 
 #app {
@@ -146,337 +159,6 @@ select:disabled {
   color: var(--ink);
   font-weight: 700;
   text-decoration: none;
-}
-
-/* Splash: shown while the robot loads (main.js); the home starts as it fades away. */
-#splash {
-  position: fixed;
-  inset: 0;
-  z-index: 3;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: 18px;
-  padding: 16px;
-  transition: opacity 0.4s ease;
-}
-
-#splash.done {
-  opacity: 0;
-  pointer-events: none;
-}
-
-#splash h1 {
-  margin: 0;
-  font-size: clamp(56px, 10vw, 112px);
-  font-weight: 500;
-  line-height: 1;
-  letter-spacing: -0.03em;
-  color: var(--ink);
-}
-
-#splash .track {
-  width: min(320px, 80vw);
-}
-
-.splash-progress {
-  width: 0;
-  height: 100%;
-  background: var(--accent);
-  transition: width 0.2s;
-}
-
-.splash-status {
-  margin: 0;
-  color: var(--muted);
-}
-
-/* Home: two slides that snap into place (screens/home.js adds .snap to <html>). */
-
-html.snap {
-  scroll-snap-type: y proximity;
-}
-
-.slide {
-  position: relative;
-  min-height: 100vh;
-  min-height: 100svh;
-  scroll-snap-align: start;
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: clamp(28px, 6vh, 64px) clamp(16px, 4vw, 48px);
-}
-
-/* Slide 1: the explanation on the left, the robot on the right. */
-.intro {
-  display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); /* the robot gets the larger share */
-  gap: clamp(16px, 3vw, 40px);
-  align-items: center;
-  will-change: opacity, transform; /* scrolling fades it out (home.js) */
-}
-
-.intro-copy {
-  display: grid;
-  gap: 20px;
-  max-width: 520px;
-}
-
-/* How it works, as one line: Video → Esqueleto 3D → Práctica → Política y datos. */
-.flow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-
-.flow span {
-  padding: 6px 14px;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.flow i {
-  color: var(--muted);
-  font-style: normal;
-}
-
-.kicker {
-  margin: 0;
-  color: var(--accent);
-  font-weight: 700;
-  font-size: 15px;
-}
-
-.brand {
-  margin: 0;
-  font-size: clamp(64px, 9vw, 120px);
-  font-weight: 500;
-  line-height: 0.95;
-  letter-spacing: -0.035em;
-  background: linear-gradient(180deg, var(--ink) 30%, #3c5378);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.intro h2 {
-  margin: 0;
-  font-size: clamp(26px, 3vw, 38px);
-  line-height: 1.15;
-}
-
-.intro .lead {
-  margin: 0;
-}
-
-/* The real robot (robot-pane.js) and a line under it. */
-.intro-robot {
-  display: grid;
-  gap: 12px;
-}
-
-.intro-robot .robot-pane {
-  height: min(64vh, 600px); /* leaves room for the numbers and the note under it */
-}
-
-/* Three measured numbers under the robot (training/README.md). */
-.facts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.facts li {
-  display: grid;
-  gap: 2px;
-  padding: 10px 14px;
-  border-radius: 14px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.3;
-}
-
-.facts b {
-  color: var(--ink);
-  font: 600 20px/1.1 var(--title);
-}
-
-.demo-note {
-  margin: 0;
-  color: var(--muted);
-  text-align: center;
-}
-
-/* The pitch's one-liner, set apart. */
-.motto {
-  margin: 0;
-  padding-left: 14px;
-  border-left: 3px solid var(--accent);
-  color: var(--ink);
-  font: 600 19px/1.35 var(--title);
-}
-
-/* Slide 2: the three choices. */
-
-.honest {
-  max-width: 760px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 15px;
-  text-align: center;
-}
-.choose {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: clamp(20px, 4vh, 36px);
-}
-
-.choose-title {
-  margin: 0;
-  font-size: clamp(34px, 4.4vw, 56px);
-  line-height: 1.05;
-  text-align: center;
-}
-
-.choices {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: clamp(16px, 2vw, 28px);
-  width: min(1200px, 100%);
-}
-
-/* A glass slab: the upper part stays transparent (its robot is drawn on the canvas behind,
-   and the robot's camera turns with the tilt), the stacked shadows give it thickness, and the
-   text panel floats in front of it. --rx and --ry come from the cursor (screens/home.js). */
-.choice {
-  opacity: var(--reveal, 1); /* home.js raises the cards in as slide 2 scrolls up */
-  translate: 0 calc((1 - var(--reveal, 1)) * 48px);
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  border: 1px solid rgb(255 255 255 / 0.95);
-  border-radius: var(--radius);
-  background: linear-gradient(160deg, rgb(255 255 255 / 0.55), rgb(255 255 255 / 0.12) 45%);
-  box-shadow:
-    inset 0 1px 0 #ffffff,
-    0 2px 0 #e3e9f2,
-    0 4px 0 #d9e1ec,
-    0 6px 0 #cfd8e5,
-    0 8px 0 #c6d0df,
-    var(--shadow);
-  text-decoration: none;
-  /* Perspective per card: each one tilts around its own center, not the row's. */
-  transform: perspective(1000px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transform-style: preserve-3d;
-  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
-  animation: float 7s ease-in-out infinite;
-}
-
-/* Each card floats on its own beat, so the row breathes instead of moving as one block. */
-.choice:nth-child(2) {
-  animation-delay: -2.3s;
-}
-
-.choice:nth-child(3) {
-  animation-delay: -4.6s;
-}
-
-@keyframes float {
-  50% {
-    translate: 0 -6px;
-  }
-}
-
-.choice:hover,
-.choice:focus-visible {
-  transition: transform 0.12s ease-out, box-shadow 0.3s;
-  animation-play-state: paused;
-  box-shadow:
-    inset 0 1px 0 #ffffff,
-    0 2px 0 #e3e9f2,
-    0 4px 0 #d9e1ec,
-    0 6px 0 #cfd8e5,
-    0 8px 0 #c6d0df,
-    0 40px 80px -30px rgb(24 44 84 / 0.5);
-}
-
-/* Shine: a light spot under the cursor, as on glass. */
-.choice::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(420px circle at var(--px, 50%) var(--py, 0%), rgb(255 255 255 / 0.55), transparent 55%);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
-}
-
-.choice:hover::after {
-  opacity: 1;
-}
-
-.choice-scene {
-  height: clamp(240px, 40vh, 420px);
-}
-
-.choice-text {
-  position: relative;
-  display: grid;
-  gap: 6px;
-  margin: 0 10px 10px;
-  padding: 22px 24px 24px;
-  border-radius: calc(var(--radius) - 8px);
-  background: var(--surface);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 10px 30px -18px rgb(24 44 84 / 0.4);
-  transform: translateZ(24px); /* floats in front of the slab when the card tilts */
-}
-
-.step {
-  transform: translateZ(18px);
-  position: absolute;
-  top: -20px;
-  right: 22px;
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--ink);
-  color: #ffffff;
-  font: 700 18px/1 var(--title);
-}
-
-.choice h2 {
-  margin: 0;
-  font-size: 24px;
-}
-
-.choice p {
-  margin: 0;
-  color: var(--muted);
-}
-
-.action {
-  justify-self: start;
-  margin-top: 10px;
-  padding: 12px 20px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-weight: 700;
 }
 
 /* Inner pages */
@@ -857,56 +539,6 @@ html.snap {
   font-size: 19px;
 }
 
-/* Recording: a pulsing red dot and the time, while the camera records (screens/live.js). */
-.recording {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.rec-time {
-  color: var(--ink);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.rec-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #e5484d;
-  animation: rec 1.2s ease-in-out infinite;
-}
-
-@keyframes rec {
-  50% {
-    opacity: 0.3;
-  }
-}
-
-.saved {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  padding: 14px 18px;
-  border-radius: 16px;
-  background: var(--surface);
-}
-
-.saved[hidden],
-.saved .button[hidden],
-.recording[hidden] {
-  display: none;
-}
-
-.saved-text {
-  margin: 0;
-  font-weight: 700;
-}
-
 .live-status {
   min-height: 1.5em;
   margin: 0;
@@ -1148,15 +780,6 @@ html.snap {
 
   .intro-robot .robot-pane {
     height: 62vh;
-  }
-
-  .facts li {
-    padding: 8px 10px;
-    font-size: 12px;
-  }
-
-  .facts b {
-    font-size: 17px;
   }
 
   .motto {

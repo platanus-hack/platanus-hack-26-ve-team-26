@@ -1,6 +1,6 @@
 // The one G1 of the app. Loading it costs 30 MB of downloads plus compiling MuJoCo, the model
-// and the shaders, so it happens once, when the page opens (the splash in main.js covers the
-// start of it). Screens borrow its canvas: attach() moves it into their pane, and leaving the
+// and the shaders, so it happens once, when the page opens (main.js starts it; the robot panes
+// show its progress). Screens borrow its canvas: attach() moves it into their pane, and leaving the
 // screen takes it out, where physics/ pauses it. A WebGL context survives being moved.
 import { createSimView } from 'tridi-physics';
 import { FINAL_LEVEL, policyUrls } from './policies.js';
