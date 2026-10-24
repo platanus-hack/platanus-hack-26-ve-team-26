@@ -256,6 +256,32 @@ Las condiciones en que el robot practica. Un archivo por mundo en `physics/world
 
 Hay cuatro: `plano`, `piedras`, `resbaloso` y `viento`, en [`physics/worlds/`](../physics/worlds). El viento se vuelve fuerza con ½·ρ·Cd·A·v² (`physics/src/worlds.js`, ~30 N a 10 m/s); Python usa la misma fórmula.
 
+## Escenas: lugares con muebles *(2026-10-24)*
+
+Un lugar donde el robot comparte el piso con cosas: una cocina, un depósito, una vereda. Las precargadas están en [`physics/scenes/<id>.json`](../physics/scenes); `data/` produce una por clip a partir del video (`GET /scenes/{clip_id}.json`, con el mismo formato). Se combina con el mundo: una cocina con piso resbaloso.
+
+```jsonc
+{
+  "id": "cocina",                       // para un video, su clip_id
+  "title": "Cocina",                    // lo que dice el selector de la web
+  "objects": [
+    {
+      "label": "mesada",                // qué es; la web le da un color por etiqueta
+      "kind": "box" | "cylinder",
+      "size": [0.6, 3.2, 0.9],          // m: ancho (x), largo (y) y alto (z); en un cilindro, x es el diámetro
+      "pos": [-2.1, 1.6],               // m, el centro sobre el piso, con el origen del PoseClip (las caderas del primer cuadro, z arriba)
+      "yaw": 0,                         // rad, giro sobre la vertical
+      "movable": false,                 // true: suelto, se puede empujar y voltear
+      "mass": 4,                        // kg, solo si es suelto (5 si falta)
+      "confidence": 0.9                 // opcional, de la detección en el video
+    }
+  ],
+  "why": "…"                            // el porqué de la distribución, para quien lea el archivo
+}
+```
+
+`physics/src/scenes.js` lo vuelve geometría sólida de MuJoCo sobre la escena actual: cada objeto choca con todas las partes del robot (pares de contacto explícitos) y los sueltos también con el piso. Hoy se ven y se sienten en la web (`view.setScene`); el entrenamiento todavía no los usa (el robot no aprende a esquivarlos: es el plan).
+
 ## Simulaciones precargadas
 
 Clips (y, cuando existan, políticas) ya hechos que la web muestra siempre, también mientras un video nuevo se procesa.
