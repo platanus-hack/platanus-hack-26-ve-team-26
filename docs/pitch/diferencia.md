@@ -71,6 +71,8 @@ Nuestro robot es **peor** que el suyo, y eso está bien: *nosotros construimos e
 
 **La frase:** "El robot de los demás ya sabía caminar. El nuestro aprendió con tu video, y se cayó mil veces antes."
 
+**El argumento de una línea, y es literal:** lo que hacen Ultimate Bots y cualquier herramienta de retargeting es **copiar**, y el robot tiene otro peso y otras proporciones: ese movimiento copiado, soltado con física, lo tumba. *El video le dice qué hacer; la simulación le enseña cómo.* Desarrollado en [`relato.md`](relato.md).
+
 ### 3. Varios videos, un comportamiento
 
 Todo lo que existe es **un video → un clip de movimiento**. Un movimiento por video, y se acabó. La [decisión de la idea](../decisiones/2026-10-23-idea-tridi.md) dice otra cosa: que el robot aprenda de **muchos** videos y después se mueva solo. Si el domingo mostramos una política entrenada con *N* clips que se sostiene sin caerse, eso no lo tiene ninguno de los cinco productos de arriba.
