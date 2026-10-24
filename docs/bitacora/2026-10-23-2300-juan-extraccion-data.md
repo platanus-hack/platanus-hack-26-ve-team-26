@@ -44,3 +44,4 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - Pastor: probar el retargeting con `data/clips/*.npz`.
 - Grabar a Pastor/César caminando y corriendo de perfil con el teléfono (focal conocida) para precargadas propias.
 - Fase 2: módulo JS con MediaPipe en el navegador que emita el mismo `PoseClip` para `web/`.
+- Shipeado a `main` como `14045b3`. Al rebasear entró el G1 de Pastor; su pregunta de la traslación de la pelvis quedó respondida en [`../preguntas-abiertas.md`](../preguntas-abiertas.md): ya viene en el `PoseClip`. Ojo Pastor: el contrato usa y arriba, MuJoCo z arriba.
