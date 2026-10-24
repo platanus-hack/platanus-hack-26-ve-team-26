@@ -154,7 +154,7 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 
 **Cancelar.** `DELETE /jobs/{job_id}` → `204`: saca el trabajo de la cola y borra sus videos (los clips ya hechos se quedan).
 
-**Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. `GET /health` responde `{ "ok": true, "queue": 0 }`.
+**Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. *(2026-10-24)* `GET /scenes/{clip_id}.json` devuelve su escena (ver "Escenas"). `GET /health` responde `{ "ok": true, "queue": 0 }`.
 
 ### Clips de la cámara y entrenamiento *(2026-10-24)*
 
@@ -279,6 +279,19 @@ Un lugar donde el robot comparte el piso con cosas: una cocina, un depósito, un
   "why": "…"                            // el porqué de la distribución, para quien lea el archivo
 }
 ```
+
+**La escena de un video** *(propuesta de Juan, 2026-10-24)*. `data/` la saca del primer cuadro del clip, junto con el `PoseClip`, con el mismo formato y estos detalles:
+
+- `id` es el `clip_id`; `title` es `"Lugar del video"`; `why` dice cómo se estimó.
+- `floor: { "friction_hint": 0.6 | null }`: una pista para elegir el mundo, no una medida. Sale del tipo de lugar que sugieren los objetos: con heladera, horno, lavaplatos o inodoro (cocina o baño, piso de baldosa) es 0,6; si no hay pistas, `null` y se usa la fricción del mundo.
+- **Ejes y escala de `pos`:** `pos = [z, x]` del `PoseClip` (x del robot = z del `PoseClip`, hacia la cámara; y del robot = x del `PoseClip`), en metros de la persona, sobre el piso. El `RobotMotion` escala el recorrido por el largo de pierna (×0,83). Para que el robot pase junto a los muebles donde pasó la persona, `physics/` multiplica `pos` (no `size`) por esa misma escala.
+- `size` mide el ancho y el alto en la imagen; el fondo (la medida que no se ve) sale de un tamaño típico por tipo de objeto. `yaw` sigue el recorrido de la persona (la gente camina a lo largo de mesadas y paredes): el detector no ve hacia dónde mira un mueble.
+- `movable` y `mass` salen del tipo: una silla o una maceta se empujan, una heladera no.
+- `confidence` es la del detector, rebajada si el objeto está cortado por el borde de la imagen.
+- Los objetos que caen sobre el recorrido de la persona se corren a lo largo del rayo de la cámara hasta dejarlo libre: por donde caminó no había nada sólido.
+- Lista vacía si no se detectó nada, y siempre en los clips de la cámara (el servidor no recibe su video).
+
+`GET /scenes/{clip_id}.json` la devuelve para cada clip que el servidor hizo (`404` si el clip no existe). Las de las precargadas están en [`data/scenes/<clip_id>.json`](../data/scenes).
 
 `physics/src/scenes.js` lo vuelve geometría sólida de MuJoCo sobre la escena actual: cada objeto choca con todas las partes del robot (pares de contacto explícitos) y los sueltos también con el piso. Hoy se ven y se sienten en la web (`view.setScene`); el entrenamiento todavía no los usa (el robot no aprende a esquivarlos: es el plan).
 
