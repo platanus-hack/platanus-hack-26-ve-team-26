@@ -1,8 +1,9 @@
 // Headless check that the robot's hands stop on its head and on each other instead of going
 // through (clearance.js), in two poses built straight on the G1's joints: a clap, both arms
-// forward and turned in until the hands overlap, and both hands brought onto the top of the head.
+// forward and turned in until the hands overlap, both hands brought onto the top of the head, and
+// forearms folded across the body, into the chest.
 // Run: npm run check
-import { createClearance, HANDS_APART_M, HEAD_CENTER, HEAD_CLEAR_M } from '../src/clearance.js';
+import { CHEST, CHEST_CLEAR_M, createClearance, HANDS_APART_M, HEAD_CENTER, HEAD_CLEAR_M } from '../src/clearance.js';
 import { loadG1Node } from './node-model.mjs';
 
 const { mujoco, sim } = await loadG1Node();
@@ -34,7 +35,15 @@ function measure(q) {
   let apart = Infinity;
   for (const a of hands[0]) for (const b of hands[1]) apart = Math.min(apart, distance(a, b));
   const fromHead = Math.min(...hands.flat().map((p) => distance(p, head)));
-  return { apart, fromHead };
+  // How far the hands are in front of the chest (torso frame), for those across its width.
+  const o = at(torso);
+  let chest = Infinity;
+  for (const p of hands.flat()) {
+    const d = p.map((v, i) => v - o[i]);
+    const [x, y, z] = [0, 1, 2].map((k) => m[k] * d[0] + m[3 + k] * d[1] + m[6 + k] * d[2]);
+    if (Math.abs(y) < CHEST.halfWidth + CHEST_CLEAR_M && z > 0 && z < CHEST.top && x > CHEST.back - CHEST_CLEAR_M) chest = Math.min(chest, x - CHEST.front);
+  }
+  return { apart, fromHead, chest };
 }
 
 // Both arms the same, mirrored: shoulder pitch (negative raises the arm forward), roll (negative
@@ -70,6 +79,9 @@ console.log('hands touch instead of going through (clearance.js)');
 check('clap, hands apart', { pitch: -1.3, elbow: 0.2 }, 'apart', HANDS_APART_M);
 // Arms up and over, forearms bent down toward the crown: the pose that put a hand deepest in the
 // head (a search over the shoulder and elbow, 3 mm from its center).
+// Forearms folded across the body (the arm's twist turns them in, the elbow at a right angle): the
+// pose that put a hand deepest in the chest (a search over the shoulder and elbow, 7.8 cm in).
+check('arms folded across the body, hands in front of the chest', { pitch: 0.2, yaw: -1.5, elbow: 0 }, 'chest', CHEST_CLEAR_M);
 check('hands on the head, away from its center', { pitch: -2.3, yaw: 0.75, elbow: -0.7 }, 'fromHead', HEAD_CLEAR_M);
 
 if (failures.length) {

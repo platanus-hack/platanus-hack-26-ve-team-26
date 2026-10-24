@@ -5,13 +5,16 @@
 //           through it, in 237 of 356 frames.
 //   head    hands over or behind the head: the G1's arms are shorter and its head sits higher on
 //           the shoulders, so a person's hands resting on their head went into the robot's.
+//   chest   crossed arms or a hand on the heart: the trunk check only covers pelvis to waist, and
+//           the hands went into the chest.
 //   clap    the robot's hands meet where the person's do, but its forearms are thicker: the hands
 //           passed through each other instead of touching.
 //   feet    seen from the side, the legs' left-right is MediaPipe's depth: the walk's ankles came
 //           within 6.5 cm of each other, the feet touching and the legs looking crossed.
 // Where that would happen, the hips (their roll joints, the ankles turning back so the soles stay
 // flat) and then the shoulders open sideways just enough: the hands stop on the head or on each
-// other, touching, instead of going through. The rest of the movement is untouched.
+// other, touching, instead of going through. For the chest the shoulder goes forward instead (its
+// pitch): opening sideways would uncross crossed arms; forward keeps them crossed, on the chest. The rest of the movement is untouched.
 //
 // Only for what is shown (playClip, mimic), like level.js: the training references stay as they are.
 import { idOf } from './sim.js';
@@ -27,6 +30,12 @@ export const TRUNK_CLEAR_M = 0.15;
 // covers it. The hand stays its 4 cm plus 1 cm of air beyond that.
 export const HEAD_CENTER = [0.008, 0, 0.39];
 export const HEAD_CLEAR_M = 0.09 + 0.04 + 0.01;
+// The G1's chest (torso_link_rev_1_0.STL, in the torso's frame): its front is at most 8.4 cm
+// forward, it spans 10.8 cm to each side and from the waist to 31 cm up. A hand inside that span
+// stays its 4 cm plus 1 cm of air in front of it. A hand more than this behind the chest's back
+// (6.7 cm) is behind the body, not in it, and is left alone.
+export const CHEST = { front: 0.084, back: -0.067, halfWidth: 0.108, top: 0.31 };
+export const CHEST_CLEAR_M = 0.04 + 0.01;
 // Two hands touch at 8 cm between their centers (4 cm each); 1 cm of air keeps them from flickering
 // through each other in a clap.
 export const HANDS_APART_M = 0.09;
@@ -39,6 +48,8 @@ const HAND_PAST_WRIST = 0.6;
 // 30 degrees was enough for the thighs; a hand brought down onto the crown needs 55 (check-touch).
 const MAX_ARM = Math.PI / 3;
 const MAX_LEGS = Math.PI / 18;
+// Forward, for the chest: folded arms deepest in it (check-touch, 9.4 cm in) need 66 degrees.
+const MAX_CHEST = Math.PI / 2;
 const STEP = Math.PI / 180;
 // An opening changes at most this fast (rad/s, ~86 degrees/s: the walk's largest, 18 degrees, in
 // 0.2 s) and never falls short of what the pose needs: an average that followed it smoothly was
@@ -72,6 +83,7 @@ export function createClearance(mujoco, model) {
     ankle: body(`${side}_ankle_roll_link`),
     thigh: [body(`${side}_hip_pitch_link`), body(`${side}_knee_link`)],
     shoulder: joint(`${side}_shoulder_roll_joint`),
+    pitch: joint(`${side}_shoulder_pitch_joint`),
     elbow: body(`${side}_elbow_link`),
     wrist: body(`${side}_wrist_yaw_link`),
   }));
@@ -90,6 +102,16 @@ export function createClearance(mujoco, model) {
     return [wrist, wrist.map((v, i) => v + HAND_PAST_WRIST * (v - elbow[i]))];
   }
   const distance = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  // How far a point is in front of the chest's clear line (negative: in it), in the torso's frame;
+  // Infinity when it is beside, above, below or behind the chest.
+  function chestMargin(p) {
+    const m = data.xmat.subarray(9 * torso, 9 * torso + 9);
+    const o = at(torso);
+    const d = [p[0] - o[0], p[1] - o[1], p[2] - o[2]];
+    const [x, y, z] = [0, 1, 2].map((k) => m[k] * d[0] + m[3 + k] * d[1] + m[6 + k] * d[2]);
+    const inSpan = Math.abs(y) < CHEST.halfWidth + CHEST_CLEAR_M && z > 0 && z < CHEST.top && x > CHEST.back - CHEST_CLEAR_M;
+    return inSpan ? x - CHEST.front - CHEST_CLEAR_M : Infinity;
+  }
 
   // The parts that open, in order (the hands' gap depends on where the legs went). Each opens by
   // `amount` (rad) and says how much clearance the pose in `data` has (>= 0 when clear).
@@ -109,6 +131,18 @@ export function createClearance(mujoco, model) {
         return -Math.sin(yaw) * (l[0] - r[0]) + Math.cos(yaw) * (l[1] - r[1]) - FEET_APART_M;
       },
     },
+    // The chest: each arm's shoulder goes forward (negative pitch) until its hand is in front.
+    // Before the sideways opening below: its trunk check also covers the bottom of the chest, and
+    // opening sideways there uncrossed folded arms.
+    ...sides.map((s, k) => ({
+      name: k === 0 ? 'left arm on chest' : 'right arm on chest',
+      max: MAX_CHEST,
+      open: (q, amount) => turn(q, s.pitch, -amount),
+      margin() {
+        const [wrist, hand] = handPoints(s);
+        return Math.min(chestMargin(wrist), chestMargin(hand));
+      },
+    })),
     ...sides.map((s, k) => ({
       name: k === 0 ? 'left arm' : 'right arm',
       max: MAX_ARM,
@@ -175,7 +209,8 @@ export function createClearance(mujoco, model) {
     },
     /**
      * For the live camera: (qpos, t) -> qpos, cleared in place. Its opened() lists the parts it is
-     * holding open in the last pose ('legs', 'left arm', 'right arm', 'hands'), so the page can
+     * holding open in the last pose ('legs', 'left arm', 'right arm', 'left arm on chest',
+     * 'right arm on chest', 'hands'), so the page can
      * tell a move the person made from one this added.
      */
     createLive() {
