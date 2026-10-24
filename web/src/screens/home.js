@@ -505,7 +505,8 @@ export function mount(root, { api }) {
   const modeAt = () => chapterAt(scrollY + innerHeight * 0.5).dataset.mode ?? 'stand';
 
   // Hero: the robot stands on its own with the trained policy; a push shows it catching itself.
-  const hero = { pushes: 0, falls: 0, pushedAt: 0, fallen: false };
+  // fallenAt: when the robot was first seen on the floor (0 while standing), to stand it up again.
+  const hero = { pushes: 0, falls: 0, pushedAt: 0, fallen: false, fallenAt: 0 };
   const stateEl = $('.hud .state');
   const say = (state, text) => {
     stateEl.dataset.state = state;
@@ -528,9 +529,32 @@ export function mount(root, { api }) {
     }
     clearTimeout(heroTimer);
     heroTimer = setTimeout(() => {
-      if (hero.fallen && mode === 'stand') view.reset();
-      say('stand', 'Física real · de pie con su política');
+      if (!hero.fallen) say('stand', 'Física real · de pie con su política');
     }, AFTER_PUSH_S * 1000);
+  }
+  // A robot on the floor in the hero, whatever put it there (a push the policy missed, or the page
+  // coming back to the hero with it fallen), is stood up again after GYM_RESTART_S, as in the Gym:
+  // before, only a timer 5 s after the push did it, so a later fall left it lying until a reload.
+  function standHeroUp(now) {
+    const down = view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M;
+    if (!down) {
+      hero.fallenAt = 0;
+      return;
+    }
+    if (!hero.fallenAt) {
+      hero.fallenAt = now;
+      if (hero.pushedAt && !hero.fallen) {
+        hero.fallen = true; // the policy misses some pushes (training/README.md): say so
+        hero.falls += 1;
+        $('[data-hud="falls"]').textContent = hero.falls;
+        say('fall', 'Esta vez se cayó. También pasa: se levanta y lo vuelve a intentar');
+      }
+    } else if (now - hero.fallenAt > GYM_RESTART_S * 1000) {
+      view.reset();
+      hero.fallenAt = 0;
+      hero.fallen = false;
+      say('stand', 'Física real · de pie con su política');
+    }
   }
   $$('.hero-push').forEach((button) => on(button, 'click', pushHero));
   on(window, 'keydown', (event) => {
@@ -732,12 +756,7 @@ export function mount(root, { api }) {
         showGymStage();
         runGym();
       }
-      if (mode === 'stand' && hero.pushedAt && !hero.fallen && view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M) {
-        hero.fallen = true; // the policy misses about 1 push in 15 (physics/README.md): say so
-        hero.falls += 1;
-        $('[data-hud="falls"]').textContent = hero.falls;
-        say('fall', 'Esta vez se cayó. También pasa: 1 de cada 15');
-      }
+      if (mode === 'stand') standHeroUp(now);
     }
     frameId = requestAnimationFrame(frame);
   });
