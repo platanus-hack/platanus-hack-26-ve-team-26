@@ -50,3 +50,6 @@ git fetch --quiet origin main
 git reset --quiet --hard origin/main
 git branch --quiet --unset-upstream 2>/dev/null || true
 echo "ship: '$title' is on main. '$branch' now matches main; keep working here."
+
+# Deploys run from the mirror; a failure here leaves main shipped and only delays the deploy.
+"$(dirname "$0")/mirror.sh" || true
