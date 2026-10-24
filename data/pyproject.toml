@@ -3,9 +3,16 @@ name = "tridi-data"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.162.0",
     "lap>=0.5.13",
     "mediapipe>=1.1.1",
     "numpy>=2.5.4",
     "opencv-python>=5.0.0.93",
     "ultralytics>=8.4.184",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
 ]
