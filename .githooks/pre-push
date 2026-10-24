@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# Blocks direct pushes to main: everything reaches main through scripts/ship.sh (a squash-merged PR).
+# Server-side protection needs GitHub Pro on private repos, so this local hook covers it meanwhile.
+# Escape hatch for the very first push of an empty repo: ALLOW_MAIN_PUSH=1 git push
+[ "${ALLOW_MAIN_PUSH:-}" = 1 ] && exit 0
+
+while read -r _local_ref _local_sha remote_ref _remote_sha; do
+  if [ "$remote_ref" = refs/heads/main ]; then
+    echo "pre-push: direct push to main blocked. Work on <name>/<topic> and run scripts/ship.sh." >&2
+    exit 1
+  fi
+done
+exit 0
