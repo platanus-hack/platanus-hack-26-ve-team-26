@@ -29,6 +29,39 @@ uv run --project training python -m training.rollout <carpeta>/<clip_id>-step-<N
 
 `rollout.py` corre la política final (el ONNX) desde el inicio del clip en N episodios por mundo de `physics/worlds/`, con cada parámetro sorteado en su rango y aplicado como `applyWorld()` de `physics/src/sim.js`, y guarda `meta.json` + `rollouts.npz` con el formato del [contrato](../docs/contrato.md#datos-para-entrenar-robots-2026-10-24).
 
+## La entrega de un clip
+
+Lo que se lleva el cliente, en una carpeta: la política final (`.onnx` + `.json`), el dataset, el `RobotMotion`, el `PoseClip` y la escena del video, más `delivery.json` (resumen por mundo y por episodio, la escalera de checkpoints y los archivos con su peso) y `replay.json` (cada episodio a 25 Hz y siempre con su última fila, para verlo sin bajar el dataset). Formato en el [contrato](../docs/contrato.md#la-entrega-de-un-clip-propuesta-de-juan-2026-10-24); el servidor la arma sola después del dataset ([`data/`](../data/README.md)).
+
+```bash
+uv run --project training python -m training.deliver <policy.json> --clip <PoseClip.json> --out <carpeta> \
+  [--motion <RobotMotion.json>] [--scene <escena.json>] [--dataset <dataset.zip>] [--title "Caminar"] [--checkpoints <carpeta>] [--since <ISO UTC>]
+```
+
+- Sin `--dataset` corre `training.rollout` (8 episodios por mundo) y lo deja en la carpeta como `dataset.zip`. Con `--dataset`, tiene que ser de este clip y de esta política (`clip_id` y `policy_id` de su `meta.json`): si no, sale sin tocar la carpeta.
+- `--motion` por defecto es `physics/motions/<clip_id>.json`; `--scene`, `data/scenes/<clip_id>.json` si existe; `--title`, el nombre del video (o "Clip de la cámara").
+- `--checkpoints` es la carpeta de los `<prefijo>-step-<N>.json` exportados: la escalera toma los de este clip que traen `followed_s`. Sin ella, `checkpoints` queda `[]`. `--since` (la hora de inicio del entrenamiento, como el `created_at` de `policy.json`) deja fuera los que sobraron de un entrenamiento anterior del mismo clip.
+- `delivery.json` se borra al empezar y se escribe al final y entero: si está, el resto de la carpeta está listo. Un `scene.json` que ya no va también se borra.
+- En `replay.json` la fila `i` está a (2i + 1)/50 s del inicio del episodio; si la última fila del dataset quedó entre dos, se agrega al final y está a `seconds` del episodio (es donde terminó). Su `foot_force` es el pico de las filas que representa, para que el golpe de un talón (una o dos filas de 20 ms) no se pierda.
+
+La precargada de la caminata está en [`data/deliveries/clip_2026-10-23_caminar-perfil_01/`](../data/deliveries/clip_2026-10-23_caminar-perfil_01) (2,4 MB; `replay.json` pesa 494 KB, 124 KB con gzip):
+
+```bash
+uv run --project training python -m training.deliver training/policies/g1-walk.json \
+  --clip data/clips/clip_2026-10-23_caminar-perfil_01.json --out data/deliveries/clip_2026-10-23_caminar-perfil_01 --title "Caminar"
+```
+
+Para regenerarla con los mismos números, sin volver a correr los 32 episodios: `--dataset data/deliveries/clip_2026-10-23_caminar-perfil_01/dataset.zip`.
+
+| Mundo | Episodios | Llegan al final (11,85 s) | Segundos: media (mín-máx) |
+| --- | --- | --- | --- |
+| Piso plano | 8 | 0 | 4,1 (3,0-5,0) |
+| Piedras | 8 | 0 | 3,0 (2,2-5,2) |
+| Piso resbaloso | 8 | 0 | 1,6 (1,2-1,8) |
+| Viento | 8 | 0 | 0,9 (0,6-1,2) |
+
+Ninguno llega al final: `g1-walk` sigue 3,5 s del clip desde el inicio y se entrenó solo en el piso plano. Unos 3 de cada 4 episodios terminan por alejarse más de 0,6 m del recorrido de la persona, no por caerse (`fell` cuenta las dos cosas, como en el entrenamiento). Su escalera queda vacía: los checkpoints de `walk-v4` no quedaron exportados con su `followed_s`.
+
 ## El mundo (`env.py`)
 
 | Pieza | Qué es | Por qué |

@@ -45,6 +45,9 @@ DRAG_AREA_M2 = 0.5
 
 GROUND = ("floor", "stones")
 
+# The ranges of physics/worlds/<id>.json that an episode draws from.
+PARAMS = ("friction", "wind_mps", "mass_scale", "motor_scale", "push_n")
+
 
 def wind_force(mps: float) -> float:
     return 0.5 * AIR_DENSITY * DRAG_AREA_M2 * mps * mps
@@ -56,8 +59,7 @@ def load_world(world_id: str) -> dict:
 
 def draw_params(world: dict, rng: np.random.Generator) -> dict:
     """One value per parameter, uniform inside the world's ranges."""
-    keys = ("friction", "wind_mps", "mass_scale", "motor_scale", "push_n")
-    return {k: round(float(rng.uniform(*world[k])), 3) for k in keys}
+    return {k: round(float(rng.uniform(*world[k])), 3) for k in PARAMS}
 
 
 class WorldEnv(MimicEnv):

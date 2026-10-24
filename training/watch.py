@@ -77,17 +77,16 @@ def main() -> int:
     p.add_argument("--once", action="store_true", help="print once and exit")
     args = p.parse_args()
     csv_path = args.run / "progress.csv"
-    shown = 0
     try:
         while True:
             text = render(args.run, read(csv_path) if csv_path.exists() else [], args.steps)
             if args.once:
                 print(text)
                 return 0
-            # Rewrite the block in place: move up over the previous one and clear it.
-            sys.stdout.write("\033[F\033[K" * shown + text + "\n")
+            # Redraw the whole screen: moving the cursor up over the previous block breaks as soon as
+            # a line wraps in a narrow terminal, and then the block repeats instead of updating.
+            sys.stdout.write("\033[H\033[2J" + text + "\n")
             sys.stdout.flush()
-            shown = text.count("\n") + 1
             if text.endswith("terminado"):
                 return 0
             time.sleep(args.every)
