@@ -30,6 +30,12 @@ Que el estudio de los otros equipos no dependa de que alguien se acuerde de pedi
 
 - La primera versión del script perdía la referencia: con un solo archivo de estado, 60 pasadas automáticas convertían "cambios desde la última pasada" en "cambios desde hace media hora". Se arregló con dos estados (`.estado.tsv` y `.estado-documentado.tsv`) y un `--marcar` que solo se corre al terminar de escribir.
 
+## Qué se hizo después (03:15)
+
+- **Puntuación con la rúbrica real** en los dos archivos de competencia: técnico 25, impacto 20, ejecución 20, ambición 20, originalidad 15, puntuando solo lo que existe en el repo y el deploy de cada equipo. Top 3 de hoy: Tridi 78, el equipo 24 con 72 y el 25 con 69.
+- Nuestras notas, sin maquillar: técnico 22/25 y ejecución 17/20 lo mejor; **impacto 12/20 y originalidad 10/15** lo peor. El impacto es el flanco por donde nos pasan cuatro equipos.
+- El skill y la pasada automática repuntúan en cada ronda, mirando también nuestro propio repo y deploy antes de ponernos nota.
+
 ## Decisiones
 
 - **El skill nombra la rutina pero no el contenido.** Este repo es público: el skill dice que la pasada existe y cómo correrla; las fichas de los rivales y las recomendaciones de pitch se quedan en platanus-ideas. Ale lo pidió explícitamente sabiendo que el skill se publica.
