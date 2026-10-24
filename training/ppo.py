@@ -1,6 +1,6 @@
 """PPO for the G1: an MLP policy learns to stand and take pushes, saving checkpoints along the way.
 
-    uv run --project training python -m training.ppo [--steps 20000000] [--run stand]
+    uv run --project training python -m training.ppo [--task stand|walk] [--steps 20000000] [--run stand]
 
 Checkpoints go to training/runs/<run>/ as step_<N>.pt plus a progress.csv, at 0, 10k, 100k, 1M,
 3M, 10M... environment steps: the pitch shows the same robot at several of them side by side.
@@ -80,11 +80,11 @@ def mlp(inp: int, out: int, hidden=(256, 128, 64)) -> nn.Sequential:
 class ActorCritic(nn.Module):
     """Small enough to run every 20 ms in a phone's browser: ~70k parameters per network."""
 
-    def __init__(self):
+    def __init__(self, obs_dim: int = OBS_DIM):
         super().__init__()
-        self.norm = RunningNorm(OBS_DIM)
-        self.actor = mlp(OBS_DIM, NU)
-        self.critic = mlp(OBS_DIM, 1)
+        self.norm = RunningNorm(obs_dim)
+        self.actor = mlp(obs_dim, NU)
+        self.critic = mlp(obs_dim, 1)
         self.log_std = nn.Parameter(torch.full((NU,), float(INIT_LOG_STD)))
         # Small last layer: the untrained policy starts near the standing pose instead of random.
         nn.init.orthogonal_(self.actor[-1].weight, 0.01)
@@ -97,19 +97,28 @@ class ActorCritic(nn.Module):
         return self.critic(self.norm(obs)).squeeze(-1)
 
 
+def obs_size(task: str) -> int:
+    if task == "walk":
+        from .imitate import MIMIC_OBS_DIM
+
+        return MIMIC_OBS_DIM
+    return OBS_DIM
+
+
 def save(model: ActorCritic, run_dir: Path, step: int) -> None:
     torch.save({"model": model.state_dict(), "step": step}, run_dir / f"step_{step}.pt")
 
 
-def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float]) -> None:
+def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(0)
-    model = ActorCritic()
+    obs_dim = obs_size(task)
+    model = ActorCritic(obs_dim)
     if init:  # continue from an earlier run (its steps are not counted again)
         model.load_state_dict(torch.load(init)["model"])
     opt = torch.optim.Adam(model.parameters(), lr=LR, eps=1e-5)
-    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n)
+    envs = VecEnv(NUM_ENVS, WORKERS, push_n=push_n, task=task)
     obs = envs.reset()
     pending = [c for c in CHECKPOINTS if c <= total_steps]
     save(model, run_dir, 0)
@@ -123,7 +132,7 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
 
     while step < total_steps:
         t0 = time.time()
-        buf_obs = np.zeros((ROLLOUT, NUM_ENVS, OBS_DIM), np.float32)
+        buf_obs = np.zeros((ROLLOUT, NUM_ENVS, obs_dim), np.float32)
         buf_act = np.zeros((ROLLOUT, NUM_ENVS, NU), np.float32)
         buf_logp = np.zeros((ROLLOUT, NUM_ENVS), np.float32)
         buf_rew = np.zeros((ROLLOUT, NUM_ENVS), np.float32)
@@ -152,7 +161,7 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
                     ep_len[i] = 0
                 falls += int(term.sum())
             buf_val[ROLLOUT] = model.value(torch.as_tensor(obs)).numpy()
-        model.norm.update(torch.as_tensor(buf_obs.reshape(-1, OBS_DIM)))
+        model.norm.update(torch.as_tensor(buf_obs.reshape(-1, obs_dim)))
 
         # Generalized advantage estimation.
         adv = np.zeros_like(buf_rew)
@@ -166,7 +175,7 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
 
         # PPO update, in minibatches of 1024.
         model.to(device)
-        b_obs = torch.as_tensor(buf_obs.reshape(-1, OBS_DIM), device=device)
+        b_obs = torch.as_tensor(buf_obs.reshape(-1, obs_dim), device=device)
         b_act = torch.as_tensor(buf_act.reshape(-1, NU), device=device)
         b_logp = torch.as_tensor(buf_logp.reshape(-1), device=device)
         b_adv = torch.as_tensor(adv.reshape(-1), device=device)
@@ -208,6 +217,8 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="python -m training.ppo", description=__doc__.split("\n")[0])
     p.add_argument("--steps", type=int, default=20_000_000)
     p.add_argument("--run", default="stand")
+    p.add_argument("--task", choices=["stand", "walk"], default="stand",
+                   help="stand: balance and pushes (env.py); walk: imitate a RobotMotion (imitate.py)")
     p.add_argument("--init", type=Path, help="checkpoint to continue from")
     p.add_argument("--push-min", type=float, default=PUSH_N[0], help="weakest random push, N")
     p.add_argument("--push-max", type=float, default=PUSH_N[1], help="strongest random push, N")
@@ -215,7 +226,7 @@ def main() -> None:
     # that moving each minibatch to the GPU costs more than the GPU saves. --device mps to compare.
     p.add_argument("--device", default="cpu")
     args = p.parse_args()
-    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max))
+    train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), args.task)
 
 
 if __name__ == "__main__":
