@@ -37,6 +37,8 @@ Juan reporta en En vivo: el robot no distingue palmas hacia adelante o hacia atr
 
 - **En vivo dejó de seguir (roto en `b23e0e2`, arreglado en `98d25ed`):** al reescribir `matchHands` en `data/live/src/index.js` se borró la función `smoothed` que venía después. Cada cuadro con cuerpo tiraba `ReferenceError: smoothed is not defined` y el loop de la cámara moría: no salía el esqueleto y el estado quedaba en "Esperando el permiso de la cámara…". No lo vio ningún check: `vite build` no detecta nombres sin definir y `npm run check` no importa `index.js`. Se encontró en tridi-alpha con una cámara falsa (`caminar.mp4` recortado a la mitad de arriba en un canvas, como `getUserMedia`). Revisado con eslint `no-undef` todo lo tocado en la sesión: sin otros casos.
 
+- **El robot de En vivo no se podía girar con el mouse:** `4d5dd3e` (spinner de la marca) quitó `pointer-events: none` de `.robot-loading`. La capa se desvanece al cargar pero seguía encima del canvas y se quedaba con los arrastres. Vuelto en `style.css`; probado en tridi-alpha arrastrando sobre el robot (la cámara gira). Arregla también los paneles de Simulaciones, que usan la misma capa.
+
 ## Decisiones
 
 - B3 (pesar más el codo) no se hizo: con geometría exacta los codos ya salían bien; la causa era profundidad y espejo.
