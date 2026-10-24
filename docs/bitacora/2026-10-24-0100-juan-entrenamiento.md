@@ -22,7 +22,6 @@ Primera fase de `training/`: entorno de RL legible sobre `scene_mjx.xml`, una po
 - Sin política el G1 de entrenamiento se cae en 1 s (motores blandos, `kp=75`): el entorno tiene algo real que aprender.
 - 11.400 pasos de política por segundo con 64 robots en una M2. 20 M de pasos ≈ 30 min.
 - ONNX igual a torch (3e-8 rad), 265 KB.
-
 - Primer entrenamiento `stand-v1`: 20 M pasos en 38,5 min. La política se sostiene 20 s sin empujones, aguanta los 4 empujones hasta 150 N, y con 250 N aguanta 2,2 de 4 (13,4 s de pie). Escalera para el pitch: 1,1 s (sin entrenar), 4,2 s (3 M), 9,6 s (10 M), 13,4 s (20 M). Exportada a `training/policies/` (`g1-stand.onnx` y los checkpoints `g1-stand-step-*`).
 
 ## Qué no funcionó
