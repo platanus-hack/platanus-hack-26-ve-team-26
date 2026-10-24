@@ -16,6 +16,17 @@ uv run --project training python -m training.ppo --task mimic --motion <clip_id 
 uv run --project training python -m training.browser_fixture training/policies/<id>.onnx  # estados para la prueba del navegador (physics/)
 ```
 
+Para que se corrija más rápido y aguante más, en los cuatro mundos de la web y no solo en el plano (`--worlds`, [`worlds.py`](worlds.py)); `rollout.py` usa los mismos mundos para el dataset:
+
+El viento entra de a poco con `--wind-max` (m/s): `stand-worlds-v1` lo recibió entero desde el primer paso (hasta 14 m/s, ~59 N constantes), con `--std 0.3`, y a los 12 M pasos aguantaba menos que `g1-stand-quiet` en todos los mundos (6/16 episodios de 20 s en plano, contra 15/16). Por eso, por etapas y sin reabrir la exploración:
+
+```bash
+uv run --project training python -m training.ppo --run stand-worlds-v2a --steps 6000000 --every 1000000 --init training/runs/stand-v7b/step_8000000.pt \
+  --reward turn=0.3,feet=0.5,planted=0.1,rate=0.02 --push-every 4,8 --push-min 50 --push-max 300 \
+  --worlds plano,piedras,resbaloso,viento --wind-max 6
+uv run --project training python -m training.ppo --task mimic --motion <clip_id> --worlds plano,piedras,resbaloso,viento --init <walk.pt> --push-max 100
+```
+
 Una postura quieta (ver "La política de hoy"): los términos de quietud de `env.Stance` se activan con `--reward`, los empujones se espacian con `--push-every`, y al continuar un run `--std` vuelve a abrir la exploración:
 
 ```bash
@@ -82,6 +93,7 @@ Ninguno llega al final: `g1-walk` sigue 3,5 s del clip desde el inicio y se entr
 | Caída | Pelvis bajo 0,5 m o torso inclinado más de 60° | Desde ahí el G1 no se levanta |
 | Empujones | Cada 2-4 s (`--push-every`), hasta 300 N durante 0,1 s, dirección al azar | El botón de la web empuja 250 N: queda dentro de lo aprendido. Para una postura quieta, cada 4-8 s: con 5-9 empujones por episodio nunca se asienta |
 | Episodio | 20 s, arrancando con la pose de pie ±0,05 rad | Aprende a sostenerse desde muchas poses, no a repetir una |
+| Mundos (`--worlds`, [`worlds.py`](worlds.py), apagado por defecto) | Cada robot vive en un mundo de `physics/worlds/` (el robot i en el mundo i mod n) y en cada reinicio sortea fricción, masa, fuerza de los motores, viento y empujón máximo dentro de sus rangos, con las fórmulas de `applyWorld()` de la web | Una política que solo vio el piso plano no sabe corregirse con viento ni en piso resbaloso (la caminata dura 0,9 s con viento). Los empujones salen del mundo, con `--push-max` como tope, así que sigue sirviendo de currículum |
 
 ## Para correr la política en el navegador (Pastor y César)
 

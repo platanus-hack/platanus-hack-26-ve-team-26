@@ -125,7 +125,7 @@ def save(model: ActorCritic, run_dir: Path, step: int, meta: dict, export_dir: P
 def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tuple[float, float], task: str,
           motion: str | None = None, every: int = 0, export_dir: Path | None = None, prefix: str | None = None,
           push_every: tuple[float, float] = PUSH_EVERY_S, stance: Stance | None = None, std: float | None = None,
-          seed: int = 0) -> None:
+          seed: int = 0, worlds: tuple[str, ...] = (), wind_max: float | None = None) -> None:
     run_dir = RUNS / run
     run_dir.mkdir(parents=True, exist_ok=True)
     torch.manual_seed(seed)
@@ -138,9 +138,11 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
         # bonus it only narrows further: a changed reward needs the exploration opened again.
         model.log_std.data.fill_(np.log(std))
     opt = torch.optim.Adam(model.parameters(), lr=LR, eps=1e-5)
-    envs = VecEnv(NUM_ENVS, WORKERS, seed=seed, push_n=push_n, task=task, motion=motion, push_every=push_every, stance=stance)
+    envs = VecEnv(NUM_ENVS, WORKERS, seed=seed, push_n=push_n, task=task, motion=motion, push_every=push_every, stance=stance,
+                  worlds=worlds, wind_max=wind_max)
     obs = envs.reset()
     meta = {"task": task, "motion": motion} if task == "mimic" else {"task": task}
+    meta["worlds"] = list(worlds) or ["plano"]
     extra = range(every, total_steps, every) if every > 0 else []
     pending = sorted({c for c in CHECKPOINTS if c <= total_steps} | set(extra))
     out = (export_dir, prefix or run)
@@ -253,6 +255,11 @@ def main() -> None:
     p.add_argument("--push-every", default=f"{PUSH_EVERY_S[0]},{PUSH_EVERY_S[1]}",
                    help="seconds between random pushes, min,max (default 2,4; a quiet stance needs 4,8 to settle between them)")
     p.add_argument("--reward", default="", help="stance terms (env.py Stance), e.g. turn=0.3,feet=0.5,planted=0.1,rate=0.02,calm_s=1")
+    p.add_argument("--worlds", default="",
+                   help="train in these worlds of physics/worlds/, e.g. plano,piedras,resbaloso,viento (training/worlds.py); "
+                        "empty: the flat floor, as before. Pushes then come from each world, capped by --push-max")
+    p.add_argument("--wind-max", type=float,
+                   help="--worlds: cap every world's wind at this many m/s (a curriculum: e.g. 6, then 10, then none)")
     p.add_argument("--std", type=float, help="reset the action std to this (e.g. 0.3) when continuing with --init")
     p.add_argument("--seed", type=int, default=0, help="torch and environment seed (every run replays seed 0 otherwise)")
     # CPU by default: measured on an M2, 11.2k steps/s on CPU vs 10.1k on MPS. This network is so small
@@ -264,7 +271,8 @@ def main() -> None:
     stance = Stance(**{k: float(v) for k, v in (kv.split("=") for kv in args.reward.split(",") if kv)}) if args.reward else None
     push_every = tuple(float(v) for v in args.push_every.split(","))
     train(args.steps, args.run, args.device, args.init, (args.push_min, args.push_max), task, args.motion,
-          args.every, export_dir, args.policy_prefix, push_every, stance, args.std, args.seed)
+          args.every, export_dir, args.policy_prefix, push_every, stance, args.std, args.seed,
+          tuple(w for w in args.worlds.split(",") if w), args.wind_max)
 
 
 if __name__ == "__main__":

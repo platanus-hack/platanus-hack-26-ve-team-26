@@ -32,7 +32,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .rollout import EPISODES, PARAMS, ROOT, WORLD_ORDER, load_world, rollout
+from .rollout import EPISODES, rollout
+from .worlds import PARAMS, ROOT, WORLD_ORDER, load_world
 
 MOTIONS = ROOT / "physics" / "motions"
 SCENES = ROOT / "data" / "scenes"

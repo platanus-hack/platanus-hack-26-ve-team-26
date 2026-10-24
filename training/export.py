@@ -25,8 +25,8 @@ from .ppo import ActorCritic, obs_size
 
 OUT = Path(__file__).parent / "policies"
 
-# The worlds an imitation policy trains in (physics/worlds/<id>.json). Only the flat floor until
-# MimicEnv draws a world per episode (ENT-3 in docs/plan-producto.md).
+# The worlds a policy trained in (physics/worlds/<id>.json), for checkpoints from before
+# ppo.py --worlds saved them: those all trained on the flat floor.
 TRAINED_WORLDS = ["plano"]
 
 
@@ -108,7 +108,7 @@ def export(checkpoint: Path, policy_id: str, out: Path, task: str | None = None,
         # Imitation: the clip it follows, and how far ahead the observation shows it
         # (imitate.MimicEnv.observe).
         **({"motion": env.motions[0].id, "lookahead_s": list(LOOKAHEAD_S)} if walk else {}),
-        "worlds": TRAINED_WORLDS,
+        "worlds": state.get("worlds") or TRAINED_WORLDS,
         **followed,
         "steps": int(state["step"]),
         "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),

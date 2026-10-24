@@ -23,98 +23,22 @@ import mujoco
 import numpy as np
 import onnxruntime as ort
 
-from .env import ACTION_SCALE, MJCF
-from .imitate import MimicEnv
+from .env import ACTION_SCALE
+from .worlds import WORLD_ORDER, MimicInWorld, draw_params, load_world
 
-ROOT = Path(__file__).resolve().parent.parent
-WORLDS_DIR = ROOT / "physics" / "worlds"
-MODELS = ROOT / "physics" / "models"
 OUT = Path(__file__).parent / "datasets"
-
-# Display order of physics/src/worlds.js: the reference world first.
-WORLD_ORDER = ["plano", "piedras", "resbaloso", "viento"]
 
 # 8 episodes per world: enough to see how often it falls in each one (1 in 8 is the resolution),
 # and 4 worlds x 8 x a 12 s clip is ~20k rows, a few MB, in under a minute on a laptop.
 EPISODES = 8
 
-# Wind -> force on the torso, as physics/src/worlds.js: F = 1/2 rho Cd A v^2 with air at
-# 1.2 kg/m^3 and Cd A ~ 0.5 m^2 for a standing person (10 m/s ~ 30 N).
-AIR_DENSITY = 1.2
-DRAG_AREA_M2 = 0.5
 
-GROUND = ("floor", "stones")
-
-# The ranges of physics/worlds/<id>.json that an episode draws from.
-PARAMS = ("friction", "wind_mps", "mass_scale", "motor_scale", "push_n")
-
-
-def wind_force(mps: float) -> float:
-    return 0.5 * AIR_DENSITY * DRAG_AREA_M2 * mps * mps
-
-
-def load_world(world_id: str) -> dict:
-    return json.loads((WORLDS_DIR / f"{world_id}.json").read_text())
-
-
-def draw_params(world: dict, rng: np.random.Generator) -> dict:
-    """One value per parameter, uniform inside the world's ranges."""
-    return {k: round(float(rng.uniform(*world[k])), 3) for k in PARAMS}
-
-
-class WorldEnv(MimicEnv):
-    """MimicEnv in a world: its scene, floor grip, robot mass, motor strength, wind and pushes."""
+class WorldEnv(MimicInWorld):
+    """MimicEnv in a world (worlds.py), with the values rollout() draws, plus the feet's forces."""
 
     def __init__(self, world: dict, seed: int, motion: str):
-        super().__init__(seed=seed, clips=(motion,), push=True)
-        if world["scene"] != MJCF:
-            # Swap in the world's scene. The reference keeps the cleaning done on the flat model:
-            # the stones are a few cm, so its pelvis height still holds (physics/worlds/piedras.json).
-            self.model = mujoco.MjModel.from_xml_path(str(MODELS / world["scene"]))
-            self.data = mujoco.MjData(self.model)
-            self.torso = self.model.body("torso_link").id
-        self.ground = {self.model.geom(n).id for n in GROUND if mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_GEOM, n) >= 0}
-        self.ground_pairs = [p for p in range(self.model.npair)
-                             if self.model.pair_geom1[p] in self.ground or self.model.pair_geom2[p] in self.ground]
+        super().__init__(world, seed, motion, redraw=False)
         self.foot_geoms = [{self.model.geom(f"{side}_foot{k}_collision").id for k in (1, 2, 3)} for side in ("left", "right")]
-        m = self.model
-        self.defaults = {
-            "mass": m.body_mass.copy(), "inertia": m.body_inertia.copy(), "gain": m.actuator_gainprm[:, 0].copy(),
-            "bias": m.actuator_biasprm[:, 1:3].copy(), "torque": m.jnt_actfrcrange.copy(),
-        }
-        self.wind = np.zeros(2)
-
-    def apply_world(self, p: dict) -> None:
-        """physics/src/sim.js applyWorld(), always from the model's own values so worlds never compound."""
-        m, d = self.model, self.defaults
-        m.pair_friction[self.ground_pairs, 0:2] = p["friction"]
-        m.body_mass[:] = d["mass"] * p["mass_scale"]
-        m.body_inertia[:] = d["inertia"] * p["mass_scale"]
-        m.actuator_gainprm[:, 0] = d["gain"] * p["motor_scale"]
-        m.actuator_biasprm[:, 1:3] = d["bias"] * p["motor_scale"]
-        m.jnt_actfrcrange[:] = d["torque"] * p["motor_scale"]
-        mujoco.mj_setConst(m, self.data)
-        angle = self.rng.uniform(0, 2 * np.pi)  # the wind blows from a random side, steady all episode
-        self.wind = wind_force(p["wind_mps"]) * np.array([np.cos(angle), np.sin(angle)])
-        self.push_n = (0.0, p["push_n"])
-        self.push_enabled = p["push_n"] > 0
-
-    def _push(self) -> None:
-        super()._push()
-        self.data.xfrc_applied[self.torso, :2] += self.wind  # the wind keeps blowing during a push
-
-    def _touch_ground(self) -> None:
-        """MimicEnv._touch_ground, counting the stones as floor too."""
-        d = self.data
-        for _ in range(40):
-            mujoco.mj_forward(self.model, d)
-            dist = min((d.contact[i].dist for i in range(d.ncon) if self.ground & set(d.contact[i].geom)), default=None)
-            if dist is None:
-                d.qpos[2] -= 0.005
-            elif dist < -0.002:
-                d.qpos[2] -= dist
-            else:
-                return
 
     def foot_forces(self) -> np.ndarray:
         """Force of the ground on each foot (left, right), in the world frame, in N."""
