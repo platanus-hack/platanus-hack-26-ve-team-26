@@ -6,6 +6,7 @@ import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { createRootTracker } from './root.js';
+import { createLeveler } from './level.js';
 import { createRobotPoseFilter } from './filters.js';
 import { RobotView } from './viewer.js';
 import { placeXml, SCENE_ORDER } from './scenes.js';
@@ -100,6 +101,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   let retargeter = null;
   let smoother = null; // the live pose filter (filters.js createRobotPoseFilter)
   let rootTracker = null; // where the copying robot is on the floor (root.js)
+  let leveler = null; // keeps the copying robot upright sideways (level.js)
   // Retargeting runs on its own model of the G1: the kinematic chain and the soles, without meshes
   // (a model with them takes ~3 s to build in a browser, and would freeze the first camera frame).
   // It does not depend on which model the simulation shows, and its joints are laid out exactly
@@ -163,7 +165,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     sim.reset();
     retargeter?.delete();
     rootTracker?.delete();
-    tracker = retargeter = smoother = rootTracker = null;
+    leveler?.delete();
+    tracker = retargeter = smoother = rootTracker = leveler = null;
   }
 
   return {
@@ -322,11 +325,13 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
       smoother ??= createRobotPoseFilter(kinematicModel().nq); // the robot's own values, not a place's objects
       rootTracker ??= createRootTracker(sim.mujoco, kinematicModel(), { mirror, legLength: retargeter.legLength });
+      leveler ??= createLeveler(sim.mujoco, kinematicModel());
       const points = tracker.update(pose.world, pose.landmarks, pose.t);
       const { qpos, tracked, residual } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw() });
       // The path is made from the filtered pose, the one drawn: made from the raw one, the planted
       // foot would slide by whatever the filter holds back.
-      if (tracked) sim.puppet(rootTracker.update(smoother.filter(qpos, pose.t), pose));
+      // Leveled before the path: root.js puts the leveled feet back on the floor.
+      if (tracked) sim.puppet(rootTracker.update(leveler.level(smoother.filter(qpos, pose.t), pose.t), pose));
       return { tracked, residual, airborne: rootTracker.airborne() };
     },
     dispose() {
@@ -336,6 +341,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       view.dispose();
       retargeter?.delete();
       rootTracker?.delete();
+      leveler?.delete();
       kinematic?.delete();
       sim.delete();
     },

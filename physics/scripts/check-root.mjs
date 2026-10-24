@@ -8,6 +8,7 @@ import { readFileSync } from 'node:fs';
 import { createRobotPoseFilter } from '../src/filters.js';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
+import { createLeveler } from '../src/level.js';
 import { createRootTracker } from '../src/root.js';
 import { loadG1Node } from './node-model.mjs';
 
@@ -59,12 +60,14 @@ function run(poses) {
   const retargeter = createRetargeter(mujoco, kinematic, { mirror: false });
   const filter = createRobotPoseFilter(kinematic.nq);
   const root = createRootTracker(mujoco, kinematic, { mirror: false, legLength: retargeter.legLength });
+  const leveler = createLeveler(mujoco, kinematic);
   const rows = poses.map((pose) => {
     const { qpos } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t), { travelYaw: root.travelYaw() });
-    return { q: Array.from(root.update(filter.filter(qpos, pose.t), pose)), airborne: root.airborne() };
+    return { q: Array.from(root.update(leveler.level(filter.filter(qpos, pose.t), pose.t), pose)), airborne: root.airborne() };
   });
   retargeter.delete();
   root.delete();
+  leveler.delete();
   return { rows, legLength: retargeter.legLength };
 }
 
@@ -94,6 +97,18 @@ console.log('mimic: the walk of data/clips, live, with the camera');
   const person = (Math.hypot(b[0] - a[0], b[1] - a[1]) * legLength) / legs[legs.length >> 1];
   const robot = Math.hypot(rows.at(-1).q[0] - rows[0].q[0], rows.at(-1).q[1] - rows[0].q[1]);
   expect(robot > MIN_TRAVEL_SHARE * person, `the robot walks ${robot.toFixed(1)} m, the person's path scaled to its legs is ${person.toFixed(1)} (at least ${100 * MIN_TRAVEL_SHARE}%)`);
+  // Upright sideways (level.js): the walk's torso leaned 6 degrees on average before; after the
+  // leveler's first 2 s, under 1.5.
+  const torso = mujoco.mj_name2id(kinematic, mujoco.mjtObj.mjOBJ_BODY.value, 'torso_link');
+  const leans = rows.slice(2 * clip.fps).map(({ q }) => {
+    data.qpos.set(q);
+    mujoco.mj_kinematics(kinematic, data);
+    const up = [2, 5, 8].map((k) => data.xmat[9 * torso + k]);
+    const yaw = 2 * Math.atan2(q[6], q[3]);
+    return -Math.sin(yaw) * up[0] + Math.cos(yaw) * up[1];
+  });
+  const lean = (Math.asin(leans.reduce((a, b) => a + b, 0) / leans.length) * 180) / Math.PI;
+  expect(Math.abs(lean) < 1.5, `the torso leans ${lean.toFixed(1)} degrees sideways on average, under 1.5`);
   const jumps = rows.filter((r) => r.airborne).length;
   expect(jumps === 0, `no jump while walking (${jumps} frames in the air)`);
 }

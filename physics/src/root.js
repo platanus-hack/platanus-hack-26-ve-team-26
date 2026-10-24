@@ -164,6 +164,11 @@ export function createRootTracker(mujoco, model, { mirror = true, legLength }) {
       }
       const up = s * liftFilter.filter(lift(world, landmarks, camera, t), t);
       const feet = feetOf(qpos);
+      // The lowest sole on the floor: the retargeter grounds it, but leveling (level.js) after it
+      // moves the soles a little.
+      const lowest = Math.min(feet[0].h, feet[1].h);
+      qpos[2] -= lowest;
+      for (const f of feet) f.h -= lowest;
       const weights = feet.map(({ h }) => Math.min(1, Math.max(0, (CONTACT_HIGH_M - (h + up)) / (CONTACT_HIGH_M - CONTACT_LOW_M))));
       const total = weights[0] + weights[1];
       const contact = Math.min(1, total);

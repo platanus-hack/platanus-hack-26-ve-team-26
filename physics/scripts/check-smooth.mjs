@@ -103,6 +103,31 @@ console.log('playClip with plantFeet: the walk with its foot on the floor kept s
   console.log(`       (the walk covers ${travel.toFixed(1)} m with plantFeet, ${Math.hypot(motion.qpos.at(-1)[0] - motion.qpos[0][0], motion.qpos.at(-1)[1] - motion.qpos[0][1]).toFixed(1)} as retargeted)`);
 }
 
+console.log('upright sideways: no constant lean in what the screen shows (level.js)');
+{
+  // Seen from the side, MediaPipe's depth bias leaned the walk's G1 6 degrees sideways for the whole
+  // clip. A person sways a degree or two each step around upright; over the clip, the torso's mean
+  // sideways lean must stay under 1.5 degrees, in every clip.
+  const MAX_LEAN_DEG = 1.5;
+  const torso = mujoco.mj_name2id(kinematic, mujoco.mjtObj.mjOBJ_BODY.value, 'torso_link');
+  for (const id of readdirSync(new URL('../motions/', import.meta.url)).filter((f) => f.endsWith('.json'))) {
+    const leanOf = (motion) => {
+      let sum = 0;
+      for (const q of motion.qpos) {
+        data.qpos.set(q);
+        mujoco.mj_kinematics(kinematic, data);
+        const up = [2, 5, 8].map((k) => data.xmat[9 * torso + k]);
+        const yaw = 2 * Math.atan2(q[6], q[3]);
+        sum += -Math.sin(yaw) * up[0] + Math.cos(yaw) * up[1]; // toward the robot's left
+      }
+      return (Math.asin(sum / motion.qpos.length) * 180) / Math.PI;
+    };
+    const raw = read(`../motions/${id}`);
+    const shown = leanOf(smoothForDisplay(mujoco, kinematic, raw));
+    expect(Math.abs(shown) < MAX_LEAN_DEG, `${id.replace('.json', '')}: torso leans ${shown.toFixed(1)} degrees sideways on average (the reference: ${leanOf(raw).toFixed(1)}), under ${MAX_LEAN_DEG}`);
+  }
+}
+
 console.log('starting a clip over: no jump from its last pose to its first');
 {
   // Each loop used to jump from the last pose to the first: 67 degrees in a joint in the run, 147 in

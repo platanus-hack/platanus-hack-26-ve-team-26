@@ -7,6 +7,7 @@
 //   position  the hips' path, scaled to the robot's legs, so its stride matches its travel
 //   heading   the direction of travel, because the hip line is noisy seen from the side
 import { createPoseTracker } from './pose.js';
+import { levelClip } from './level.js';
 import { createReference } from './reference.js';
 import { createRetargeter } from './retarget.js';
 import { idOf } from './sim.js';
@@ -182,6 +183,30 @@ function movingAverage(values, window) {
   });
 }
 
+// The model's sole spheres, by foot (left, right): the G1 models each foot as four small spheres.
+function soleGeoms(mujoco, model) {
+  return ANKLES.map((name) => {
+    const body = idOf(mujoco, model, 'BODY', name);
+    const ids = [];
+    for (let g = 0; g < model.ngeom; g++) {
+      if (model.geom_bodyid[g] === body && model.geom_type[g] === mujoco.mjtGeom.mjGEOM_SPHERE.value) ids.push(g);
+    }
+    return ids;
+  });
+}
+
+// Lowers or raises each row's pelvis so its lowest sole touches the floor.
+function groundRows(mujoco, model, qpos) {
+  const data = new mujoco.MjData(model);
+  const soles = soleGeoms(mujoco, model).flat();
+  for (const q of qpos) {
+    data.qpos.set(q);
+    mujoco.mj_kinematics(model, data);
+    q[2] -= Math.min(...soles.map((g) => data.geom_xpos[3 * g + 2] - model.geom_size[3 * g]));
+  }
+  data.delete();
+}
+
 // Rewrites the pelvis x and y of `qpos` (rows of the G1's 36 values) so that the foot on the floor
 // stays where it is from one frame to the next (see PLANT_SMOOTH_S). Each foot carries a share of
 // the weight by its height (root.js, the live camera's version, where the thresholds are measured):
@@ -190,13 +215,7 @@ function movingAverage(values, window) {
 function plantFeet(mujoco, model, qpos, fps) {
   const data = new mujoco.MjData(model);
   const feet = ANKLES.map((name) => idOf(mujoco, model, 'BODY', name));
-  const soles = feet.map((body) => {
-    const ids = [];
-    for (let g = 0; g < model.ngeom; g++) {
-      if (model.geom_bodyid[g] === body && model.geom_type[g] === mujoco.mjtGeom.mjGEOM_SPHERE.value) ids.push(g);
-    }
-    return ids;
-  });
+  const soles = soleGeoms(mujoco, model);
   // Each foot against the pelvis, in world axes, and its lowest sole's height above the floor.
   const rel = qpos.map((q) => {
     data.qpos.set(q);
@@ -250,6 +269,9 @@ export function smoothForDisplay(mujoco, model, motion, { plantFeet: planted = f
   } else {
     const reference = createReference(mujoco, model, motion);
     const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
+    // Upright sideways (level.js), then the feet back on the floor: leveling moves the soles a bit.
+    levelClip(mujoco, model, qpos, motion.fps);
+    groundRows(mujoco, model, qpos);
     const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
     const height = movingAverage(qpos.map((row) => row[2]), window);
     qpos.forEach((row, i) => (row[2] = height[i]));
