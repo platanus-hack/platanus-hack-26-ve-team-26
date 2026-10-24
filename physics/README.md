@@ -240,6 +240,8 @@ Los mundos donde el robot entrena y se muestra (SIM-3 del [plan del producto](..
 import { WORLDS } from 'tridi-physics'; // los cuatro, en orden: plano, piedras, resbaloso, viento
 await view.setWorld(WORLDS[1]);          // corta un clip o la cámara; con otra escena, recarga el modelo y la política
 view.world();                            // el mundo actual, o null
+view.setConditions({ friction: 0.4, wind_mps: 8 }); // a mano, sobre el mundo actual; sobrevive a un cambio de lugar
+view.conditions();                       // { friction, wind_mps, mass_scale, motor_scale, wind_newtons }
 ```
 
 | Mundo | Escena | Fricción del piso | Viento (m/s, de costado) | Masas | Motores | Empujones al entrenar (N) |

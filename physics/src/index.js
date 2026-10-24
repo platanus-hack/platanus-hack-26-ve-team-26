@@ -8,7 +8,7 @@ import { createRetargeter } from './retarget.js';
 import { createRobotPoseFilter } from './filters.js';
 import { RobotView } from './viewer.js';
 import { placeXml, SCENE_ORDER } from './scenes.js';
-import { middleValues, sceneFile as worldScene, WORLD_ORDER } from './worlds.js';
+import { middleValues, sceneFile as worldScene, windForce, windSpeed, WORLD_ORDER } from './worlds.js';
 
 // physics/worlds/*.json, in display order.
 const WORLD_FILES = import.meta.glob('../worlds/*.json', { eager: true, import: 'default' });
@@ -113,13 +113,15 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     clip = null;
     baseScene = sceneFile;
     sim.load(place ? placeFile(sceneFile) : sceneFile, keyName);
-    if (world) sim.applyWorld(middleValues(world)); // a new model starts from its own values
+    if (world) sim.applyWorld(conditions ?? middleValues(world)); // a new model starts from its own values
     view.rebuild();
   }
 
   // The world the robot is in (physics/worlds), null for the plain scene; and the last policy's
   // bytes and metadata, so changing to a world with another scene can bring the policy back.
   let world = null;
+  // Values set by hand over the world's middle ones (setConditions), kept across model reloads.
+  let conditions = null;
   let lastPolicy = null;
   // The place the robot is in (physics/scenes, or one detected in a video), null for an empty floor;
   // and the scene file under it (the policy's, or a world's), which the place is added to.
@@ -254,6 +256,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      */
     async setWorld(next) {
       world = next;
+      conditions = null; // a new world starts from its own middle values
       if (baseScene !== worldScene(next)) {
         swapScene(worldScene(next), 'home');
         await restorePolicy();
@@ -265,6 +268,24 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     },
     /** The world the robot is in, or null. */
     world: () => world,
+    /**
+     * Sets the conditions by hand over the current world (flat ground if none): any of
+     * { friction, wind_mps, mass_scale, motor_scale }; the rest keep their value. Applies at once,
+     * without resetting the robot, and survives a change of place.
+     */
+    setConditions(values) {
+      const base = conditions ?? middleValues(world ?? { friction: [1, 1], wind_mps: [0, 0], mass_scale: [1, 1], motor_scale: [1, 1] });
+      const next = { ...base, ...values };
+      if (values.wind_mps !== undefined) next.wind_newtons = windForce(values.wind_mps);
+      conditions = next;
+      sim.applyWorld(conditions);
+    },
+    /** The conditions in effect: { friction, wind_mps, mass_scale, motor_scale, wind_newtons }. */
+    conditions: () => {
+      const current = conditions ?? (world ? middleValues(world) : null);
+      if (!current) return { friction: 1, wind_mps: 0, mass_scale: 1, motor_scale: 1, wind_newtons: 0 };
+      return { wind_mps: current.wind_mps ?? windSpeed(current.wind_newtons), ...current };
+    },
     /**
      * Puts the robot in a place (an entry of SCENES, or a scene data/ detected in a video; format
      * in docs/contrato.md): its furniture is solid, and its loose objects can be pushed and knocked

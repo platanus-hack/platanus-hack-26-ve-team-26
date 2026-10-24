@@ -14,6 +14,8 @@ const mid = ([min, max]) => (min + max) / 2;
 const AIR_DENSITY = 1.2;
 const DRAG_AREA_M2 = 0.5;
 export const windForce = (mps) => 0.5 * AIR_DENSITY * DRAG_AREA_M2 * mps * mps;
+/** The inverse: the wind speed (m/s) that pushes with `newtons`. */
+export const windSpeed = (newtons) => Math.sqrt(newtons / (0.5 * AIR_DENSITY * DRAG_AREA_M2));
 
 /** The world's scene file relative to the G1's folder: 'unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'. */
 export const sceneFile = (world) => world.scene.slice(world.scene.indexOf('/') + 1);
