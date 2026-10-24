@@ -51,7 +51,7 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 
 - [x] **W4.1 Cámara.** `#/en-vivo` (`web/src/screens/live.js`): un botón grande enciende y apaga la cámara, la vista previa va en espejo, y si el permiso se niega se muestra el mensaje de `CameraError` tal cual. MediaPipe se baja recién al encender la cámara, con el modelo `lite` en celulares.
 - [x] **W4.2 Pose en vivo.** `drawSkeleton` sobre el video y `view.mimic(pose)` mueve al G1. Mensajes simples una vez por segundo (no te veo, te veo a medias, te veo) y un aviso si van menos de 20 cuadros por segundo. Empujar apaga la cámara y devuelve el robot a la física.
-- [ ] **W4.3 Grabar.** Pendiente: no se pidió para esta entrega. Cuenta regresiva, grabar y parar. El resultado es un `PoseClip` con `source: "camera"`.
+- [~] **W4.3 Grabar (WEB-1 del [plan](../docs/plan-producto.md)).** La cámara graba desde que se enciende, con contador hasta 30 s (el tope del servidor) y "Parar y guardar"; también guarda al apagarla o salir de la pantalla. El `PoseClip` va a la galería ("Tu cámara · hh:mm") y "Verlo en simulaciones" lo abre con el robot repitiéndolo. Falta mandarlo al servidor con `POST /clips` (espera SRV-1). Cuenta regresiva, grabar y parar. El resultado es un `PoseClip` con `source: "camera"`.
 
 ## M5. Subir archivos
 

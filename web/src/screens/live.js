@@ -1,5 +1,9 @@
-// Entrena a Tridi en vivo (W4): the camera on one side with the person's skeleton drawn over it,
-// and the G1 copying them on the other (view.mimic from physics/, createLiveCapture from data/live).
+// Entrena a Tridi en vivo (W4, WEB-1 in docs/plan-producto.md): the camera on one side with the
+// person's skeleton drawn over it, and the G1 copying them on the other (view.mimic from physics/,
+// createLiveCapture from data/live). Turning the camera on also starts recording; stopping saves a
+// PoseClip to the gallery, where the robot repeats it. Sending it to the server waits for
+// POST /clips (SRV-1).
+import { addUserClip } from '../preloaded.js';
 import { mountRobotPane, robotPaneHTML } from '../robot-pane.js';
 
 export const title = 'En vivo';
@@ -12,6 +16,13 @@ const MIN_FPS = 20;
 // The first second after the camera opens is always slow (shaders, autofocus): wait this long
 // before warning about speed.
 const WARMUP_MS = 2500;
+// Longest recording: the same 30 s the video server accepts per video (docs/contrato.md), so a
+// camera clip and an uploaded one can be trained the same way.
+const MAX_RECORD_S = 30;
+// Shorter than this is not a movement worth keeping (a tap on the button by mistake).
+const MIN_RECORD_S = 2;
+
+const clock = (seconds) => `${Math.floor(seconds / 60)}:${String(Math.floor(seconds % 60)).padStart(2, '0')}`;
 
 export function mount(root, { dots }) {
   root.innerHTML = `
@@ -36,7 +47,18 @@ export function mount(root, { dots }) {
         ${robotPaneHTML('Robot · te copia')}
       </div>
       <div class="live-bar">
-        <button class="primary camera-toggle" type="button">Encender la cámara</button>
+        <div class="row">
+          <button class="primary camera-toggle" type="button">Encender la cámara</button>
+          <button class="record-toggle" type="button" hidden>Parar y guardar</button>
+        </div>
+        <p class="recording" hidden><span class="rec-dot"></span><span class="rec-time">0:00</span> / ${clock(MAX_RECORD_S)} · de perfil el robot avanza; de frente se queda en el lugar</p>
+        <div class="saved" hidden>
+          <p class="saved-text"></p>
+          <div class="row">
+            <a class="button primary see-clip" href="#/simulaciones">Verlo en simulaciones</a>
+            <button class="again" type="button">Grabar otro</button>
+          </div>
+        </div>
         <p class="live-status" aria-live="polite"></p>
         <p class="live-warning" hidden></p>
       </div>
@@ -59,8 +81,54 @@ export function mount(root, { dots }) {
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
   const robot = mountRobotPane($('.robot-pane'), dots, { beforePush: () => stop() });
 
+  // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
+  let recordTimer = 0;
+  let recordStart = 0;
+
+  function startRecording() {
+    live.startRecording();
+    recordStart = performance.now();
+    $('.saved').hidden = true;
+    $('.recording').hidden = false;
+    $('.record-toggle').hidden = false;
+    clearInterval(recordTimer);
+    recordTimer = setInterval(() => {
+      const seconds = (performance.now() - recordStart) / 1000;
+      $('.rec-time').textContent = clock(Math.min(seconds, MAX_RECORD_S));
+      if (seconds >= MAX_RECORD_S) saveRecording();
+    }, 250);
+  }
+
+  function saveRecording() {
+    if (!live?.isRecording()) return;
+    clearInterval(recordTimer);
+    $('.recording').hidden = true;
+    $('.record-toggle').hidden = true;
+    const seconds = (performance.now() - recordStart) / 1000;
+    // The result gets its own block: the live status line rewrites itself every second.
+    const result = (text, clip = null) => {
+      $('.saved-text').textContent = text;
+      $('.saved-text').classList.toggle('error', !clip);
+      $('.see-clip').hidden = !clip;
+      if (clip) $('.see-clip').href = `#/simulaciones/${encodeURIComponent(clip.id)}`;
+      $('.saved').hidden = false;
+    };
+    let clip;
+    try {
+      clip = live.stopRecording();
+    } catch {
+      return result('No se vio a nadie lo suficiente. Que se vea todo tu cuerpo y graba otra vez.');
+    }
+    if (seconds < MIN_RECORD_S) return result('La grabación fue muy corta. Graba al menos 2 segundos.');
+    const time = new Date().toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+    addUserClip(clip, `Tu cámara · ${time}`);
+    result(`Movimiento guardado: ${Math.round(seconds)} s, se te vio el ${Math.round(100 * clip.quality.valid_ratio)} % del tiempo.`, clip);
+  }
+
   function stop() {
     if (!live) return;
+    say('');
+    saveRecording(); // turning the camera off keeps what was recorded
     live.stop();
     live = null;
     robot.view?.reset();
@@ -68,7 +136,6 @@ export function mount(root, { dots }) {
     root.querySelector('.live').classList.remove('camera-on');
     button.textContent = 'Encender la cámara';
     $('.live-warning').hidden = true;
-    say('');
   }
 
   function onPose(pose) {
@@ -109,6 +176,7 @@ export function mount(root, { dots }) {
       startedAt = performance.now();
       root.querySelector('.live').classList.add('camera-on');
       button.textContent = 'Apagar la cámara';
+      startRecording();
     } catch (error) {
       // CameraError messages are already in plain Spanish (permission denied, no camera).
       const isCamera = capture && error instanceof capture.CameraError;
@@ -120,10 +188,13 @@ export function mount(root, { dots }) {
   }
 
   button.onclick = () => (live ? stop() : start());
+  $('.record-toggle').onclick = saveRecording;
+  $('.again').onclick = () => (live ? startRecording() : start());
 
   return () => {
     disposed = true;
-    stop();
+    clearInterval(recordTimer);
+    stop(); // a recording in progress is kept: it is in the gallery when the user comes back
     robot.dispose();
   };
 }

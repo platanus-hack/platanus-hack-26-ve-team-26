@@ -25,16 +25,20 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Tercera vuelta: la pantalla de carga perdió la animación de puntos (la volvía lenta) y queda en nombre, barra y estado, con un mínimo de 0,9 s. En la slide 1, el G1 real reemplaza a la figura de puntos: pasa solo por los movimientos precargados que tienen `RobotMotion` guardado (caminar y correr, 9 s cada uno; `hasSavedMotion` en `web/src/motions.js`), y tras un empujón la etiqueta dice "se recupera solo" y a los 4 s vuelve al movimiento. César no quiso botones para elegir el movimiento. Textos tomados del pitch del equipo. Se borraron `dots/figure.js` y `addScene`, que ya no se usaban.
 - Cuarta vuelta, con lo que recolectaron Pastor y Juan: el pitch del producto (`docs/pitch/pitch-producto.md`, `8078d4c`) y el plan técnico (`docs/plan-producto.md`). La slide 1 abre con "La IA aprendió a hablar leyendo internet. La IA física no tiene un internet de movimiento" y dice "Convierte video en datos de entrenamiento para robots". Bajo el robot, tres cifras medidas (4 de 4 empujones de 250 N, 73 min, red de 265 KB). La etiqueta del robot dice "movimiento de un video", y la slide 2 aclara que la caminata aprendida y los datos corregidos siguen en desarrollo, según la tabla de qué es verdad hoy del pitch. La tarjeta de Subir dice que el video se borra.
 - `AGENTS.md` (commit aparte, archivo del equipo): describe el producto con el pitch nuevo y pide revisar la tabla de qué es verdad hoy antes de escribir textos.
+- WEB-1 (plan del producto): la cámara de En vivo graba desde que se enciende, con contador hasta 30 s, "Parar y guardar" y guardado al apagarla o salir. El clip va a la galería como "Tu cámara · hh:mm" y se abre en Simulaciones, donde el robot lo repite (movimiento calculado en el navegador). El resultado tiene su propio bloque, porque la línea de estado se reescribe cada segundo. Falta mandarlo al servidor (`POST /clips`, SRV-1).
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- WEB-1 con la cámara falsa de Chrome (sin persona): empieza a grabar al encender, el contador avanza, Parar muestra "No se vio a nadie lo suficiente" con "Grabar otro", y la segunda grabación se detiene sola en 0:30. **No se probó con una persona real**: el camino que guarda el clip falta verlo con una webcam.
 - Robot de la slide 1, con Chrome sin GPU: empieza caminando, a los 9 s corre, el empujón cambia la etiqueta a "se recupera solo" y luego retoma el movimiento. Sin desborde en 390 px.
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- El aviso de grabación fallida se mostraba en la línea de estado y la reescribía el mensaje de cada segundo ("No te veo…"): ahora va en su propio bloque.
 
 - El repo privado `platanus-ideas` no está en esta máquina ni aparece con `gh`: lo del producto se tomó del repo público.
 
@@ -54,5 +58,7 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - La vuelta al estilo claro contradice la decisión "innegociable" de Juan; se registró como decisión de César enlazando la suya, sin editarla.
 
 ## Sigue
+
+- César: probar WEB-1 con una webcam real (guardar un clip y verlo en Simulaciones). Mandar el clip al servidor cuando Juan tenga `POST /clips` (SRV-1).
 
 - Pastor: pasar la raíz de Vercel a `web/`.
