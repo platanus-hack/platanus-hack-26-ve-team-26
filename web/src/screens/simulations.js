@@ -1,6 +1,7 @@
 // Ver simulaciones: the gallery of preloaded clips and the stage with the person and the robot.
 import physicsAssets from '../physics-assets.js';
 import { mountGallery } from '../gallery.js';
+import { robotPaneHTML } from '../robot-pane.js';
 import { mountStage } from '../stage.js';
 
 export const title = 'Simulaciones';
@@ -17,7 +18,7 @@ export function prefetch() {
   for (const url of physicsAssets) fetch(url, { priority: 'low' }).catch(() => {});
 }
 
-export function mount(root, { dots }) {
+export function mount(root, { dots }, [clipId] = []) {
   root.innerHTML = `
     <section class="page sims">
       <header class="page-head">
@@ -31,14 +32,7 @@ export function mount(root, { dots }) {
               <canvas id="human"></canvas>
               <p class="pane-label" id="human-label">Persona</p>
             </section>
-            <section class="pane" id="robot-pane">
-              <canvas id="view"></canvas>
-              <div class="robot-loading">
-                <div class="track"><div id="robot-progress"></div></div>
-                <p id="robot-status">Preparando el mundo de física…</p>
-              </div>
-              <p class="pane-label">Robot · de pie, todavía aprendiendo</p>
-            </section>
+            ${robotPaneHTML('Robot · de pie, todavía aprendiendo')}
           </div>
           <div id="controls">
             <label>Ver
@@ -57,7 +51,6 @@ export function mount(root, { dots }) {
               </select>
             </label>
             <button id="reset" type="button">Empezar de nuevo</button>
-            <button id="push" type="button" disabled>Empujar al robot</button>
           </div>
         </div>
         <aside class="sims-list">
@@ -68,6 +61,6 @@ export function mount(root, { dots }) {
     </section>`;
   prefetch();
   const stage = mountStage(root, dots);
-  mountGallery(root, stage);
+  mountGallery(root, stage, clipId);
   return () => stage.dispose();
 }

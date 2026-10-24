@@ -1,9 +1,8 @@
 // The simulation stage: the human skeleton of the selected clip next to the G1 from physics/,
-// with one set of controls for both. The skeleton shows at once; while the robot (30 MB)
-// loads, a dot robot waves in its place, so the pane is never empty.
-import { createSimView } from 'tridi-physics';
-import { waiting } from './dots/poses.js';
-import { SCENE_THEME, SkeletonView } from './skeleton.js';
+// with one set of controls for both. The skeleton shows at once; the robot pane shows a dot
+// robot until the real one has loaded (robot-pane.js).
+import { mountRobotPane } from './robot-pane.js';
+import { SkeletonView } from './skeleton.js';
 
 // A hidden tab or a shader compile can stall a frame; past this the skeleton skips ahead
 // instead of jumping, as physics/ does for the robot.
@@ -16,11 +15,9 @@ const MAX_FRAME_S = 1 / 30;
 export function mountStage(root, dots) {
   const $ = (id) => root.querySelector(`#${id}`);
   const skeleton = new SkeletonView($('human'));
-  let robot = null;
-  let placeholder = dots.addView($('robot-pane'), waiting);
+  const robot = mountRobotPane(root.querySelector('.robot-pane'), dots);
   let playing = true;
   let speed = 1;
-  let disposed = false;
 
   let last = performance.now();
   let frameId = requestAnimationFrame(function frame(now) {
@@ -31,43 +28,25 @@ export function mountStage(root, dots) {
     frameId = requestAnimationFrame(frame);
   });
 
+  robot.ready.then((view) => {
+    view?.setSpeed(speed);
+    if (view && !playing) view.pause();
+  });
+
   $('show').onchange = (event) => ($('stage').dataset.show = event.target.value);
   $('play').onclick = () => {
     playing = !playing;
-    if (robot) playing ? robot.play() : robot.pause();
+    if (robot.view) playing ? robot.view.play() : robot.view.pause();
     $('play').textContent = playing ? 'Pausa' : 'Seguir';
   };
   $('speed').onchange = (event) => {
     speed = Number(event.target.value);
-    robot?.setSpeed(speed);
+    robot.view?.setSpeed(speed);
   };
   $('reset').onclick = () => {
     skeleton.time = 0;
-    robot?.reset();
+    robot.view?.reset();
   };
-  $('push').onclick = () => robot?.push();
-
-  createSimView($('view'), {
-    theme: SCENE_THEME,
-    onProgress: ({ done, total }) => {
-      $('robot-progress').style.width = `${(100 * done) / total}%`;
-    },
-  })
-    .then((view) => {
-      if (disposed) return view.dispose(); // the user left while it loaded
-      robot = view;
-      robot.setSpeed(speed);
-      if (!playing) robot.pause();
-      dots.removeView(placeholder);
-      placeholder = null;
-      $('robot-pane').classList.add('ready');
-      $('push').disabled = false;
-    })
-    .catch((error) => {
-      if (disposed) return;
-      $('robot-status').textContent = 'No se pudo cargar el robot. Recarga la página para intentar de nuevo.';
-      console.error(error);
-    });
 
   return {
     /** @param {import('./contract.js').PoseClip} clip  @param {string} title */
@@ -76,11 +55,9 @@ export function mountStage(root, dots) {
       $('human-label').textContent = `Persona · ${title}`;
     },
     dispose() {
-      disposed = true;
       cancelAnimationFrame(frameId);
       skeleton.dispose();
-      robot?.dispose();
-      if (placeholder) dots.removeView(placeholder);
+      robot.dispose();
     },
   };
 }
