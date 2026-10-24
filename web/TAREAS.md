@@ -6,7 +6,7 @@ Para no esperar a nadie, la web arranca con **datos falsos**: un `PoseClip` sint
 
 Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
-**Correr la web:** `cd web && npm install && npm run dev`. El clip sintético se regenera con `node scripts/make-synthetic-clip.mjs`.
+**Correr la web:** `cd web && npm install && npm run dev`. `physics/` entra como paquete local (`tridi-physics`); `three` y `@mujoco/mujoco` se instalan en `web/` con las mismas versiones que en `physics/package.json`: si Pastor las cambia, hay que cambiarlas aquí también. El clip sintético se regenera con `node scripts/make-synthetic-clip.mjs`.
 
 ## M0. Base (bloquea todo lo demás)
 
@@ -17,8 +17,8 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M1. Layout y estados
 
-- [ ] **W1.1 Pantalla única.** HTML y CSS a mano. El visor ocupa casi toda la pantalla; al costado, un panel con tres pestañas: Capturar, Subir y Galería. Los botones principales se ven sin hacer scroll, también en el proyector.
-- [ ] **W1.2 Máquina de estados.** `idle → capturando | subiendo → procesando → en cola → listo`, y `error` desde cualquiera. Un objeto de estado con suscriptores en JS plano, para que cada panel sepa qué mostrar.
+- [x] **W1.1 Pantalla única.** HTML y CSS a mano. El visor ocupa casi toda la pantalla; al costado, un panel con tres pestañas: Capturar, Subir y Galería. Los botones principales se ven sin hacer scroll, también en el proyector.
+- [x] **W1.2 Máquina de estados.** `idle → capturando | subiendo → procesando → en cola → listo`, y `error` desde cualquiera. Un objeto de estado con suscriptores en JS plano, para que cada panel sepa qué mostrar (`web/src/state.js`); una transición inválida lanza un error.
 
 ## M2. Galería de precargadas (lo que se ve siempre)
 
@@ -28,9 +28,9 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M3. Visor de la simulación (junto con Pastor)
 
-- [ ] **W3.1 Interfaz con `physics/`.** Pastor ya la publicó: `createSimView(canvas, { onProgress, onStats })` con `play`, `pause`, `setSpeed`, `reset`, `push` y `dispose` ([`physics/README.md`](../physics/README.md)). Falta importarla en la web; `loadClip` y `loadPolicy` llegan después.
+- [~] **W3.1 Interfaz con `physics/`.** Pastor ya la publicó: `createSimView(canvas, { onProgress, onStats })` con `play`, `pause`, `setSpeed`, `reset`, `push` y `dispose` ([`physics/README.md`](../physics/README.md)). La web ya la importa (`web/src/viewer.js`) y muestra al G1 de pie; `loadClip` y `loadPolicy` llegan después.
 - [ ] **W3.2 Visor provisional.** Esqueleto del `PoseClip` en three.js, para tener algo que mostrar antes de que exista el robot.
-- [ ] **W3.3 Controles.** Play y pausa, velocidad, reiniciar, cámara orbital, y ver humano, robot o los dos lado a lado.
+- [~] **W3.3 Controles.** Listos: pausa, velocidad (x0,25, x0,5, x1), reiniciar, empujar y cámara orbital (la trae `physics/`). Falta: ver humano, robot o los dos lado a lado.
 - [ ] **W3.4 Carga pesada.** MuJoCo WASM, onnxruntime-web y la política se descargan con barra de progreso, y la precargada ya visible no se corta.
 
 ## M4. Captura en vivo
