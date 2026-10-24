@@ -5,7 +5,10 @@
 // The robot repeats the clip (its RobotMotion: saved for the preloaded clips, computed here from the
 // PoseClip for any other) in step with the
 // skeleton, and has a trained policy loaded: "Empujar" drops the clip and shows the policy
-// keeping the robot up. "Empezar de nuevo" puts both back at the start of the clip.
+// keeping the robot up. "Empezar de nuevo" puts both back at the start of the clip. "Mundo" puts
+// the robot on another floor, grip, wind, mass and motor strength (physics/worlds); leaving the
+// screen puts it back on flat ground, since the app shares one robot.
+import { WORLDS } from 'tridi-physics';
 import { savedMotion } from './motions.js';
 import { FINAL_LEVEL, levelLabel, policyUrls } from './policies.js';
 import { mountRobotPane } from './robot-pane.js';
@@ -39,7 +42,9 @@ export function mountStage(root, dots) {
   const motions = new Map(); // clip id -> RobotMotion, so a clip is retargeted once
 
   function setRobotLabel(text) {
-    label.textContent = text ?? (copying ? 'Robot · repite el movimiento' : `Robot · se equilibra solo (${levelLabel(level).toLowerCase()})`);
+    const world = robot.view?.world();
+    const where = world && world.id !== 'plano' ? ` · ${world.title.toLowerCase()}` : '';
+    label.textContent = text ?? (copying ? `Robot · repite el movimiento${where}` : `Robot · se equilibra solo (${levelLabel(level).toLowerCase()})${where}`);
   }
 
   let last = performance.now();
@@ -108,6 +113,27 @@ export function mountStage(root, dots) {
     else setRobotLabel();
   }
 
+  // Another world: a world on the stones scene reloads the model (a moment), and the clip resumes after.
+  async function setWorld(id) {
+    const view = robot.view;
+    if (!view) return;
+    $('world').disabled = true;
+    root.querySelector('.push').disabled = true;
+    setRobotLabel('Cambiando de mundo…');
+    try {
+      await view.setWorld(WORLDS.find((world) => world.id === id));
+    } catch (error) {
+      console.error(error);
+      setRobotLabel('No se pudo cambiar de mundo.');
+    } finally {
+      $('world').disabled = false;
+      root.querySelector('.push').disabled = false;
+    }
+    copying = false;
+    if (motion) startMotion();
+    else setRobotLabel();
+  }
+
   robot.ready.then(async (view) => {
     if (!view) return;
     view.setSpeed(speed);
@@ -118,6 +144,7 @@ export function mountStage(root, dots) {
 
   $('show').onchange = (event) => ($('stage').dataset.show = event.target.value);
   $('policy').onchange = (event) => loadLevel(event.target.value);
+  $('world').onchange = (event) => setWorld(event.target.value);
   $('play').onclick = () => {
     playing = !playing;
     if (robot.view) playing ? robot.view.play() : robot.view.pause();
@@ -146,6 +173,8 @@ export function mountStage(root, dots) {
     dispose() {
       cancelAnimationFrame(frameId);
       skeleton.dispose();
+      const view = robot.view;
+      if (view && view.world() && view.world().id !== 'plano') view.setWorld(WORLDS.find((world) => world.id === 'plano'));
       robot.dispose();
     },
   };
