@@ -10,21 +10,26 @@
     <header>
       <div>
         <h1>Unitree G1 en MuJoCo</h1>
-        <p>La física corre en tu navegador. El robot sostiene la pose con sus motores; todavía no tiene política para equilibrarse.</p>
+        <p>La física corre en tu navegador. Con la cámara, el robot copia tu movimiento; sin ella, sostiene la pose con sus motores y todavía no tiene política para equilibrarse.</p>
       </div>
       <nav>
+        <button id="camera" disabled>Cámara</button>
         <button id="push" disabled>Empujar</button>
         <button id="reset" disabled>Reiniciar</button>
       </nav>
     </header>
     <main id="stage">
       <canvas id="view"></canvas>
+      <div id="camera-box" hidden>
+        <video id="camera-video" playsinline muted></video>
+        <canvas id="camera-overlay"></canvas>
+      </div>
       <div id="loading">
         <div class="track"><div id="progress-bar"></div></div>
         <p id="progress-text">Cargando MuJoCo y el robot…</p>
       </div>
     </main>
-    <footer id="stats"></footer>
+    <footer><span id="stats"></span><span id="camera-stats"></span></footer>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
