@@ -8,12 +8,28 @@ Cada cambio aquí es su propio commit y se entrega con `scripts/ship.sh` antes d
 
 Borrador para revisar entre los 4 antes de escribir código. Cuando se acepte, se crea el archivo de tipos y esta sección pasa a "vigente".
 
+**Cambio propuesto (Pastor, 2026-10-24): entrenar cada video.** Lo que pide el [plan técnico](plan-producto.md): clips de la cámara al servidor, una cola de entrenamiento por clip, políticas de imitación, datos para entrenar robots y mundos. Las partes nuevas dicen *(propuesta 2026-10-24)*. Falta que lo revise el equipo; se shipea antes del código que lo usa.
+
 ## Flujo y dueños
 
 ```
 cámara / .mp4 / .zip ──► data/ (Juan) ──PoseClip──► training/ ──policy.onnx──► web/ (César) + physics/ (Pastor)
                                                        ▲
                                     physics/ (Pastor): escena MuJoCo, robot, retargeting
+```
+
+Con el entrenamiento por video *(propuesta 2026-10-24)*:
+
+```
+cámara ──PoseClip (POST /clips)───────────┐
+.mp4 / .zip ──► extracción ──PoseClip─────┤
+                                          ▼
+                       POST /clips/{clip_id}/train ──► cola de entrenamiento (de a uno)
+                                          │   retarget ─► training ─► data
+                                          ▼
+     RobotMotion · policy.onnx + policy.json (un checkpoint cada tanto) · datos (.zip)
+                                          ▼
+              web: el robot con su política, Empujar, mundos y descargas
 ```
 
 ## `PoseClip`: el movimiento de un sujeto
@@ -57,6 +73,10 @@ Lo produce el retargeting en `physics/`. Ángulos de cada articulación del robo
 
 Se genera con `cd physics && npm run retarget -- ../data/clips/<clip>.json` y queda en [`physics/motions/<clip_id>.json`](../physics/motions). Los de los clips precargados están versionados ahí: son lo que imita `training/` y lo que la web reproduce junto a la persona.
 
+*(Propuesta 2026-10-24)* `npm run retarget -- <clip>.json --out <carpeta>` lo escribe en otra carpeta: el servidor guarda ahí los `RobotMotion` de los clips de usuarios, para no tocar `physics/motions/`, que está versionada.
+
+`training/` no imita el `RobotMotion` tal cual: `imitate.Motion` lo limpia para el modelo de entrenamiento (suaviza, apoya un pie en el piso cuadro a cuadro con las esferas de sus pies y saca de ahí los objetivos de los pies). Quien corra una política de imitación fuera de Python tiene que repetir esa limpieza.
+
 Cada fila de `qpos` sigue el orden de MuJoCo para el G1: posición de la pelvis en metros (`x, y, z`, con z hacia arriba), su orientación como cuaternión (`w, x, y, z`) y los ángulos de las 29 articulaciones en radianes, en el orden en que aparecen en `g1_mjx.xml` (de la pierna izquierda a la muñeca derecha). La pelvis sigue el recorrido de la persona (sus caderas, con z hacia arriba y el origen en la primera posición) **escalado por el largo de pierna del G1 sobre el de la persona** (unos ×0,83: las piernas del robot son más cortas, y sin escalar los pies patinarían), y mira hacia donde avanza; si la persona está quieta, hacia donde apuntan sus caderas. Los pies quedan sobre el piso (z de la pelvis ajustada).
 
 ## `Policy`: el modelo entrenado
@@ -66,6 +86,20 @@ Lo produce `training/`. Lo corre la web con onnxruntime-web junto a MuJoCo WASM.
 - `policy.onnx`: entrada = observación del robot (`[obs_dim]`), salida = acción (`[nu]`, objetivos de los motores).
 - `policy.json`: `{ "id", "robot", "mjcf", "obs_dim", "nu", "trained_on": [clip_ids], "steps", "created_at" }`.
 - `mjcf` es la escena con que se entrenó, relativa a `physics/models/` (por ejemplo `"unitree_g1/scene_mjx.xml"`). Una política solo funciona sobre ese modelo, así que la web carga esa escena antes de correrla.
+
+*(Propuesta 2026-10-24)* Hay dos tipos de política, y `policy.json` suma campos para distinguirlas:
+
+| Campo | Qué es | Hoy |
+| --- | --- | --- |
+| `task` | `"stand"` (de pie, aguanta empujones) o `"mimic"` (imita un `RobotMotion`) | Propuesta. Sin el campo, `obs_dim` las distingue: 93 es `stand`, otro valor es `mimic` |
+| `motion` | El `clip_id` del `RobotMotion` que imita (solo `mimic`) | Propuesta. Hoy sale de `trained_on[0]` |
+| `lookahead_s` | Qué tan adelante muestra la observación la referencia, en segundos (solo `mimic`) | **Ya lo escribe** `training/export.py`: `[0.1, 0.25]` |
+| `worlds` | Los ids de los mundos con que se entrenó (ver "Mundos") | Propuesta |
+
+La observación de cada tipo, número por número:
+
+- `stand` (93): la tabla de [`training/README.md`](../training/README.md).
+- `mimic` (190): los 93 de `stand`; los ángulos de la referencia a 20 ms menos la pose de pie (29); la velocidad de la pelvis de la referencia en el marco de la pelvis (3); la altura de la pelvis de la referencia menos la actual (1); y por cada valor de `lookahead_s`, los ángulos de la referencia en ese instante menos la pose de pie (29) y la posición de su pelvis menos la actual, en el marco de la pelvis (3). El detalle está en `MimicEnv.observe()` de `training/imitate.py`. La salida ya trae sumada la pose de referencia: se escribe tal cual en `data.ctrl`.
 
 ## API del servidor de video (`data/server.py`)
 
@@ -108,7 +142,7 @@ Lo corre `data/` (Juan); lo llama la web para subir videos (W5) y seguir el prog
 }
 ```
 
-Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando personas (`tracking`) → pose 3D (`pose3d`) → retargeting y entrenamiento (fuera de este servidor).
+Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando personas (`tracking`) → pose 3D (`pose3d`) → retargeting y entrenamiento (hoy fuera de este servidor; con la propuesta del 2026-10-24, en la cola de entrenamiento de abajo).
 
 **Elegir otro sujeto (W5.3).**
 
@@ -120,6 +154,104 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 **Cancelar.** `DELETE /jobs/{job_id}` → `204`: saca el trabajo de la cola y borra sus videos (los clips ya hechos se quedan).
 
 **Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. `GET /health` responde `{ "ok": true, "queue": 0 }`.
+
+### Clips de la cámara y entrenamiento *(propuesta 2026-10-24)*
+
+**Mandar un clip de la cámara.** La cámara arma el `PoseClip` en el navegador (`source: "camera"`); para entrenarlo hay que mandarlo.
+
+| Método y ruta | Cuerpo | Respuesta |
+| --- | --- | --- |
+| `POST /clips` | un `PoseClip` | `201 { "clip_id" }`. El servidor le pone su propio id (los ids nombran archivos: no se usa el del navegador). `400` si no sigue el esquema, `413` si pesa más de 5 MB, `422` con el motivo en español si dura más de 30 s o si `valid_ratio` es menor que 0,8 |
+
+- 5 MB: un `PoseClip` de 30 s a 30 cuadros por segundo pesa ~0,9 MB (medido sobre los clips de `data/clips/`); el tope deja margen sin aceptar cualquier cosa.
+- `valid_ratio` mínimo de 0,8: por debajo, el cuerpo no se vio en más de 1 cuadro de cada 5, y el robot imitaría los huecos. Vale también para los videos subidos antes de entrenarlos.
+
+**Entrenar un clip.** Sirve para clips de la cámara y de videos subidos.
+
+| Método y ruta | Cuerpo | Respuesta |
+| --- | --- | --- |
+| `POST /clips/{clip_id}/train` | | `202 { "train_id" }`. Si ese clip ya está en la cola o entrenado, devuelve el mismo `train_id` (no se entrena dos veces). `404` si el clip no existe, `409` si la cola está llena |
+| `GET /train/{train_id}` | | el progreso (abajo). La web lo consulta cada ~2 s: un checkpoint tarda minutos |
+| `DELETE /train/{train_id}` | | `204`: lo saca de la cola o lo corta. Los checkpoints ya exportados se quedan |
+
+La cola entrena **de a uno** y admite **3** en espera: con unos 30 min cada uno, el último espera hora y media, y más que eso ya no es una demo. Cada entrenamiento corre `retarget → training → data`:
+
+```jsonc
+{
+  "train_id": "…",
+  "clip_id": "clip_…",
+  "state": "queued" | "running" | "done" | "failed",
+  "position": 0,                          // entrenamientos antes que este (0 = es el siguiente o ya corre)
+  "stage": "retarget" | "training" | "data",
+  "steps": 3000000, "total_steps": 20000000,
+  "followed_s": 4.2, "duration_s": 11.8,  // cuánto del clip sigue el último checkpoint, desde el principio
+  "checkpoints": [{ "steps": 3000000, "policy_id": "clip_…-step-3000000" }],
+  "eta_s": 1500,                          // tiempo estimado hasta "done"
+  "error": null                           // en español si "failed"
+}
+```
+
+**Resultados.** Se guardan: son lo que entrega el producto. Los videos se siguen borrando como arriba.
+
+| Método y ruta | Respuesta |
+| --- | --- |
+| `GET /motions/{clip_id}.json` | el `RobotMotion` del clip |
+| `GET /policies/{policy_id}.onnx` y `.json` | cada checkpoint exportado, apenas existe. El último es la política final |
+| `GET /datasets/{clip_id}.zip` | los datos para entrenar robots (abajo), al terminar la etapa `data` |
+
+## Datos para entrenar robots *(propuesta 2026-10-24)*
+
+Lo produce `training/` (etapa `data`): la política final corrida en varios episodios por mundo, con la física. Es el movimiento de la persona corregido para que el robot lo pueda hacer, en condiciones distintas.
+
+`datasets/<clip_id>.zip` trae:
+
+- `meta.json`:
+
+  ```jsonc
+  {
+    "clip_id": "clip_…",
+    "policy_id": "clip_…-step-20000000",
+    "robot": "unitree_g1",
+    "mjcf": "unitree_g1/scene_mjx.xml",
+    "hz": 50,                                  // una fila por decisión de la política (20 ms)
+    "episodes": [                              // uno por episodio, en el orden de rollouts.npz
+      { "world": "piedras", "params": { "friction": 0.8, "wind_mps": 1.2, "mass_scale": 1.04, "motor_scale": 0.93 },
+        "fell": false, "seconds": 11.8 }
+    ]
+  }
+  ```
+
+- `rollouts.npz`, todos los episodios uno detrás de otro (`N` filas en total):
+
+  | Arreglo | Forma | Qué es |
+  | --- | --- | --- |
+  | `episode` | `[N]` | a qué episodio de `meta.json` pertenece cada fila |
+  | `t` | `[N]` | segundos desde el inicio del episodio |
+  | `qpos` | `[N, 36]` | la pose, como en `RobotMotion` |
+  | `qvel` | `[N, 35]` | velocidades de MuJoCo |
+  | `ctrl` | `[N, 29]` | objetivos de los motores que dio la política |
+  | `foot_force` | `[N, 2, 3]` | fuerza de contacto del piso en cada pie (izquierdo, derecho), en el mundo, en N |
+  | `pose_error` | `[N]` | error medio de los ángulos contra la referencia, en rad |
+  | `pelvis_error` | `[N]` | distancia de la pelvis a la de la referencia, en m |
+
+## Mundos *(propuesta 2026-10-24)*
+
+Las condiciones en que el robot practica. Un archivo por mundo en `physics/worlds/<id>.json`, el mismo para el entrenamiento y la web: así lo que se ve es lo que se entrenó. El entrenamiento sortea cada valor dentro de su rango en cada episodio; la web muestra el valor del medio.
+
+```jsonc
+{
+  "id": "piedras",
+  "title": "Piedras",                          // lo que dice el selector de la web
+  "scene": "unitree_g1/scene_mjx_rocks.xml",   // relativa a physics/models/; el piso plano es scene_mjx.xml
+  "friction": [0.6, 1.0],                      // fricción del piso
+  "wind_mps": [0.0, 3.0],                      // viento horizontal, en dirección al azar
+  "mass_scale": [0.9, 1.1],                    // multiplica la masa de cada cuerpo
+  "motor_scale": [0.85, 1.0],                  // multiplica la fuerza (kp) de cada motor
+  "push_n": [0.0, 300.0]                       // empujones, como en training/env.py
+}
+```
+
+Los valores son de ejemplo: cada mundo lleva los suyos, con su porqué en el archivo.
 
 ## Simulaciones precargadas
 
@@ -139,4 +271,4 @@ Clips (y, cuando existan, políticas) ya hechos que la web muestra siempre, tamb
 
 - **Los archivos** se quedan donde los deja su dueño: `data/clips/*.json` (Juan) y `web/clips/*.json` (sintéticos para pruebas). La web los empaqueta al compilar; no se copian.
 - **Agregar uno:** dejar el `PoseClip` en `data/clips/` y sumar una entrada a la lista. Si la entrada nombra un clip que no existe, la web la salta y avisa en la consola.
-- **Políticas:** cuando `training/` tenga la primera, cada entrada suma `"policy"` con el id de su `policy.json`.
+- **Políticas:** cuando `training/` tenga la primera, cada entrada suma `"policy"` con el id de su `policy.json`. *(Propuesta 2026-10-24)* Para una precargada es su política de imitación (`task: "mimic"`), salida del mismo flujo que un video de usuario.
