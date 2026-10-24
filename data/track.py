@@ -41,6 +41,14 @@ class Tracking:
     n_frames: int
     tracks: dict[int, Track]
 
+    @property
+    def first_frame(self) -> int:
+        """The first frame with someone in it: where the user picks a person (frame 0 may be empty)."""
+        return min((t.frames[0] for t in self.tracks.values()), default=0)
+
+    def people_at_first_frame(self) -> list[Track]:
+        return [t for t in self.tracks.values() if t.frames[0] == self.first_frame]
+
 
 @dataclass
 class Subject:
@@ -61,7 +69,7 @@ def track_people(video: Path, progress: Callable[[str, int, int], None]) -> Trac
 
     cap = cv2.VideoCapture(str(video))
     if not cap.isOpened():
-        raise RuntimeError("cannot open the video")
+        raise RuntimeError("no se pudo abrir el video")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30.0
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -92,7 +100,7 @@ def track_people(video: Path, progress: Callable[[str, int, int], None]) -> Trac
         progress("tracking", i, total)
     cap.release()
     if i == 0:
-        raise RuntimeError("no frames could be read (broken or unsupported video)")
+        raise RuntimeError("no se pudo leer ningún cuadro: el video está dañado o en un formato no soportado")
     return Tracking(fps, width, height, i, tracks)
 
 
@@ -118,12 +126,14 @@ def _pick_auto(tr: Tracking) -> Track:
 
 
 def _pick_click(tr: Tracking, x: float, y: float) -> Track:
-    # The click is on the first frame of the video, as shown to the user.
-    first = [t for t in tr.tracks.values() if t.frames[0] == 0]
+    # The click is on the first frame with people, as shown to the user.
+    first = tr.people_at_first_frame()
     hits = [t for t in first if t.boxes[0][0] <= x <= t.boxes[0][2] and t.boxes[0][1] <= y <= t.boxes[0][3]]
     if not hits:
-        found = ", ".join(f"#{t.id} {np.round(t.boxes[0]).astype(int).tolist()}" for t in first) or "none"
-        raise RuntimeError(f"no person contains ({x:.0f}, {y:.0f}) in the first frame. People there: {found}")
+        found = ", ".join(f"#{t.id} {np.round(t.boxes[0]).astype(int).tolist()}" for t in first) or "ninguna"
+        raise RuntimeError(
+            f"no hay ninguna persona en ({x:.0f}, {y:.0f}) del cuadro {tr.first_frame}. Personas ahí: {found}"
+        )
     # Overlapping boxes: the person whose center is nearest the click is the one being pointed at.
     def dist(t: Track) -> float:
         b = t.boxes[0]
@@ -153,7 +163,7 @@ def _stitch(chain_end: Track, tr: Tracking, used: set[int]) -> Track | None:
 
 def select_subject(tr: Tracking, click: tuple[float, float] | None) -> Subject:
     if not tr.tracks:
-        raise RuntimeError("no person detected in the video")
+        raise RuntimeError("no se detectó ninguna persona en el video")
     first = _pick_click(tr, *click) if click else _pick_auto(tr)
     boxes, kpts = {}, {}
     used, current = {first.id}, first

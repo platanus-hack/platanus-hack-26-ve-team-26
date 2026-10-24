@@ -267,7 +267,7 @@ def lift_subject(video: Path, tr: Tracking, subject: Subject, progress: Callable
     rejected["flipped"] = int(flipped.sum())
 
     if valid.sum() < 2:
-        raise RuntimeError(f"the subject's 3D pose was found in {int(valid.sum())} frames; need at least 2")
+        raise RuntimeError(f"la pose 3D del sujeto salió en {int(valid.sum())} cuadros y hacen falta al menos 2: que se vea el cuerpo entero")
 
     # Trim to the first and last good frame: the clip starts when the subject is really there.
     lo, hi = np.flatnonzero(valid)[[0, -1]]

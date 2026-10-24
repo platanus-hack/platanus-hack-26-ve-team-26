@@ -18,8 +18,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .lift import lift_subject
-from .track import select_subject, track_people
+from .lift import Lifted, lift_subject
+from .track import Subject, Tracking, select_subject, track_people
 
 VIDEO_EXTS = {".mp4", ".mov", ".m4v", ".avi", ".mkv", ".webm"}
 DEFAULT_OUT = Path(__file__).parent / "clips"
@@ -59,7 +59,15 @@ def extract(video: Path, source_file: str, out: Path, click: tuple[float, float]
     tracking = track_people(video, progress)
     subject = select_subject(tracking, click)
     lifted = lift_subject(video, tracking, subject, progress)
+    json_path, clip = write_clip(tracking, subject, lifted, source_file, out)
+    dropped = ", ".join(f"{k} {v}" for k, v in lifted.rejected.items() if v)
+    progress.done(f"track #{subject.track_id} ({subject.selected_by}), valid {clip['quality']['valid_ratio']:.0%}"
+                  + (f", dropped: {dropped}" if dropped else ""))
+    return json_path
 
+
+def write_clip(tracking: Tracking, subject: Subject, lifted: Lifted, source_file: str, out: Path) -> tuple[Path, dict]:
+    """Saves the PoseClip as <id>.json and <id>.npz in out; returns the JSON path and the clip."""
     out.mkdir(parents=True, exist_ok=True)
     clip_id = _clip_id(Path(source_file).stem, out)
     fps = tracking.fps
@@ -91,10 +99,7 @@ def extract(video: Path, source_file: str, out: Path, click: tuple[float, float]
         boxes=lifted.boxes.astype(np.float32),  # [F, 4] subject box
         meta=json.dumps(meta),
     )
-    dropped = ", ".join(f"{k} {v}" for k, v in lifted.rejected.items() if v)
-    progress.done(f"track #{subject.track_id} ({subject.selected_by}), valid {clip['quality']['valid_ratio']:.0%}"
-                  + (f", dropped: {dropped}" if dropped else ""))
-    return json_path
+    return json_path, clip
 
 
 def _parse_click(s: str) -> tuple[float, float]:
@@ -108,7 +113,7 @@ def _parse_click(s: str) -> tuple[float, float]:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="python -m data.extract", description=__doc__.split("\n")[0])
     p.add_argument("input", type=Path, help="a video or a .zip of videos")
-    p.add_argument("--click", type=_parse_click, help="x,y in the first frame: follow the person there")
+    p.add_argument("--click", type=_parse_click, help="x,y in the first frame with people: follow the person there")
     p.add_argument("--out", type=Path, default=DEFAULT_OUT, help="output folder (default: data/clips)")
     args = p.parse_args(argv)
 
