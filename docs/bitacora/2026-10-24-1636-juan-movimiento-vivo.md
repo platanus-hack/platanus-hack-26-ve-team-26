@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: cerrada
+estado: en curso
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
@@ -45,6 +45,13 @@ Juan: que la caminata se vea más natural, y que en vivo el robot vaya adonde va
 - **Causa:** `web/src/screens/home.js` solo lo paraba con un temporizador fijo 5 s después del empujón. Una caída posterior, o volver al Hero con el robot caído, lo dejaba ahí.
 - **Arreglo** (carpeta de César): `standHeroUp`, cada cuadro en el Hero: pelvis bajo 0,45 m durante 1,6 s (`GYM_RESTART_S`, lo mismo que el Gym) → `view.reset()`. La caída solo se cuenta si hubo empujón. El aviso decía "1 de cada 15" y con `stand-v7d` es más o menos 1 de cada 4 (bitácora del balance de pie): ahora dice "se levanta y lo vuelve a intentar".
 - **Comprobado en el navegador:** acostado a mano sin empujón, se levanta en ~1,7 s y el HUD sigue "de pie"; con empujón, cuenta 1 caída, avisa y vuelve a "de pie con su política".
+
+## En vivo que no abría, robot inclinado en Capture, iteraciones del Gym y menos texto
+
+- **"No pudimos abrir esta parte" al entrar a En vivo:** cada pantalla es un archivo con nombre por build. Una pestaña abierta antes de un deploy (hoy se shippeó dos veces) pide el archivo viejo, Vercel ya no lo tiene y el router mostraba la pantalla de error hasta recargar. Abierta en limpio en producción carga bien. `web/src/router.js`: si una pantalla no baja, la página se recarga sola una vez (guarda en `sessionStorage`, 30 s), y solo si vuelve a fallar se ve el error.
+- **Robot inclinado al final de Capture:** no era el robot, era la cámara. Miraba hacia abajo y además corría la imagen de lado (film offset) para dejar sitio al texto: las verticales lejos del centro se inclinan, y al final de Capture la toma sube hacia la del Gym. `directCamera` (`home.js`) ahora deja la cámara nivelada y corre la imagen hacia arriba (descentrado vertical de la proyección), como una lente de arquitectura: mismo encuadre, verticales derechas. Comprobado en el navegador.
+- **Gym con las iteraciones:** 4 paradas en vez de 3: 0 (1,1 s, 0 de 4), 10 M (9,6 s, 1 de 4), 40 M = v2 "Estable" (20 s, 4 de 4, pero gira sobre un pie) y 60 M = `stand-v7d` "Quieto" (20 s, 3,6 de 4, el que usa la web). La v2 se recuperó de git (`abea922`) como `training/policies/g1-stand-v2`; también está en el selector de Simulaciones. La parada final decía "40 M, 4 de 4", que ya no era cierto. Los minutos de laptop salen del log (73 min hasta 40 M) más los 20 M siguientes a 11.400 pasos/s: 102 min. El Gym mide 5 pantallas en vez de 4. No se metió la de 48 M (`g1-stand-quiet`): se ve igual que la de 60 M y aguanta menos.
+- **Menos texto:** Capture, Gym (texto, explicación de pasos, pie del gráfico), Policy (la nota) y el cierre, más cortos. Se fueron "4 de 4 empujones" de Policy y del cierre (ahora sale de la última parada: 3,6 de 4).
 
 ## Sigue
 
