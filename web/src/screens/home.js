@@ -542,9 +542,12 @@ export function mount(root, { api }) {
   // scrolls as usual. From Lenis's target, not scrollY, so presses during a glide chain.
   // Enter always goes to the next stop, the hero included, so a demo can move through the film
   // fast; on phones it takes the same step as the down arrow (one chapter, or one Gym stage).
+  // A push button keeps the focus after a click (Chrome on the Mac): Enter there still advances
+  // instead of pressing it again; the other buttons and links keep their own Enter.
   on(window, 'keydown', (event) => {
     const enter = event.key === 'Enter';
-    if ((event.code !== 'Space' && !enter) || event.repeat || event.target.closest?.('input, textarea, select, button, a')) return;
+    const own = enter ? 'input, textarea, select, button:not(.hero-push), a' : 'input, textarea, select, button, a';
+    if ((event.code !== 'Space' && !enter) || event.repeat || event.target.closest?.(own)) return;
     if (enter && narrow()) {
       event.preventDefault();
       step(1);
