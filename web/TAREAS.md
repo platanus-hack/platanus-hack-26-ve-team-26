@@ -63,6 +63,15 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 - [x] **W6.1 Etapas.** Subir → buscar personas (`tracking`) → calcular cómo se mueve (`pose3d`) → listo, con su avance y la posición en la cola. Si se sale de la pantalla, el trabajo sigue y al volver se retoma.
 - [x] **W6.2 Resultado.** El clip va primero en la galería ("Tu video") y "Verlo en simulaciones" abre `#/simulaciones/<id del clip>` con ese clip elegido. Se guarda en memoria: al recargar, la galería vuelve a las precargadas.
 
+## M9. Marca corporativa (innegociable)
+
+La web es un producto para empresas de robots humanoides: profesional, sobria, con números reales. Regla en [`../docs/decisiones/2026-10-24-marca-b2b-robotica.md`](../docs/decisiones/2026-10-24-marca-b2b-robotica.md); guía completa en [`../docs/marca.md`](../docs/marca.md).
+
+- [ ] **W9.1 Estilo.** Los 4 votan 3 referencias de `docs/marca.md`; con eso, paleta (una base y un acento), tipografía (sans + mono para datos) y componentes. Estilo propio, sin copiar a Tesla ni a nadie.
+- [ ] **W9.2 Landing.** Las 8 secciones de `docs/marca.md` (hero con el G1 en vivo, problema, cómo funciona, pruébalo, resultados, para quién, tecnología, cierre).
+- [ ] **W9.3 Consola.** Cámara, Subir y Simulaciones con el mismo estilo, como la parte "producto" de la landing. Las funciones no cambian.
+- [ ] **W9.4 Cifras.** Cada número de la web sale de un README del repo y respeta "Lo que NO podemos decir" de `docs/pitch/diferencia.md`. Sin logos ni nombres de empresas como clientes.
+
 ## M7. Pulido para la demo
 
 - [ ] **W7.1 Modo demo.** Loop automático por las precargadas para la pantalla del stand.
