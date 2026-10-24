@@ -11,6 +11,8 @@ uv run --project training python -m training.ppo --steps 20000000 --run stand   
 uv run --project training python -m training.evaluate training/runs/stand/step_*.pt  # de pie y empujones, por checkpoint
 uv run --project training python -m training.export training/runs/stand/step_20000000.pt --id g1-stand
 uv run --project training python -m training.diagnose_reference [clip_id ...]        # ¿el G1 puede hacer este RobotMotion? Antes de imitarlo
+uv run --project training python -m training.ppo --task mimic --motion <clip_id o RobotMotion.json> --steps 10000000 --run <run>
+uv run --project training python -m training.browser_fixture training/policies/<id>.onnx  # estados para la prueba del navegador (physics/)
 ```
 
 `diagnose_reference.py` revisa una referencia de imitación sin política, en 2 s: pies contra el piso, objetivos de los pies de la recompensa, rangos de los motores, y la referencia jugada por los motores con la pelvis sostenida (error, retraso de cada motor y contacto de los pies).

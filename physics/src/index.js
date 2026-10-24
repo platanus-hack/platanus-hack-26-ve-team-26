@@ -157,8 +157,11 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * @returns Promise<{ motion, stats }> see retargetClip; null if the view was disposed meanwhile
      */
     retarget: (poseClip, options = {}) => retargetClipAsync(sim.mujoco, kinematicModel(), poseClip, { mirror: false, cancelled: () => disposed, ...options }),
-    /** Where the clip is, in seconds; 0 with no clip. For syncing anything drawn beside the robot. */
-    clipTime: () => clipTime,
+    /**
+     * Where the clip is, in seconds: the clip being played, or the one an imitation policy follows;
+     * 0 otherwise. For syncing anything drawn beside the robot (the person's skeleton).
+     */
+    clipTime: () => (clip ? clipTime : sim.policy?.time?.(sim) ?? 0),
     seek: (seconds) => (clipTime = Math.min(Math.max(seconds, 0), clip?.duration ?? 0)),
     stop,
     /**
@@ -168,12 +171,16 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * default model would not work on it.
      * @param onnx  policy.onnx: a URL, or its bytes
      * @param meta  policy.json: the object, or a URL
+     * @param options.motion  for an imitation policy (policy.json `task: "mimic"`): the RobotMotion it
+     *   learned (the object, or a URL). The robot then does that clip with physics, from its first
+     *   pose, and starts over at the end; clipTime() says where it is, and push() still works.
      * Loading another policy of the same model only swaps the network. onnxruntime-web (14 MB of
      * WebAssembly) is downloaded the first time.
      */
-    async loadPolicy(onnx, meta) {
+    async loadPolicy(onnx, meta, { motion } = {}) {
       const bytes = typeof onnx === 'string' ? new Uint8Array(await (await fetch(onnx)).arrayBuffer()) : new Uint8Array(onnx);
       if (typeof meta === 'string') meta = await (await fetch(meta)).json();
+      if (typeof motion === 'string') motion = await (await fetch(motion)).json();
       // The policy's scene ('unitree_g1/scene_mjx.xml' -> 'scene_mjx.xml'), or the current world's
       // version of it (the same robot, another floor).
       const sceneFile = world ? worldScene(world) : meta.mjcf.slice(meta.mjcf.indexOf('/') + 1);
@@ -183,10 +190,10 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       if (sim.sceneFile !== sceneFile) swapScene(sceneFile, 'home');
       else stop();
       try {
-        const policy = await createPolicy(ort, sim, bytes, meta);
+        const policy = await createPolicy(ort, sim, bytes, meta, { motion });
         sim.policy?.dispose();
         sim.policy = policy;
-        lastPolicy = { bytes, meta };
+        lastPolicy = { bytes, meta, motion };
         sim.reset();
       } catch (error) {
         if (sim.sceneFile !== previous.sceneFile) swapScene(previous.sceneFile, previous.keyName);
@@ -210,7 +217,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
         swapScene(worldScene(next), 'home');
         if (lastPolicy) {
           const { loadOrt } = await import('./ort.js');
-          sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta);
+          sim.policy = await createPolicy(await loadOrt(), sim, lastPolicy.bytes, lastPolicy.meta, { motion: lastPolicy.motion });
         }
       } else {
         stop();

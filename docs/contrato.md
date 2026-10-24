@@ -91,7 +91,7 @@ Lo produce `training/`. Lo corre la web con onnxruntime-web junto a MuJoCo WASM.
 
 | Campo | Qué es | Hoy |
 | --- | --- | --- |
-| `task` | `"stand"` (de pie, aguanta empujones) o `"mimic"` (imita un `RobotMotion`; en `training.ppo` es `--task walk`) | Lo escribe `training/export.py`. En políticas viejas sin el campo, `obs_dim` las distingue: 93 es `stand`, otro valor es `mimic` |
+| `task` | `"stand"` (de pie, aguanta empujones) o `"mimic"` (imita un `RobotMotion`; en `training.ppo` es `--task mimic`, o su nombre viejo `walk`) | Lo escribe `training/export.py`. En políticas viejas sin el campo, `obs_dim` las distingue: 93 es `stand`, otro valor es `mimic` |
 | `motion` | El `clip_id` del `RobotMotion` que imita (solo `mimic`) | Lo escribe `training/export.py` |
 | `lookahead_s` | Qué tan adelante muestra la observación la referencia, en segundos (solo `mimic`) | Lo escribe `training/export.py`: `[0.1, 0.25]` |
 | `worlds` | Los ids de los mundos con que se entrenó (ver "Mundos") | Lo escribe `training/export.py`. `["plano"]` hasta que la imitación sortee mundos (ENT-3) |

@@ -1,0 +1,18 @@
+{
+  "id": "g1-walk",
+  "robot": "unitree_g1",
+  "mjcf": "unitree_g1/scene_mjx.xml",
+  "obs_dim": 190,
+  "nu": 29,
+  "task": "mimic",
+  "trained_on": [
+    "clip_2026-10-23_caminar-perfil_01"
+  ],
+  "motion": "clip_2026-10-23_caminar-perfil_01",
+  "lookahead_s": [
+    0.1,
+    0.25
+  ],
+  "steps": 10002432,
+  "created_at": "2026-10-24T09:22:47+00:00"
+}

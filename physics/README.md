@@ -32,6 +32,7 @@ await view.retarget(poseClip, { onProgress }); // calcular el RobotMotion de un 
 view.clipTime();    // en qué segundo va, para sincronizar lo que se dibuja al lado
 view.stop();        // soltar el clip o la cámara y volver al robot físico, de pie
 await view.loadPolicy(onnxUrl, jsonUrl); // una política entrenada (training/policies/): el robot se equilibra solo
+await view.loadPolicy(onnxUrl, jsonUrl, { motion }); // una de imitación: el robot hace ese clip con física (ver abajo)
 view.clearPolicy(); // quitarla y volver a los motores rígidos
 await view.setWorld(WORLDS[1]); // un mundo de physics/worlds: piso, agarre, viento, masas y motores (ver más abajo)
 view.dispose(); // al desmontar: corta el ciclo y libera WebGL y la memoria de MuJoCo
@@ -97,6 +98,29 @@ view.reset(); // de pie otra vez
 En el navegador, con la v1: 150 N aguantado desde los cuatro lados.
 
 **El botón Empujar (250 N) lo aguanta, con una excepción.** Desde las cuatro direcciones de las pruebas lo aguanta todo, y probado desde 60 direcciones repartidas alrededor del robot aguanta 56 (93 %): las 4 que fallan son seguidas, de 186° a 204° (un sector de unos 20° por detrás), así que el botón, que empuja en una dirección cualquiera, derriba al robot más o menos 1 de cada 15 veces. Es la política `g1-stand`, la política que Juan entrenó en dos vueltas (la primera solo aguantaba 2,2 de 4: es el escalón de 20 M de la escalera). Con 300 N aguanta 3,2 de 4 y con 350 N, 1,2.
+
+### Una política de imitación: el robot hace un clip con física
+
+```js
+await view.loadPolicy('/policies/g1-walk.onnx', '/policies/g1-walk.json', { motion: '/motions/clip_2026-10-23_caminar-perfil_01.json' });
+view.clipTime(); // en qué segundo del clip va, para mover el esqueleto de la persona al lado
+view.push();     // también se lo puede empujar
+```
+
+Una política con `task: "mimic"` (de `training/imitate.py`) aprendió a hacer **un** clip con sus motores, no a quedarse de pie. `loadPolicy` necesita además el `RobotMotion` de ese clip (`policy.json` dice cuál en `motion`, y se niega si le pasan otro). El robot arranca en la primera pose del clip, lo hace con física y vuelve a empezar al terminarlo.
+
+| Archivo | Qué hace |
+| --- | --- |
+| `src/reference.js` | La referencia que sigue la política: el `RobotMotion` limpiado para el modelo de entrenamiento (articulaciones suavizadas 0,1 s, pelvis suavizada 0,3 s en el plano del piso, un pie apoyado en el piso cuadro a cuadro con las cápsulas de los pies) y muestreado en cualquier instante. Es `imitate.Motion` de Python, número por número |
+| `src/policy.js` | La observación de 190 números de `MimicEnv.observe()`: los 93 de la política de pie, la referencia 20 ms adelante y, por cada valor de `lookahead_s`, la referencia en ese instante |
+| `scripts/check-mimic.mjs` | Pone al robot en 40 estados que grabó Python (`training/browser_fixture.py` → `training/policies/g1-walk.fixture.json`) y exige la misma observación y los mismos objetivos de motor |
+
+| Prueba (`npm run check`) | Resultado |
+| --- | --- |
+| Observación del navegador contra la de Python, en 40 estados | Iguales: diferencia máxima 3e-8 |
+| Objetivos de los motores | Iguales: 3e-7 rad |
+| Con la limpieza rota a propósito (articulaciones suavizadas 0,2 s en vez de 0,1) | Falla: 0,21 de diferencia. La prueba sí puede fallar |
+| Desde la primera pose, con la física del navegador | Sigue el clip 1,3 s de 11,8, lo mismo que mide Python: `g1-walk` todavía no camina (ver `training/`) |
 
 ## Un clip completo: `RobotMotion`
 
