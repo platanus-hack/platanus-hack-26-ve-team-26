@@ -24,6 +24,13 @@ Las láminas son [`deck/tridi-deck.html`](deck/tridi-deck.html) y su PDF; cada u
 > "Un bug se revierte. Una caída, no.
 > La gravedad no acepta otro intento."
 
+*El dato está en la lámina y es el complemento hablado si hay aire: **89 % de éxito en el banco de simulación contra 12 % en tareas reales de casa**, y **2,3 millones de dólares la hora** de línea parada. Las dos cifras con su matiz, abajo.*
+
+| Dato | Lo que hay que decir con cuidado |
+| --- | --- |
+| 89 % / 12 % | **Son dos bancos distintos**, no la misma prueba: RLBench (simulación) y BEHAVIOR-1K (tareas de casa), del Stanford AI Index 2026 vía [Fortune](https://fortune.com/2026/05/23/humanoid-robots-america-china-adaptability-deployment-ambrose-nasa/) y [eWeek](https://www.eweek.com/news/humanoid-robots-fail-88-percent-household-tasks/). Decir "lo que funciona en un simulador limpio no sobrevive afuera", nunca "el mismo robot baja de 90 a 12" |
+| 2,3 M USD/hora | Siemens 2024, de una **encuesta a 181 profesionales**, no de costos medidos. Es automotriz; en manufactura general se cita ~125 mil USD/hora |
+
 ### 0:16–0:24 · Lámina 3, qué les falta a los robots
 
 > "Los robots ya tienen cuerpo. Lo que les falta es experiencia.

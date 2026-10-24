@@ -80,7 +80,9 @@ S.append(slide(1, "dark split cover", """
 
 S.append(slide(2, "dark statement", """
   <h2>Un bug<br>se revierte.<br><em>Una caída, no.</em></h2>
-  <p class="es">La gravedad no acepta otro intento.</p>""",
+  <p class="es">La gravedad no acepta otro intento. Lo que funciona en un simulador limpio no
+     sobrevive afuera: <b>89 % de éxito en el banco de simulación, 12 % en tareas reales</b>.
+     Y una línea parada cuesta <b>2,3 millones de dólares la hora</b>.</p>""",
   "0:09 · 7 s"))
 
 S.append(slide(3, "dark statement", """
@@ -110,36 +112,30 @@ S.append(slide(5, "dark worldslide", """
 
 S.append(slide(6, "paper", """
   <p class="kicker">Tres piezas</p>
-  <div class="cols">
-    <div class="col"><p class="product">Capture</p>
-      <p>Un video cualquiera se vuelve el esqueleto 3D de una persona, y ese movimiento entra al
-         cuerpo del robot.</p><p class="num">33 puntos · 3,2 cm</p></div>
-    <div class="col"><p class="product">Gym</p>
-      <p>El robot lo practica millones de veces con física real. Si se cae, vuelve a
-         intentarlo.</p><p class="num">40 M pasos · 73 min</p></div>
-    <div class="col"><p class="product">Policy</p>
-      <p>Sale una red pequeña que mueve sus 29 motores, y corre en el navegador de
-         ustedes.</p><p class="num">265 KB · cada 20 ms</p></div>
+  <div class="cols trio-cols">
+    <div class="col"><p class="product">Capturar</p>
+      <p>Video a esqueleto 3D, y al cuerpo del robot.</p><p class="num">3,2 cm</p></div>
+    <div class="col"><p class="product">Entrenar</p>
+      <p>Millones de intentos con física real.</p><p class="num">40 M pasos · 73 min</p></div>
+    <div class="col"><p class="product">Entregar</p>
+      <p>Una red que corre en tu navegador.</p><p class="num">265 KB</p></div>
   </div>""", "0:45 · 5 s"))
 
 S.append(slide(7, "paper", """
   <p class="kicker">El negocio</p>
   <h2>Vendemos movimiento,<br>no robots</h2>
-  <div class="cols">
+  <div class="cols trio-cols">
     <div class="col"><p class="product">Cliente ideal</p>
-      <p>El equipo que ya tiene el cuerpo y no tiene el movimiento: humanoides con hardware y sin
-         datos. Los gigantes recolectan en casa; abajo de ellos nadie puede montar un estudio.</p></div>
+      <p>Humanoides con hardware y sin datos de movimiento.</p></div>
     <div class="col"><p class="product">Primer cliente</p>
-      <p>Laboratorios y startups de humanoides que <b>ya pagan por datos</b> hoy, por hora. El
-         presupuesto existe; lo que no existe es el movimiento que necesitan.</p></div>
+      <p>Los laboratorios que ya pagan por datos, por hora.</p></div>
     <div class="col"><p class="product">Qué compran</p>
-      <p>La entrega de un clip: la política entrenada, el movimiento corregido por la física y el
-         dataset en varios mundos. Ya existe: <code>deliveries/</code>.</p></div>
+      <p>La política entrenada y el movimiento corregido por la física.</p></div>
   </div>
   <div class="stat-row tam">
-    <div class="stat"><b>2,7 mil M</b><span>USD, datos de entrenamiento en 2026 — 10,9 mil M en 2031</span></div>
-    <div class="stat"><b>+100 M</b><span>USD al año que ya se gastan en datos reales de robótica</span></div>
-    <div class="stat"><b>≈ 0</b><span>nuestro costo por hora: no pagamos a nadie por grabar</span></div>
+    <div class="stat"><b>2,7 mil M</b><span>USD en datos de entrenamiento, 2026</span></div>
+    <div class="stat"><b>+100 M</b><span>USD al año ya se gastan en datos de robótica</span></div>
+    <div class="stat"><b>≈ 0</b><span>nuestro costo por hora: no pagamos por grabar</span></div>
   </div>""", "0:50 · 13 s"))
 
 S.append(slide(8, "paper", """
@@ -286,6 +282,9 @@ tr.on td{color:var(--signal);font-weight:500}
 .split.end h2{font-size:58px;word-break:break-word}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
+.trio-cols .col p{font-size:19px}
+.trio-cols .col .num{margin-top:14px}
+.statement .es b{font-weight:600;color:var(--fg)}
 .stat-row.tam{border-top:1px solid rgb(13 13 11/.14);padding-top:18px;gap:44px}
 .stat-row.tam .stat b{font-size:34px}
 .stat-row.tam .stat span{font-size:14px;max-width:30ch}
