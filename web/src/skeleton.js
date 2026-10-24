@@ -16,6 +16,16 @@ const BONES = [
 const FOOT_JOINTS = [27, 28, 29, 30, 31, 32];
 // MediaPipe's own drawing utilities skip landmarks under this visibility.
 const MIN_VISIBILITY = 0.5;
+// Arms and hands are never hidden: filmed in profile, the far arm is behind the body (visibility
+// 0.05-0.46 for the left elbow of the walk), yet MediaPipe's estimate of it is good: it swings
+// against the seen arm, as people do. Under ESTIMATED it is drawn at FADED brightness, marked as
+// a guess; between ESTIMATED and SEEN it blends, and visibility changes ~3% per frame, so the fade
+// follows the swing instead of blinking. Legs keep MediaPipe's rule: a leg cut by the frame edge
+// has no estimate worth drawing.
+const ARM_POINTS = new Set([11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22]);
+const SEEN = 0.7;
+const ESTIMATED = 0.3;
+const FADED = 0.35;
 const BONE_RADIUS = 0.02; // meters: thick enough to read on a phone, thin next to a limb
 const JOINT_RADIUS = 0.03;
 const HUMAN_COLOR = 0xff4f1a; // the brand's signal: the human is orange, the robot keeps its own colors
@@ -61,6 +71,11 @@ export class SkeletonView {
     // three.js culls an InstancedMesh by a bounding sphere computed once, around the first
     // matrices (the origin); a clip that walks a few meters away would vanish. Never cull it.
     this.bones.frustumCulled = this.joints.frustumCulled = false;
+    // Per-instance brightness (pose() dims the estimated arm). Set once here so the material is
+    // compiled with instance colors from the first frame.
+    this.tint = new THREE.Color(1, 1, 1);
+    for (let i = 0; i < BONES.length; i++) this.bones.setColorAt(i, this.tint);
+    for (let i = 0; i < 33; i++) this.joints.setColorAt(i, this.tint);
     this.body.add(this.bones, this.joints);
 
     this.camera = new THREE.PerspectiveCamera(40, 1, 0.05, 100);
@@ -118,16 +133,20 @@ export class SkeletonView {
 
   pose({ joints }) {
     const { a, b, dir, m, q, s } = this.tmp;
-    const visible = (i) => joints[i][3] >= MIN_VISIBILITY;
+    const drawn = (i) => ARM_POINTS.has(i) || joints[i][3] >= MIN_VISIBILITY;
+    // 1 where the camera saw the point, down to FADED where MediaPipe estimated it.
+    const seen = (i) => (ARM_POINTS.has(i) ? FADED + (1 - FADED) * THREE.MathUtils.smoothstep(joints[i][3], ESTIMATED, SEEN) : 1);
 
     joints.forEach((joint, i) => {
-      this.joints.setMatrixAt(i, visible(i) ? m.makeTranslation(joint[0], joint[1], joint[2]) : HIDDEN);
+      this.joints.setMatrixAt(i, drawn(i) ? m.makeTranslation(joint[0], joint[1], joint[2]) : HIDDEN);
+      this.joints.setColorAt(i, this.tint.setScalar(seen(i)));
     });
     BONES.forEach(([from, to], i) => {
-      if (!visible(from) || !visible(to)) {
+      if (!drawn(from) || !drawn(to)) {
         this.bones.setMatrixAt(i, HIDDEN);
         return;
       }
+      this.bones.setColorAt(i, this.tint.setScalar(Math.min(seen(from), seen(to))));
       a.fromArray(joints[from]);
       b.fromArray(joints[to]);
       const length = a.distanceTo(b);
@@ -137,6 +156,8 @@ export class SkeletonView {
     });
     this.joints.instanceMatrix.needsUpdate = true;
     this.bones.instanceMatrix.needsUpdate = true;
+    this.joints.instanceColor.needsUpdate = true;
+    this.bones.instanceColor.needsUpdate = true;
 
     // Follow the hips along the ground, as physics/ follows the robot: a walk across the
     // frame stays centered without the camera bobbing with each step.

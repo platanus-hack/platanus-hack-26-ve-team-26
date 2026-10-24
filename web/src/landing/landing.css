@@ -224,7 +224,17 @@ html.is-landing.lenis body {
   align-items: center;
   gap: 32px;
   padding: 16px var(--gutter);
-  mix-blend-mode: normal;
+  border-bottom: 1px solid transparent; /* the hairline of .solid, held so the bar never grows 1 px */
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+/* Past the hero the chapters scroll under the bar (home.js), in the same light ink as its own
+   words: a dark ground and the landing's hairline, the glass of .btn and .state made denser.
+   0.8 keeps the 12 px nav readable even over a full white glyph before the blur. */
+.topbar.solid {
+  border-bottom-color: var(--line);
+  background: rgb(10 10 9 / 0.8);
+  backdrop-filter: blur(16px);
 }
 
 .wordmark {
@@ -524,10 +534,10 @@ html.is-landing.lenis body {
   margin-top: 16px !important;
 }
 
-/* Gym: three stops of the training, each on its own clock */
+/* Gym: three stops of the training, one screen of scroll each */
 
 .gym {
-  height: 100svh; /* one screen: the stages change on their own clock, not with the scroll */
+  height: 400svh; /* the panel sticks for three screens, one per stage (home.js gymStage, gymGate) */
 }
 
 .gym-hint {
@@ -720,7 +730,7 @@ html.is-landing.lenis body {
   stroke-dashoffset: 0;
 }
 
-/* Policy: the legs up close, the numbers beside them */
+/* Policy: the whole robot the network moves, the numbers beside it */
 
 .policy {
   height: 260svh;
@@ -1205,6 +1215,10 @@ html.is-landing.lenis body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .topbar {
+    transition: none;
+  }
+
   .live-dot,
   .now .dot,
   .scroll-cue span {

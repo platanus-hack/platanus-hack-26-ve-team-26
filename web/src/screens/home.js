@@ -32,6 +32,10 @@ const WALK_VIDEO = `${import.meta.env.BASE_URL}media/caminar.mp4`;
 const PUSH_N = 250; // physics/ pushes with 250 N for 0.1 s (physics/README.md)
 const FALLEN_PELVIS_M = 0.45; // the standing G1 has its pelvis at 0.78 m
 const GYM_PUSH_EVERY_S = 2.5; // the Gym pushes the standing robot this often, so every level shows itself
+// The first push comes sooner, so a stage shows itself while its stop holds the scroll; never
+// before 2 s, the earliest training ever pushes (training/env.py PUSH_EVERY_S): earlier is outside
+// what the policies learned, and "Estable" could fall.
+const GYM_FIRST_PUSH_S = 2.0;
 const GYM_RESTART_S = 1.6; // a fallen robot lies this long before it is stood up again
 const AFTER_PUSH_S = 5; // after a push in the hero, the robot stands this long before it is reset
 // The Gym in three stops of the real training, each a saved checkpoint, with what
@@ -51,12 +55,18 @@ const narrow = () => innerWidth < 860;
 // The shots. The camera orbits the robot's pelvis: azimuth 0 looks at the robot from the front
 // (MuJoCo +x), elevation lifts it, distance in meters, aim is the height it looks at, and shift
 // slides the robot across the frame (a share of the width, + to the right) to leave room for words.
+// follow is how many seconds the camera takes to catch up with the pelvis (physics/ viewer
+// followTau): a still frame instead of the street sliding with every small step; the walk keeps a
+// short one so the robot stays in frame. Resets and clip loops still cut (the viewer snaps them).
+// Capture looks from the robot's right (az -90): the walk is turned to head +x (faceForward), so
+// it is the side the phone filmed, the robot walks the same way as the video, and the far arm is
+// the one behind the body. Policy shows the whole robot the network moves, slightly from above.
 const SHOTS = {
-  hero: { az: 22, el: 3, dist: 1.35, aim: 1.08, shift: 0.2 },
-  capture: { az: 188, el: 6, dist: 3.3, aim: 0.8, shift: 0.24 },
-  gym: { az: 38, el: 12, dist: 3.7, aim: 0.75, shift: 0.2 },
-  policy: { az: 78, el: -3, dist: 1.6, aim: 0.45, shift: -0.26 },
-  close: { az: 140, el: 16, dist: 6.5, aim: 0.8, shift: 0 },
+  hero: { az: 22, el: 3, dist: 1.35, aim: 1.08, shift: 0.2, follow: 0.5 },
+  capture: { az: -90, el: 6, dist: 3.3, aim: 0.8, shift: 0.24, follow: 0.15 },
+  gym: { az: 38, el: 12, dist: 3.7, aim: 0.75, shift: 0.2, follow: 1 },
+  policy: { az: 60, el: 15, dist: 3.3, aim: 0.72, shift: -0.24, follow: 1.5 },
+  close: { az: 140, el: 16, dist: 6.5, aim: 0.8, shift: 0, follow: 1.5 },
 };
 // On phones the words sit low: no sideways shift, farther away, and aimed below the robot so it
 // stands in the upper half of the screen.
@@ -119,7 +129,7 @@ export function mount(root, { api }) {
           </figure>
           <figure class="frame frame-skeleton">
             <canvas class="skeleton-canvas"></canvas>
-            <figcaption>Esqueleto 3D · 33 puntos</figcaption>
+            <figcaption>Esqueleto 3D · 33 puntos · tenue: lo que la cámara no ve</figcaption>
           </figure>
         </div>
         <div class="caption capture-caption">
@@ -130,7 +140,7 @@ export function mount(root, { api }) {
       </div>
     </section>
 
-    <section class="chapter gym" id="gym" data-shot="gym" data-mode="gym">
+    <section class="chapter gym" id="gym" data-shot="gym" data-mode="gym" data-hold="0.8">
       <div class="sticky">
         <div class="caption gym-caption">
           <p class="product">Tridi Gym</p>
@@ -154,7 +164,7 @@ export function mount(root, { api }) {
             <p class="steps-explain">Un paso es una decisión del robot: toma ${DECISIONS_PER_S} por segundo. ${GYM_STAGES.at(-1).steps / 1e6} millones son unas ${Math.round(GYM_STAGES.at(-1).steps / DECISIONS_PER_S / 3600)} horas de práctica, repartidas entre ${PARALLEL_ROBOTS} robots simulados a la vez, en ${curve.minutes} minutos de laptop.</p>
           </div>
           <p class="gym-status"><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></p>
-          <p class="gym-hint">Cambia sola cada pocos segundos · toca un punto del eje para verlo</p>
+          <p class="gym-hint">Baja para entrenarlo · toca un punto del eje para ir a esa etapa</p>
           <figure class="chart-fig">
             <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a cerca de 20 s al final"></svg>
             <figcaption>Segundos de pie por intento · ${curve.minutes} minutos en una laptop · log real</figcaption>
@@ -257,7 +267,8 @@ export function mount(root, { api }) {
   };
 
   // ---- Smooth scroll, and GSAP's scroll triggers driven by it ----
-  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.09 });
+  // gymGate (Gym, below) sees every wheel step first, so a fast scroll stops at each stage.
+  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.09, virtualScroll: (data) => gymGate(data) });
   const tick = (time) => lenis?.raf(time * 1000);
   if (lenis) {
     lenis.on('scroll', ScrollTrigger.update);
@@ -311,8 +322,10 @@ export function mount(root, { api }) {
         from = chapters[i];
         to = chapters[i + 1] ?? chapters[i];
         // Hold the chapter's shot for most of it, and move to the next one in its last stretch.
+        // The Gym holds it longer (data-hold): its last stage sits at 75 % of the chapter.
         const span = next - top;
-        t = Math.min(1, Math.max(0, ((mid - top) / span - 0.7) / 0.3));
+        const hold = Number(chapters[i].dataset.hold ?? 0.7);
+        t = Math.min(1, Math.max(0, ((mid - top) / span - hold) / (1 - hold)));
         break;
       }
     }
@@ -327,6 +340,7 @@ export function mount(root, { api }) {
     const goal = targetShot();
     const k = reducedMotion ? 1 : 0.06;
     for (const key of Object.keys(shot)) shot[key] += (goal[key] - shot[key]) * k;
+    v.viewer.followTau = reducedMotion ? 0 : shot.follow;
     const { camera, controls } = v.viewer;
     const az = (shot.az * Math.PI) / 180;
     const el = (shot.el * Math.PI) / 180;
@@ -359,25 +373,33 @@ export function mount(root, { api }) {
       .catch((error) => console.error(error));
     return queue;
   }
-  const walkMotion = WALK ? savedMotion(WALK.clip) : Promise.resolve(null);
+  // The walk of Capture, turned to start facing +x like the standing robot (faceForward), so the
+  // walk begins without the robot snapping 90°.
+  const walkMotion = WALK ? savedMotion(WALK.clip).then((motion) => motion && faceForward(motion)) : Promise.resolve(null);
   let mode = null; // 'stand' | 'walk' | 'gym'
   let modeToken = 0;
   async function setMode(next) {
     if (!view || mode === next) return;
+    const previous = mode;
     mode = next;
     const token = ++modeToken;
-    gym.since = 0;
+    Object.assign(gym, { since: 0, shownAt: 0 });
     if (next === 'walk') {
       await useLevel(FINAL_LEVEL);
       const motion = await walkMotion;
+      // From the first frame, with the video: resuming where the video was paused made the robot
+      // jump along the walk (1.9 m) the moment it started.
+      video.currentTime = 0;
       if (token === modeToken && motion) view.playClip(motion);
     } else if (next === 'gym') {
-      Object.assign(gymClock, { stage: 0, since: performance.now() }); // every visit starts untrained
       await useLevel(gymLevel());
       if (token === modeToken) startGymRun();
     } else {
       await useLevel(FINAL_LEVEL);
-      if (token === modeToken) view.stop();
+      // Stood back up only when it is not already standing on its own: on the first visit, after
+      // the walk (a puppet) or lying on the floor. From the Gym it keeps standing, with no jump.
+      const fallen = view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M;
+      if (token === modeToken && (previous !== 'gym' || fallen)) view.stop();
     }
   }
   const modeAt = () => {
@@ -420,26 +442,52 @@ export function mount(root, { api }) {
     pushHero();
   });
 
-  // Gym: scrolling through the chapter moves through the training. Each stop is a saved
-  // checkpoint of training/, on the real robot, pushed every few seconds.
+  // Gym: the three stages are three screens of scroll. The chapter is four screens tall and its
+  // panel sticks for three of them (landing.css .gym); the stage is the third of that stretch you
+  // are in, so scrolling is what trains the robot. Each stage's middle is a stop: scrolling down,
+  // a wheel or trackpad gesture, however fast, stops there instead of flying past (gymGate), and
+  // keeps the scroll until that checkpoint has shown what it does (gymShown): the untrained robot
+  // falls (~1,1 s), the others take their first push. Up, the top bar's links and the axis move freely.
   const gymEl = $('.gym');
-  const gym = { since: 0, lastPush: 0, fallen: false, loading: false };
-  // The stage plays on its own clock, not the scroll: each one stays long enough to show what it
-  // does (the untrained robot falls within ~1 s; the trained one takes a few pushes), then the
-  // next, and around again. A click on a stage jumps to it.
-  const GYM_STAGE_S = [5, 7, 9];
-  const gymClock = { stage: 0, since: performance.now() };
-  const gymStage = () => gymClock.stage;
+  const gymPanel = gymEl.querySelector('.sticky');
+  const gym = { since: 0, lastPush: 0, fallen: false, loading: false, shownAt: 0 };
+  const GYM_SHOWN_FALL_S = 0.4; // after a fall, a moment on the floor before the scroll is let go
+  const GYM_SHOWN_PUSH_S = 0.8; // after a push, time to see it stagger and catch itself (or not)
+  // A stop never keeps the scroll longer, even if a checkpoint is slow to load: longer reads as
+  // stuck, which is why the Gym once ran on its own clock instead of the scroll.
+  const GYM_HOLD_MAX_S = 2.5;
+  const STOP_PX = 4; // Lenis lands on fractional pixels: this close to a stop is on it
+  const gymStep = () => (gymEl.offsetHeight - gymPanel.offsetHeight) / GYM_STAGES.length;
+  const gymStops = () => GYM_STAGES.map((_, i) => gymEl.offsetTop + (i + 0.5) * gymStep());
+  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - gymEl.offsetTop) / gymStep())));
   const gymLevel = () => GYM_STAGES[gymStage()].level;
-  function advanceGymStage() {
-    if (performance.now() - gymClock.since < GYM_STAGE_S[gymClock.stage] * 1000) return;
-    gymClock.stage = (gymClock.stage + 1) % GYM_STAGES.length;
-    gymClock.since = performance.now();
+  const gymShown = (stage) => level === GYM_STAGES[stage].level && gym.shownAt > 0 && performance.now() >= gym.shownAt;
+  const gate = { stop: -1, since: 0 };
+  function gymGate(data) {
+    const { event } = data;
+    // Touch scrolls natively (Lenis has no syncTouch here); before the robot loads there is nothing to wait for.
+    if (!event.type.includes('wheel') || event.ctrlKey || !view) return true;
+    const from = lenis.targetScroll;
+    const stops = gymStops();
+    const holding =
+      gate.stop >= 0 && Math.abs(from - stops[gate.stop]) < STOP_PX && !gymShown(gate.stop) && performance.now() - gate.since < GYM_HOLD_MAX_S * 1000;
+    if (!holding) gate.stop = -1;
+    if (data.deltaY <= 0) return true; // up and sideways are always free
+    if (holding) {
+      if (event.cancelable) event.preventDefault(); // Lenis skips its own preventDefault when this returns false
+      return false;
+    }
+    const next = stops.findIndex((stop) => from < stop - STOP_PX && stop <= from + data.deltaY);
+    if (next < 0 || gymShown(next)) return true;
+    data.deltaY = stops[next] - from; // Lenis reads the delta after this callback: land on the stop
+    Object.assign(gate, { stop: next, since: performance.now() });
+    return true;
   }
   $$('.axis-stop').forEach((stop, i) =>
     on(stop, 'click', () => {
-      gymClock.stage = i;
-      gymClock.since = performance.now();
+      const top = gymStops()[i];
+      if (lenis) lenis.scrollTo(top, { duration: 1 });
+      else window.scrollTo({ top });
     }),
   );
   let shownStage = -1;
@@ -476,13 +524,14 @@ export function mount(root, { api }) {
   function startGymRun() {
     view.stop();
     const t = view.sim.data.time;
-    Object.assign(gym, { since: t || 1e-6, lastPush: t, fallen: false });
+    // The first push comes at GYM_FIRST_PUSH_S, then every GYM_PUSH_EVERY_S.
+    Object.assign(gym, { since: t || 1e-6, lastPush: t - (GYM_PUSH_EVERY_S - GYM_FIRST_PUSH_S), fallen: false });
   }
   function runGym() {
     const wanted = gymLevel();
     if (wanted !== level) {
       if (gym.loading) return; // one checkpoint at a time; the next frame asks again if needed
-      gym.since = 0;
+      Object.assign(gym, { since: 0, shownAt: 0 }); // a new checkpoint has shown nothing yet
       gym.loading = true;
       const token = modeToken;
       useLevel(wanted).then(() => {
@@ -497,12 +546,14 @@ export function mount(root, { api }) {
     $('[data-gym="up"]').textContent = `${num(up, 1)} s`;
     if (view.sim.bodyPosition('pelvis')[2] < FALLEN_PELVIS_M) {
       gym.fallen = true;
+      gym.shownAt ||= performance.now() + GYM_SHOWN_FALL_S * 1000;
       $('[data-gym="status"]').textContent = `Se cayó a los ${num(up, 1)} s. Lo levantamos y vuelve a intentarlo.`;
       setTimeout(() => mode === 'gym' && level === wanted && startGymRun(), GYM_RESTART_S * 1000);
       return;
     }
     if (now - gym.lastPush > GYM_PUSH_EVERY_S) {
       gym.lastPush = now;
+      gym.shownAt ||= performance.now() + GYM_SHOWN_PUSH_S * 1000;
       view.push();
       $('[data-gym="status"]').textContent = `Empujón de ${PUSH_N} N.`;
     }
@@ -546,7 +597,6 @@ export function mount(root, { api }) {
         view.seek(video.currentTime);
       } else if (!video.paused) video.pause();
       if (mode === 'gym') {
-        advanceGymStage();
         showGymStage();
         runGym();
       }
@@ -613,7 +663,7 @@ export function mount(root, { api }) {
       scrollTrigger: { trigger: '.capture', start: 'top 75%', end: 'top 15%', scrub: true },
     });
 
-    // Gym: its words come in once; the stages and the chart then run on their own clock (advanceGymStage).
+    // Gym: its words come in once; the stages then follow the scroll (gymStage) and stop it (gymGate).
     gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, duration: 0.6, scrollTrigger: { trigger: '.gym', start: 'top 60%', toggleActions: 'play none none none' } });
 
     // Policy: the numbers come in one by one.
@@ -635,12 +685,23 @@ export function mount(root, { api }) {
     if (entry.isIntersecting && !skeleton && WALK) {
       skeleton = new SkeletonView($('.skeleton-canvas'));
       skeleton.controls.enabled = false;
-      // Seen from the side the video was filmed from, so the skeleton walks the same way as the person.
-      skeleton.camera.position.set(0, 1.1, -3.4);
+      // Seen from the side the video was filmed from (the PoseClip's z points to the phone), so the
+      // skeleton walks the same way as the person and the far arm is the dimmed one behind the body.
+      skeleton.camera.position.set(0, 1.1, 3.4);
       fetchClip(WALK).then((clip) => !gone && skeleton.setClip(clip), console.error);
     }
   }, { rootMargin: '400px' });
   skeletonObserver.observe(captureEl);
+
+  // The top bar is clear over the hero and turns solid once the hero has scrolled past its bottom
+  // edge: from there on chapter text scrolls under it (the Gym, the end of each pinned chapter and
+  // the closing), in the same light ink as the bar's own words. An observer, not a ScrollTrigger,
+  // so it also works with reduced motion, where the GSAP context below creates nothing.
+  const topbar = $('.topbar');
+  const barObserver = new IntersectionObserver(([entry]) => topbar.classList.toggle('solid', !entry.isIntersecting), {
+    rootMargin: `-${topbar.offsetHeight}px 0px 0px 0px`,
+  });
+  barObserver.observe($('.hero'));
 
   api.checked.then((ok) => {
     if (ok || gone) return;
@@ -664,6 +725,7 @@ export function mount(root, { api }) {
       lenis.destroy();
     }
     skeletonObserver.disconnect();
+    barObserver.disconnect();
     cleanups.forEach((fn) => fn());
     video.pause();
     skeleton?.dispose();
@@ -676,12 +738,36 @@ export function mount(root, { api }) {
       camera.filmOffset = 0;
       camera.updateProjectionMatrix();
       controls.enabled = true;
+      view.viewer.followTau = 0; // the app screens follow the robot rigidly
       lights.forEach((light) => view.viewer.scene.remove(light));
       view.viewer.renderer.toneMappingExposure = saved.exposure;
       undressStreet();
     }
     robot.detach();
   };
+}
+
+// Turns a RobotMotion about the vertical through its first pelvis position so it starts facing +x,
+// where the standing robot faces after a reset: the walk was filmed heading +y, and without this the
+// robot snapped 90° when it started. The pelvis path and quaternion turn; the joints do not.
+function faceForward(motion) {
+  const [x0, y0, , w0, a0, b0, c0] = motion.qpos[0];
+  const yaw = Math.atan2(2 * (w0 * c0 + a0 * b0), 1 - 2 * (b0 * b0 + c0 * c0));
+  const cos = Math.cos(-yaw);
+  const sin = Math.sin(-yaw);
+  const hw = Math.cos(-yaw / 2); // the turn as a quaternion about z: (hw, 0, 0, hz)
+  const hz = Math.sin(-yaw / 2);
+  const qpos = motion.qpos.map(([x, y, z, w, a, b, c, ...joints]) => [
+    x0 + cos * (x - x0) - sin * (y - y0),
+    y0 + sin * (x - x0) + cos * (y - y0),
+    z,
+    hw * w - hz * c,
+    hw * a - hz * b,
+    hw * b + hz * a,
+    hw * c + hz * w,
+    ...joints,
+  ]);
+  return { ...motion, qpos };
 }
 
 // The training log as a line: mean seconds up per attempt against millions of steps. An episode
