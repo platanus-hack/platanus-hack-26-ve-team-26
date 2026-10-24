@@ -228,7 +228,12 @@ class MimicEnv(G1Env):
 
     def reward(self, ctrl: np.ndarray) -> tuple[float, dict]:
         """DeepMimic's terms and weights (Peng et al. 2018), each exp(-k * error) in [0, 1]:
-        pose 0.5, velocity 0.05, feet 0.15, pelvis position 0.2, pelvis orientation 0.1."""
+        pose 0.5, velocity 0.05, feet 0.15, pelvis position 0.2, pelvis orientation 0.1.
+
+        Plus pelvis speed (0.15): without it the policy learned to move its legs like the clip while
+        staying behind (0.5 m back when the episode is cut at 0.6 m), and the position term gives
+        almost nothing that far away, so nothing pushed it to catch up. Only the floor plane counts:
+        the reference's vertical speed is noise. A speed error of 0.37 m/s halves it."""
         q_ref, root_vel_ref, joint_vel_ref, feet_ref = self.motion.sample(self.t)
         qpos, qvel = self.data.qpos, self.data.qvel
         feet = self.data.xpos[self.feet_ids]
@@ -240,6 +245,7 @@ class MimicEnv(G1Env):
             "feet": 0.15 * np.exp(-40.0 * np.sum((feet - feet_ref) ** 2)),
             "pelvis": 0.2 * np.exp(-10.0 * np.sum((qpos[:3] - q_ref[:3]) ** 2)),
             "orientation": 0.1 * np.exp(-2.0 * np.sum(quat_err**2)),
+            "pelvis_speed": 0.15 * np.exp(-5.0 * np.sum((qvel[:2] - root_vel_ref[:2]) ** 2)),
         }
         return float(sum(terms.values())), terms
 
