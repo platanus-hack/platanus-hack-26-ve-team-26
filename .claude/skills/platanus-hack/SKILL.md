@@ -57,7 +57,17 @@ The other teams' repos in the `platanus-hack` org are public, and the team keeps
 - **`SIN NOVEDADES` means stop.** Say so in one line and move on: no reading, no writing, no commit.
 - Otherwise: read each changed team's new commits, what they added (README, `platanus-hack-project.jsonc`, docs, code) and curl their deploy URL; update `caracas-2026.md` (the "Actualizado" header, the pass number, the table rows and the fichas that moved) and `three-dimensional.md` when our own track moves or something is worth copying; rewrite their "Cambios desde la última pasada" section for this pass instead of appending; then `actualizar.sh --marcar`, commit in English (`docs(research): ...`) and push straight to `main` of platanus-ideas — that repo has no `ship.sh`.
 
-**Score every team on each pass.** `caracas-2026.md` carries a scoreboard built with the event's real rubric — technical 25, impact 20, execution 20, ambition 20, originality 15 — and `three-dimensional.md` carries the same for our track. Re-score the teams that moved, judging **only what is in the repo and the deploy right now**, the way a technical judge who verifies everything would. Keep the ranking, the top three with its reasoning, and the table of who can pass us on each criterion. Be honest: a flattering score is useless, and the person asked for it not to be. The scoreboard states its cut-off time and that it measures what exists, not what will be delivered.
+**Score every team on each pass.** `caracas-2026.md` carries a scoreboard built with the event's real rubric, and `three-dimensional.md` carries the same for our track. The criteria are not just weights, they are questions, and they change how to score:
+
+| Criterion | Weight | What the judge asks |
+| --- | --- | --- |
+| Technical | 25 % | Is there real engineering? Do the methods fit the problem? Is it **robust, efficient and secure**? |
+| Ambition | 20 % | Are they after something big? How far are they **pushing the limits**? |
+| Execution | 20 % | How much did they **build during this hack**? Is it what **a talented team with 36 hours and frontier AI tools** should reach? |
+| Impact | 20 % | How much better is someone's life? Is it a **real leap over the status quo**? |
+| Originality | 15 % | Is it new? **If the judge asks their agent, does it find something very similar already built?** |
+
+So: execution is a relative bar, not a file count; originality is decided by a live search, so whatever an agent finds in ten seconds is the mark; and technical covers robustness and security, so a single point of failure or an exposed secret costs points however clever the algorithm is. Re-score the teams that moved, judging **only what is in the repo and the deploy right now**, the way a technical judge who verifies everything would. Keep the ranking, the top three with its reasoning, and the table of who can pass us on each criterion. Be honest: a flattering score is useless, and the person asked for it not to be. The scoreboard states its cut-off time and that it measures what exists, not what will be delivered.
 
 **Keep it running every half hour** until the repos close (Sunday 25, 08:30). Schedule it with CronCreate at an off-minute (`7,37 * * * *`), with a prompt that does the pass above and stays silent on `SIN NOVEDADES`. The schedule lives in the session, so set it up again after a restart; the person can also just say "actualiza la competencia".
 
