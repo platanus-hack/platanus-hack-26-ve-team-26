@@ -71,12 +71,15 @@ Lo corre `data/` (Juan); lo llama la web para subir videos (W5) y seguir el prog
 
 **Subida por partes.** Un archivo (`.mp4`, `.mov`, `.m4v`, `.webm` o un `.zip` de esos) se parte en pedazos de `chunk_size` bytes; el último puede ser más corto. Si un pedazo falla se reenvía el mismo: reenviar pisa, no duplica.
 
+**Qué se guarda.** Solo los `PoseClip`: son los datos que sirven para entrenar. Los videos se borran en cuanto dejan de hacer falta: al fallar o cancelar, en el acto; al terminar bien, a los 10 minutos (el tiempo para elegir otra persona). Una subida abandonada se borra a la hora. Topes: **60 MB por subida** (`413`) y **30 s por video** (el video queda `failed` con el motivo).
+
 | Método y ruta | Cuerpo | Respuesta |
 | --- | --- | --- |
 | `POST /uploads` | `{ "filename": "pastor-corre.mp4", "size": 52428800 }` | `201 { "upload_id", "chunk_size", "total_chunks" }` |
 | `PUT /uploads/{upload_id}/chunks/{index}` | bytes del pedazo (`application/octet-stream`), `index` desde 0 | `{ "received": [0, 1, 2], "total_chunks" }` |
 | `GET /uploads/{upload_id}` | | `{ "received": [...], "total_chunks" }`, para retomar una subida cortada |
 | `POST /uploads/{upload_id}/complete` | | `202 { "job_id" }`: arma el archivo y lo pone en la cola |
+| `DELETE /uploads/{upload_id}` | | `204`: cancela la subida y borra lo recibido |
 
 **Progreso.** La web consulta `GET /jobs/{job_id}` cada ~0,5 s:
 
@@ -110,7 +113,9 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 | Método y ruta | Cuerpo | Respuesta |
 | --- | --- | --- |
 | `GET /jobs/{job_id}/videos/{n}/first-frame.jpg` | | el cuadro `first_frame`, en sus píxeles originales, para dibujar `people` encima |
-| `POST /jobs/{job_id}/videos/{n}/subject` | `{ "x": 640, "y": 360 }`, píxeles del cuadro `first_frame` | `202`; el video vuelve a `pose3d` con esa persona (`selected_by: "user"`), sin repetir el tracking |
+| `POST /jobs/{job_id}/videos/{n}/subject` | `{ "x": 640, "y": 360 }`, píxeles del cuadro `first_frame` | `202`; el video vuelve a `pose3d` con esa persona (`selected_by: "user"`), sin repetir el tracking. `410` si ya pasaron los 10 minutos y el video se borró |
+
+**Cancelar.** `DELETE /jobs/{job_id}` → `204`: saca el trabajo de la cola y borra sus videos (los clips ya hechos se quedan).
 
 **Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. `GET /health` responde `{ "ok": true, "queue": 0 }`.
 
