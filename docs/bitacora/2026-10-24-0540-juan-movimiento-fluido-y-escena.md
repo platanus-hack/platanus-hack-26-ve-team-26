@@ -73,3 +73,41 @@ Dos prioridades para la demo, en `data/`: (1) que el robot no tiemble, filtrando
 
 - **Juan:** bajar `YS91BvCJFsM` desde una terminal con acceso a Chrome (o grabar a alguien caminando de perfil frente a sillas y mesas en el evento), y dejarlo como precargada con `--id` y su escena en `data/scenes/`.
 - **Pastor:** `cd physics && npm run retarget -- ../data/clips/<clip>.json` para los tres clips regenerados y `npm run check`. Cargar `GET /scenes/{clip_id}.json` (o `data/scenes/`) con `view.setScene`, multiplicando `pos` por la escala del recorrido.
+
+## Parte 3: la landing (pedido de Juan)
+
+Seis quejas: el robot siempre se tambalea (y se ve bugueado "en el giro"), la mano lejana desaparece en Capture, las etapas del Gym no van con el scroll, el plano de Policy tiembla en círculo, "Sube un video" está apagado y la navbar se pierde sobre el texto.
+
+### Qué se encontró (diagnóstico en paralelo, medido en el navegador, en Node y en Python)
+
+- **El tambaleo es real y es la política:** `g1-stand` (v2, 40 M) no se queda quieta. Gira sobre el pie derecho a ~57°/s (una vuelta cada 6 s) golpeteando con el izquierdo, y la pelvis traza un círculo de ~45 cm. El premio de `training/env.py` no castiga girar. Lo mismo en el navegador, en Node y en el entorno de Python, así que no es un error del puerto a la web.
+- **La cámara lo amplificaba:** `viewer.follow()` pega la cámara a la pelvis cada cuadro, y la calle se deslizaba con cada paso. En el plano de Policy (piernas a 1,6 m) eso era el "círculo".
+- **El "giro":** al entrar a Capture la cámara orbitaba 166°. El robot giraba 90° de golpe (la caminata mira a +y) y saltaba 1,9 m (`view.seek` con el video donde se había pausado). Al pasar del Gym a Policy se reiniciaba el robot.
+- **La mano:** el esqueleto escondía los puntos con visibilidad < 0,5 (el codo izquierdo nunca llega). Los dos paneles 3D miraban desde el lado tapado. El brazo del robot quedaba congelado; Pastor lo arregló en paralelo (`24131af`: el brazo tapado copia al visible en fase opuesta).
+- **Gym:** el capítulo medía una pantalla, igual que su panel fijo, así que nunca se fijaba; las etapas iban con su propio reloj (decisión de César en `9a4a944` porque el scroll se sentía trabado).
+- **Navbar:** sin fondo; el texto del cierre pasa por debajo con el mismo color (contraste 1:1).
+- **Servidor de videos:** no estaba corriendo (ni `data.server` ni `cloudflared`); la web lo ve apagado. Juan pidió no prenderlo por ahora.
+
+### Qué se hizo
+
+- `physics/src/viewer.js` (commit aparte, opcional): `followTau`, la cámara se acerca a la pelvis con suavidad y corta cuando la pelvis salta más de 0,3 m en un cuadro (un reinicio, un clip que vuelve a empezar). Por defecto 0, como hoy en las otras pantallas. Revisado por un segundo agente: `npm run check` 116 ok, y con 0 da exactamente lo mismo que antes.
+- `web/src/screens/home.js`, `landing.css`, `skeleton.js`:
+  - Cada plano dice qué tan rápido lo sigue la cámara.
+  - Policy muestra el robot entero, desde un poco arriba.
+  - Capture: la caminata empieza en el cuadro 0 con el video, girada para mirar a +x como el robot de pie. Se ve desde el lado que filmó el celular, y el robot y el esqueleto caminan hacia la derecha como el video.
+  - El esqueleto dibuja tenue el brazo estimado en vez de esconderlo.
+  - Del Gym a Policy no se reinicia el robot.
+  - El Gym mide 4 pantallas, una etapa por pantalla. Un ruedazo se frena en cada etapa hasta que el robot la muestra (la caída o el primer empujón, a los 2 s; máximo 2,5 s).
+  - La navbar pasa a vidrio oscuro con línea fina después del hero.
+- Probado en el navegador: tres ruedazos de 10 pasos se frenan en "No sirve", el robot se cae a 1,2 s y el siguiente gesto pasa a "Más o menos". La navbar sale sólida sobre el cierre y transparente arriba. Capture camina a la derecha de perfil, Policy muestra el robot entero. A 375 px no hay scroll lateral. `vite build` ok.
+
+### Qué no funcionó
+
+- **`stand-v3`** (giro sumado al término "still", 10 M pasos desde v2, 16 min): sigue girando a −52°/s y se desplaza más (1 m contra 0,36 m). No se usa.
+- Nuestro brazo "estimado" (seguir la estimación de MediaPipe en vez de inventarlo) quedó descartado: Pastor shipeó su versión en `physics/` mientras tanto.
+
+### Sigue
+
+- **`stand-v4`** entrenando en `../tridi-training` (rama `juan/training`): término propio para el giro (0,2; a 14°/s pierde la mitad) y otro para los pies quietos (0,1), 12 M pasos desde v2. Se acepta solo si gira menos de 5°/s y aguanta 4 de 4 empujones de 250 N; si no, se queda v2.
+- **Avisar a César:** el Gym vuelve a ir con el scroll (deshace `9a4a944`, con freno para que no se sienta trabado) y `skeleton.js` atenúa los brazos en vez de esconderlos (también en la galería).
+- **Avisar a Pastor:** `viewer.followTau` (opcional). La política de pie gira, y el entrenamiento `stand-v4` está en curso.
