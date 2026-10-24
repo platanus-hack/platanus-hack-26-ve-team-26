@@ -20,6 +20,20 @@ export function idOf(mujoco, model, type, name) {
   return id;
 }
 
+// Each createModel() compiles from its own folder in the WASM file system, so two never share one.
+let loadCount = 0;
+
+function removeTree(fs, path) {
+  if (!fs.analyzePath(path).exists) return;
+  for (const name of fs.readdir(path)) {
+    if (name === '.' || name === '..') continue;
+    const child = `${path}/${name}`;
+    if (fs.isDir(fs.stat(child).mode)) removeTree(fs, child);
+    else fs.unlink(child);
+  }
+  fs.rmdir(path);
+}
+
 export class Simulation {
   /**
    * @param mujoco  module returned by the @mujoco/mujoco loader
@@ -55,18 +69,23 @@ export class Simulation {
 
   // A new MjModel from `sceneFile`, owned by the caller (delete() it). Not the one simulated.
   // `paths` limits which of the files the model can read: a model without meshes needs only its
-  // own XML, and copying all 19 MB into MuJoCo's virtual file system takes a while.
+  // own XML.
+  // The files go through Emscripten's in-memory file system, not MjVFS: MjVFS.addBuffer copies
+  // a Uint8Array one element at a time across the JS/WASM boundary, which took 24 s for the
+  // G1's 19 MB of meshes; FS.writeFile copies each file at once (23 ms). Measured in Node with
+  // the same WASM build. The folder is removed after compiling, as MjVFS was deleted before.
   createModel(sceneFile, paths = Object.keys(this.files)) {
     const { mujoco } = this;
-    const vfs = new mujoco.MjVFS();
+    const root = `/models/${++loadCount}`;
     try {
       for (const path of paths) {
         if (!this.files[path]) throw new Error(`The model file "${path}" was not loaded (is it in physics/models/unitree_g1?)`);
-        vfs.addBuffer(path, this.files[path]);
+        mujoco.FS.mkdirTree(`${root}/${path}`.replace(/\/[^/]*$/, ''));
+        mujoco.FS.writeFile(`${root}/${path}`, this.files[path]);
       }
-      return mujoco.MjModel.from_xml_path(sceneFile, vfs);
+      return mujoco.MjModel.from_xml_path(`${root}/${sceneFile}`);
     } finally {
-      vfs.delete();
+      removeTree(mujoco.FS, root);
     }
   }
 
