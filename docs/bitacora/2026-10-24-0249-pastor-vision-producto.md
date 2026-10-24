@@ -36,6 +36,7 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
 ## Qué no funcionó
 
 - Sugerí "partir de una política que ya sabe equilibrarse" para que cada video entrene más rápido, y se confundió con `g1-stand` como requisito. Es un atajo opcional y hoy no se puede enchufar (otras entradas, otra acción).
+- El primer diagnóstico de ENT-1 en el plan decía "reproducir la referencia solo con los motores". Eso ya lo hace `evaluate_walk.py` (fila "sin política") y no prueba nada: sin red el robot se cae aunque la referencia sea buena. Corregido a reproducirla con la pelvis sostenida y medir el seguimiento de los ángulos y el apoyo de los pies.
 
 ## Decisiones
 

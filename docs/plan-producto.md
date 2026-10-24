@@ -77,7 +77,7 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 ### Entrenamiento (`training/`)
 
 - [ ] **ENT-1. Que la imitación aprenda la caminata.** Lo más importante: sin esto no hay producto. En este orden:
-  - Reproducir la referencia solo con los motores (sin red) y medir cuánto aguanta de pie. Si se cae enseguida aunque esté bien seguida, la referencia es inviable y se corrige en el retargeting.
+  - Reproducir la referencia con la pelvis sostenida (sin red y sin que pueda caerse) y medir si los motores siguen los ángulos y si los pies apoyan sin hundirse ni flotar. Si no, la referencia es inviable y se corrige en el retargeting. Sin sostenerla, caerse es lo esperado (sin red tampoco se sostiene de pie), así que la fila "sin política" de `evaluate_walk.py` no dice si la referencia sirve.
   - Mirar cada término de la recompensa en `progress.csv`, para saber cuál no sube.
   - Probar con 2 a 3 s de un ciclo de paso en vez del clip entero.
   - Los empujones, recién cuando camine.
