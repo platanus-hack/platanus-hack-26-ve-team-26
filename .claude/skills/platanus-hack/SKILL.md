@@ -1,6 +1,6 @@
 ---
 name: platanus-hack
-description: Team 26's workflow for Platanus Hack 26 Caracas (Juan, Pastor, César, Ale). Use it to set up a teammate's machine (/platanus-hack setup: a parent folder with the hackathon repo platanus-hack-26-ve-team-26 and the private research repo platanus-ideas, gh, hooks and a personal branch), and whenever working in that repo: syncing with main, shipping with scripts/ship.sh, and keeping the per-session log in docs/bitacora. Trigger on /platanus-hack, "set up the hackathon repo", "ship this", "update the bitácora", or any work inside platanus-hack-26-ve-team-26.
+description: Team 26's workflow for Platanus Hack 26 Caracas (Juan, Pastor, César, Ale). Use it to set up a teammate's machine (/platanus-hack setup: a parent folder with the hackathon repo platanus-hack-26-ve-team-26 and the private research repo platanus-ideas, gh, hooks and a personal branch), and whenever working in either repo: syncing with main, shipping with scripts/ship.sh, keeping the per-session log in docs/bitacora, and keeping the rival-team study in platanus-ideas current. Trigger on /platanus-hack, "set up the hackathon repo", "ship this", "update the bitácora", "actualiza la competencia", or any work inside platanus-hack-26-ve-team-26 or platanus-ideas.
 ---
 
 # Platanus Hack: team 26 workflow
@@ -42,6 +42,27 @@ One file per session in `docs/bitacora/`, named `YYYY-MM-DD-HHMM-<person>-<topic
 - Edit only this session's file. Commit it with the work; it reaches `main` on the next ship.
 - When the big picture changes, update only this person's section of `docs/estado.md`. Cross-team decisions go to `docs/decisiones/AAAA-MM-DD-<tema>.md`; open questions to `docs/preguntas-abiertas.md`.
 - On "cierra la sesión" or when the work is done: `estado: cerrada`, update `docs/estado.md`, commit and offer to ship.
+
+## Competition study (always on)
+
+The other teams' repos in the `platanus-hack` org are public, and the team keeps a study of them in **platanus-ideas** (private): `docs/research/competencia/`, with its own `README.md` explaining the routine. Nothing about it goes in this repo.
+
+**At the start of every session**, in either repo, run one pass. It costs one command and it is how the team finds out that a rival pivoted:
+
+```bash
+../platanus-ideas/docs/research/competencia/actualizar.sh    # or ./docs/... from platanus-ideas
+```
+
+- It clones or updates the rival repos into `../competencia/` (sibling of both repos, **outside git**: other teams' code is never versioned in ours) and prints what changed since the documents were last written.
+- **`SIN NOVEDADES` means stop.** Say so in one line and move on: no reading, no writing, no commit.
+- Otherwise: read each changed team's new commits, what they added (README, `platanus-hack-project.jsonc`, docs, code) and curl their deploy URL; update `caracas-2026.md` (the "Actualizado" header, the pass number, the table rows and the fichas that moved) and `three-dimensional.md` when our own track moves or something is worth copying; rewrite their "Cambios desde la última pasada" section for this pass instead of appending; then `actualizar.sh --marcar`, commit in English (`docs(research): ...`) and push straight to `main` of platanus-ideas — that repo has no `ship.sh`.
+
+**Keep it running every half hour** until the repos close (Sunday 25, 08:30). Schedule it with CronCreate at an off-minute (`7,37 * * * *`), with a prompt that does the pass above and stays silent on `SIN NOVEDADES`. The schedule lives in the session, so set it up again after a restart; the person can also just say "actualiza la competencia".
+
+Two things to remember when reading the results:
+
+- **A template repo proves nothing.** Platanus tells every team to mirror their code to a personal repo in order to deploy on Vercel, so a team can have half a product built and an empty public repo.
+- Work in platanus-ideas (this study, pitch, research) is **not** logged in `docs/bitacora/`: the bitácora is only for work in this repo.
 
 ## Updating this skill
 
