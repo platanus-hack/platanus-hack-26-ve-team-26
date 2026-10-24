@@ -2,6 +2,9 @@
 // you when the camera is on.
 import { createSimView } from './index.js';
 
+// The RobotMotion of Juan's walking clip (npm run retarget), played on the robot.
+const WALK_URL = new URL('../motions/clip_2026-10-23_caminar-perfil_01.json', import.meta.url).href;
+
 const $ = (id) => document.getElementById(id);
 
 function showProgress({ done, total, bytes }) {
@@ -17,7 +20,7 @@ async function start() {
       onStats: ({ realtime, pelvisHeight, puppet }) => {
         const { model } = view.sim;
         $('stats').textContent = puppet
-          ? `${model.nu} motores · copiando tu movimiento, sin dinámica · pelvis a ${pelvisHeight.toFixed(2)} m`
+          ? `${model.nu} motores · reproduciendo un movimiento, sin dinámica · pelvis a ${pelvisHeight.toFixed(2)} m`
           : `${model.nu} motores · ${Math.round(1 / model.opt.timestep)} pasos/s de física · tiempo real x${realtime.toFixed(2)} · pelvis a ${pelvisHeight.toFixed(2)} m`;
       },
     });
@@ -29,7 +32,7 @@ async function start() {
   $('loading').hidden = true;
   // In development the console can drive the robot (view.mimic with a made-up pose) without a camera.
   if (import.meta.env.DEV) window.tridi = view;
-  for (const id of ['camera', 'push', 'reset']) $(id).disabled = false;
+  for (const id of ['camera', 'clip', 'push', 'reset']) $(id).disabled = false;
   $('push').onclick = () => {
     stopCamera();
     view.push();
@@ -39,6 +42,10 @@ async function start() {
     view.reset();
   };
   $('camera').onclick = () => (live ? stopCamera() : startCamera());
+  $('clip').onclick = async () => {
+    stopCamera();
+    view.playClip(await (await fetch(WALK_URL)).json());
+  };
 
   let live = null;
   let cameraStats = { frames: 0, since: performance.now(), residual: 0 };

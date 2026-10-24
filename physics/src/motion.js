@@ -101,3 +101,26 @@ function travelHeading(frames, hips, i) {
   const dy = hips[b][1] - hips[a][1];
   return Math.hypot(dx, dy) / dt < MIN_TRAVEL_SPEED ? undefined : Math.atan2(dy, dx);
 }
+
+/** Seconds a RobotMotion lasts: its frames are 1/fps apart, so the last one is at (n - 1) / fps. */
+export const motionDuration = (motion) => (motion.qpos.length - 1) / motion.fps;
+
+/**
+ * The pose at time `t` (s), written into `out` (a Float64Array of the robot's nq). A clip is 24 to
+ * 30 frames per second and the screen 60, so the frames on both sides are blended: joints and
+ * the pelvis position linearly, the pelvis orientation by normalized linear interpolation, which
+ * is exact enough here because consecutive frames differ by a few degrees of heading.
+ * `t` outside the clip is held at its first or last frame.
+ */
+export function sampleMotion(motion, t, out) {
+  const rows = motion.qpos;
+  const x = Math.min(Math.max(t * motion.fps, 0), rows.length - 1);
+  const i = Math.floor(x);
+  const a = rows[i];
+  const b = rows[Math.min(i + 1, rows.length - 1)];
+  const k = x - i;
+  for (let j = 0; j < a.length; j++) out[j] = a[j] + (b[j] - a[j]) * k;
+  const norm = Math.hypot(out[3], out[4], out[5], out[6]);
+  for (let j = 3; j < 7; j++) out[j] /= norm;
+  return out;
+}

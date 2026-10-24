@@ -27,6 +27,9 @@ const view = await createSimView(canvas, {
 view.pause(); view.play(); view.setSpeed(0.5);
 view.reset(); view.push();
 view.mimic(pose);   // copiar a una persona, un cuadro de cámara por llamada (ver más abajo)
+view.playClip(motion); // reproducir un RobotMotion (ver "Un clip completo"); reset() lo rebobina
+view.clipTime();    // en qué segundo va, para sincronizar lo que se dibuja al lado
+view.stop();        // soltar el clip o la cámara y volver al robot físico, de pie
 view.dispose(); // al desmontar: corta el ciclo y libera WebGL y la memoria de MuJoCo
 ```
 
@@ -74,6 +77,15 @@ npm run retarget -- ../data/clips/clip_2026-10-23_caminar-perfil_01.json   # -> 
 | Rumbo de la pelvis | Hacia donde avanza (desplazamiento neto en una ventana de 3 s), solo si avanza a más de 0,25 m/s y coincide con lo que dicen las caderas (a menos de 90°). Si no, el de las caderas. Con 1 s de ventana el rumbo oscilaba ±16° en la caminata; con 3 s, ±10° |
 | Cuando se adopta el rumbo de avance | También se gira el sistema de referencia de la persona en el mismo ángulo, para que las piernas no queden giradas respecto del recorrido |
 | Altura de la pelvis | Se ajusta cada cuadro para que el punto más bajo de un pie toque el piso |
+
+### Reproducirlo: `view.playClip(motion)`
+
+```js
+const motion = await (await fetch('/motions/clip_2026-10-23_caminar-perfil_01.json')).json();
+view.playClip(motion);               // en bucle; { loop: false } sostiene el último cuadro
+```
+
+Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos controles que la simulación: `pause()`, `play()` y `setSpeed()` valen para el clip, y `reset()` lo rebobina. Como el esqueleto de la web, avanza con `tiempo real × velocidad`, así que los dos siguen juntos; para engancharse al segundo exacto está `clipTime()` y `seek(s)`. Un clip de 24 a 30 cuadros por segundo se muestra a 60 mezclando los cuadros vecinos (`sampleMotion`). **Empujar** durante un clip lo suelta y vuelve al robot físico, que es el que se cae. Rechaza un `RobotMotion` de otro robot.
 
 ### Calidad medida con los clips de Juan
 

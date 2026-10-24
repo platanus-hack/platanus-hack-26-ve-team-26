@@ -1,6 +1,7 @@
 // Public API of physics/ for the web app: give it a canvas and it loads MuJoCo and the G1,
 // simulates in real time and draws every frame until dispose().
 import { loadG1 } from './load.js';
+import { motionDuration, sampleMotion } from './motion.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
 import { RobotView } from './viewer.js';
@@ -26,6 +27,10 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
 
   let speed = 1;
   let playing = true;
+  // The RobotMotion being played, if any: { motion, duration, loop }, and where it is (s).
+  let clip = null;
+  let clipTime = 0;
+  const row = new Float64Array(sim.model.nq); // the pose being shown
   let frameId = 0;
   let last = performance.now();
   let stats = { wall: 0, sim: 0 };
@@ -33,7 +38,11 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   function frame(now) {
     const wall = Math.max(0, (now - last) / 1000); // the first frame's timestamp can predate `last`
     last = now;
-    if (playing) {
+    if (clip) {
+      // Same clock as the web's skeleton (wall time x speed), so both stay in step.
+      if (playing) clipTime = clip.loop ? (clipTime + wall * speed) % clip.duration : Math.min(clipTime + wall * speed, clip.duration);
+      sim.puppet(sampleMotion(clip.motion, clipTime, row));
+    } else if (playing) {
       const before = sim.data.time;
       sim.advance(wall * speed);
       stats.sim += sim.data.time - before;
@@ -52,18 +61,49 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   let tracker = null;
   let retargeter = null;
 
+  // Ends a clip or a camera copy and returns to the physical robot, standing.
+  function stop() {
+    clip = null;
+    reset();
+  }
+
+  // With a clip playing: back to its start. Otherwise the physical robot standing again (and
+  // the next mimic() starts from the stand pose).
+  function reset() {
+    if (clip) return void (clipTime = 0);
+    sim.reset();
+    retargeter?.delete();
+    tracker = retargeter = null;
+  }
+
   return {
     sim,
     play: () => (playing = true),
     pause: () => (playing = false),
     setSpeed: (value) => (speed = value),
-    // Back to the physical robot, standing. The next mimic() starts from the stand pose.
-    reset() {
-      sim.reset();
-      retargeter?.delete();
-      tracker = retargeter = null;
+    reset,
+    // The shove is for the physical robot: if it was copying a clip or a person, it first goes
+    // back to standing.
+    push() {
+      if (clip || sim.puppeted) stop();
+      sim.push();
     },
-    push: () => sim.push(),
+    /**
+     * Plays a RobotMotion (physics/motions/, or any with the G1's 36 values per frame) on the
+     * robot, without dynamics. It follows play(), pause() and setSpeed(), and reset() rewinds it.
+     * @param options.loop  start over at the end (default), or hold the last frame
+     */
+    playClip(motion, { loop = true } = {}) {
+      if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== sim.model.nq) {
+        throw new Error(`This RobotMotion is not for the ${sim.model.nq}-value G1 (robot: ${motion.robot}).`);
+      }
+      clip = { motion, duration: motionDuration(motion), loop };
+      clipTime = 0;
+    },
+    /** Where the clip is, in seconds; 0 with no clip. For syncing anything drawn beside the robot. */
+    clipTime: () => clipTime,
+    seek: (seconds) => (clipTime = Math.min(Math.max(seconds, 0), clip?.duration ?? 0)),
+    stop,
     /**
      * Makes the G1 copy a person, one camera frame at a time. Pass what createLiveCapture's
      * onPose gives. A null pose or one too occluded keeps the last pose. reset() ends it.
@@ -72,6 +112,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      */
     mimic(pose) {
       if (!pose?.visible) return { tracked: false, residual: 0 };
+      clip = null;
       tracker ??= createPoseTracker();
       retargeter ??= createRetargeter(sim.mujoco, sim.model, { mirror });
       const { qpos, tracked, residual } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t));

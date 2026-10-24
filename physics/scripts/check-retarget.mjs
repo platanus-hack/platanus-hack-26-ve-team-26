@@ -5,7 +5,7 @@ import { readFileSync } from 'node:fs';
 import { loadG1Node } from './node-model.mjs';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
-import { retargetClip } from '../src/motion.js';
+import { motionDuration, retargetClip, sampleMotion } from '../src/motion.js';
 
 // Above this a limb ended up farther than 8 cm from where the person put it (Sombra's REACH_TOLERANCE).
 const REACH_TOLERANCE = 0.08;
@@ -225,6 +225,19 @@ console.log("RobotMotion of Juan's walking clip (whole clip, with the pelvis pat
   });
   const robot = slideRatio(robotFeet, rows.map((q) => [q[0], q[1]]));
   expect(robot <= human, `planted foot slides ${robot.toFixed(2)} of the pelvis speed (the person in the data: ${human.toFixed(2)})`);
+
+  // Playback: sampling a RobotMotion between its frames.
+  const out = new Float64Array(sim.model.nq);
+  // The rows keep 5 decimals, so their quaternions are unit length only to about 1e-5.
+  const same = (a, b) => a.every((v, i) => Math.abs(v - b[i]) < 2e-5);
+  expect(Math.abs(motionDuration(motion) - (rows.length - 1) / motion.fps) < 1e-9, `duration ${motionDuration(motion).toFixed(1)} s`);
+  expect(same(sampleMotion(motion, 0, out), rows[0]) && same(sampleMotion(motion, -1, out), rows[0]), 'time 0 (and before) is the first frame');
+  expect(same(sampleMotion(motion, 100, out), rows[rows.length - 1]), 'past the end holds the last frame');
+  expect(same(sampleMotion(motion, 10 / motion.fps, out), rows[10]), 'an exact frame time gives that frame');
+  sampleMotion(motion, 10.5 / motion.fps, out);
+  const halfway = rows[10].map((v, i) => (v + rows[11][i]) / 2);
+  expect([0, 1, 2, ...Array.from({ length: 29 }, (_, k) => 7 + k)].every((i) => Math.abs(out[i] - halfway[i]) < 1e-9), 'between two frames, joints and position are blended');
+  expect(Math.abs(Math.hypot(out[3], out[4], out[5], out[6]) - 1) < 1e-9, 'the blended pelvis orientation stays a unit quaternion');
 }
 
 console.log('speed');
