@@ -141,6 +141,7 @@ export function mount(root, { api }) {
             </li>`).join('')}
           </ol>
           <p class="gym-status"><span data-gym="up">—</span> de pie ahora · <span data-gym="status">el robot real, con ese entrenamiento</span></p>
+          <p class="gym-hint">Cambia sola cada pocos segundos · toca una etapa para verla</p>
           <figure class="chart-fig">
             <svg class="chart" viewBox="0 0 400 150" role="img" aria-label="Segundos de pie por intento durante el entrenamiento: de 1,2 s al principio a cerca de 20 s al final"></svg>
             <figcaption>Segundos de pie por intento · ${curve.minutes} minutos en una laptop · log real</figcaption>
@@ -196,9 +197,27 @@ export function mount(root, { api }) {
           </ol>
         </div>
         <nav class="tries" aria-label="Probar Tridi">
-          <a class="try" href="#/en-vivo" data-warm="en-vivo"><span>Cámara</span><b>Muévete y el robot te copia</b></a>
-          <a class="try" href="#/subir" data-warm="subir" data-route="subir"><span>Video</span><b>Sube un video: solo guardamos el movimiento</b></a>
-          <a class="try" href="#/simulaciones" data-warm="simulaciones"><span>Laboratorio</span><b>Persona y robot, lado a lado</b></a>
+          <a class="try" href="#/en-vivo" data-warm="en-vivo">
+            <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="14" width="28" height="20" rx="3"/><path d="M34 21l9-5v16l-9-5z"/><circle cx="20" cy="24" r="5"/></svg>
+            <span class="try-kind">Cámara</span>
+            <b>Muévete y el robot te copia</b>
+            <span class="try-detail">En vivo, en tu navegador</span>
+            <span class="try-go">Abrir la cámara →</span>
+          </a>
+          <a class="try" href="#/subir" data-warm="subir" data-route="subir">
+            <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><rect x="6" y="10" width="36" height="26" rx="3"/><path d="M24 31V17M18 22l6-6 6 6"/><path d="M14 40h20"/></svg>
+            <span class="try-kind">Video</span>
+            <b>Sube un video de una persona</b>
+            <span class="try-detail">Hasta 30 s · solo guardamos el movimiento</span>
+            <span class="try-go">Subir un video →</span>
+          </a>
+          <a class="try" href="#/simulaciones" data-warm="simulaciones">
+            <svg class="try-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="15" cy="11" r="4"/><path d="M15 15v12M9 20h12M15 27l-4 10M15 27l4 10"/><rect x="28" y="7" width="10" height="8" rx="2"/><path d="M33 15v12M27 19h12M33 27l-3 10M33 27l3 10"/></svg>
+            <span class="try-kind">Laboratorio</span>
+            <b>Persona y robot, lado a lado</b>
+            <span class="try-detail">Clips, entrenamiento y mundos</span>
+            <span class="try-go">Ver el laboratorio →</span>
+          </a>
         </nav>
       </div>
       <footer class="footer">
@@ -340,6 +359,7 @@ export function mount(root, { api }) {
       const motion = await walkMotion;
       if (token === modeToken && motion) view.playClip(motion);
     } else if (next === 'gym') {
+      Object.assign(gymClock, { stage: 0, since: performance.now() }); // every visit starts untrained
       await useLevel(gymLevel());
       if (token === modeToken) startGymRun();
     } else {
@@ -391,14 +411,24 @@ export function mount(root, { api }) {
   // checkpoint of training/, on the real robot, pushed every few seconds.
   const gymEl = $('.gym');
   const gym = { since: 0, lastPush: 0, fallen: false, loading: false };
-  const gymProgress = () => {
-    const top = gymEl.offsetTop;
-    const span = gymEl.offsetHeight - innerHeight;
-    return Math.min(1, Math.max(0, (scrollY - top) / span));
-  };
-  // The stage on screen: the chapter is split in three equal stretches of scroll.
-  const gymStage = () => Math.min(GYM_STAGES.length - 1, Math.floor(gymProgress() * GYM_STAGES.length));
+  // The stage plays on its own clock, not the scroll: each one stays long enough to show what it
+  // does (the untrained robot falls within ~1 s; the trained one takes a few pushes), then the
+  // next, and around again. A click on a stage jumps to it.
+  const GYM_STAGE_S = [5, 7, 9];
+  const gymClock = { stage: 0, since: performance.now() };
+  const gymStage = () => gymClock.stage;
   const gymLevel = () => GYM_STAGES[gymStage()].level;
+  function advanceGymStage() {
+    if (performance.now() - gymClock.since < GYM_STAGE_S[gymClock.stage] * 1000) return;
+    gymClock.stage = (gymClock.stage + 1) % GYM_STAGES.length;
+    gymClock.since = performance.now();
+  }
+  $$('.gym-stages li').forEach((li, i) =>
+    on(li, 'click', () => {
+      gymClock.stage = i;
+      gymClock.since = performance.now();
+    }),
+  );
   let shownStage = -1;
   function showGymStage() {
     const stage = gymStage();
@@ -483,6 +513,7 @@ export function mount(root, { api }) {
         view.seek(video.currentTime);
       } else if (!video.paused) video.pause();
       if (mode === 'gym') {
+        advanceGymStage();
         showGymStage();
         runGym();
       }
@@ -549,8 +580,8 @@ export function mount(root, { api }) {
       scrollTrigger: { trigger: '.capture', start: 'top 75%', end: 'top 15%', scrub: true },
     });
 
-    // Gym: its words come in; the stages and the chart move with the stage on screen (showGymStage).
-    gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, scrollTrigger: { trigger: '.gym', start: 'top 60%', end: 'top top', scrub: true } });
+    // Gym: its words come in once; the stages and the chart then run on their own clock (advanceGymStage).
+    gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, duration: 0.6, scrollTrigger: { trigger: '.gym', start: 'top 60%', toggleActions: 'play none none none' } });
 
     // Policy: the numbers come in one by one.
     gsap.from('.policy-caption h2, .policy-caption .product', { opacity: 0, y: 30, stagger: 0.1, scrollTrigger: { trigger: '.policy', start: 'top 60%', end: 'top 10%', scrub: true } });
@@ -584,7 +615,8 @@ export function mount(root, { api }) {
     card.classList.add('unavailable');
     card.removeAttribute('href');
     card.setAttribute('aria-disabled', 'true');
-    card.querySelector('b').textContent = 'El servidor de videos está apagado ahora';
+    card.querySelector('.try-detail').textContent = 'El servidor de videos está apagado ahora';
+    card.querySelector('.try-go').textContent = 'No disponible ahora';
   });
 
   return () => {

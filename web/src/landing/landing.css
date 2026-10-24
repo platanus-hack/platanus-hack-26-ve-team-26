@@ -524,10 +524,21 @@ html.is-landing.lenis body {
   margin-top: 16px !important;
 }
 
-/* Gym: three stops of the training, one per screen of scroll */
+/* Gym: three stops of the training, each on its own clock */
 
 .gym {
-  height: 300svh; /* three stages, one screen each (home.js GYM_STAGES) */
+  height: 100svh; /* one screen: the stages change on their own clock, not with the scroll */
+}
+
+.gym-stages li {
+  cursor: pointer;
+}
+
+.gym-hint {
+  margin-top: 6px !important;
+  font: 500 10px/1.4 var(--mono);
+  text-transform: uppercase;
+  color: var(--dim);
 }
 
 .gym-caption {
@@ -854,28 +865,44 @@ html.is-landing.lenis body {
   margin-top: 12px;
 }
 
+/* The three ways to try it: real cards, each with its own icon, a short detail and a button, so
+   they read as different and clickable. */
 .try {
   display: grid;
-  gap: 40px;
-  align-content: space-between;
-  min-height: 160px;
-  padding: 22px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
+  grid-template-rows: auto auto 1fr auto auto;
+  gap: 10px;
+  min-height: 250px;
+  padding: 24px;
+  border: 1px solid var(--line-dark);
+  border-radius: 12px;
+  background: rgb(238 236 231 / 0.04);
   color: var(--fg);
   text-decoration: none;
-  transition: border-color 0.25s, background 0.25s;
+  transition: transform 0.25s ease, border-color 0.25s, background 0.25s;
 }
 
-.try:hover {
+.try:hover,
+.try:focus-visible {
+  transform: translateY(-4px);
   border-color: var(--signal);
-  background: rgb(255 79 26 / 0.07);
+  background: rgb(255 79 26 / 0.08);
 }
 
-.try span {
+.try-icon {
+  width: 44px;
+  height: 44px;
+  margin-bottom: 6px;
+  fill: none;
+  stroke: var(--signal);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.try-kind {
   font: 500 11px/1 var(--mono);
   text-transform: uppercase;
-  color: var(--signal);
+  color: var(--dim);
 }
 
 .try b {
@@ -883,20 +910,40 @@ html.is-landing.lenis body {
   letter-spacing: -0.02em;
 }
 
-.try b::after {
-  content: ' →';
-  color: var(--dim);
+.try-detail {
+  font-size: 14px;
+  color: var(--fg-2);
+}
+
+.try-go {
+  justify-self: start;
+  margin-top: 6px;
+  padding: 10px 16px;
+  border: 1px solid var(--signal);
+  border-radius: 999px;
+  font: 500 14px/1 var(--display);
+  color: var(--signal);
+  transition: background 0.25s, color 0.25s;
+}
+
+.try:hover .try-go,
+.try:focus-visible .try-go {
+  background: var(--signal);
+  color: var(--ink);
 }
 
 .try.unavailable {
-  opacity: 0.45;
+  opacity: 0.5;
   cursor: default;
+  transform: none;
   background: none;
-  border-color: var(--line);
+  border-color: var(--line-dark);
 }
 
-.try.unavailable b::after {
-  content: '';
+.try.unavailable .try-go {
+  border-color: var(--line-dark);
+  background: none;
+  color: var(--dim);
 }
 
 .footer {
