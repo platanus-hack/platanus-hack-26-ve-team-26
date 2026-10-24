@@ -2,7 +2,7 @@
 // The same PoseClip that data/extract.py makes from an uploaded video, with source "camera".
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
 import { PoseFilter } from './oneeuro.js';
-import { BODY, MIN_VISIBILITY, buildPoseClip, cameraTranslation } from './poseclip.js';
+import { buildPoseClip, cameraTranslation, isSeen } from './poseclip.js';
 
 export { buildPoseClip, cameraTranslation } from './poseclip.js';
 export { PoseFilter } from './oneeuro.js';
@@ -42,7 +42,7 @@ export class CameraError extends Error {}
  * @param options.onProgress  ({ stage: 'model' | 'camera', done: boolean }) while loading
  * @param options.onPose      ({ landmarks, world, visible, t }) every processed frame: `landmarks`
  *   are 33 points normalized to the video (for drawSkeleton), `world` 33 points in meters
- *   (hip-centered, MediaPipe axes), `visible` false when no body or too occluded, `camera` where
+ *   (hip-centered, MediaPipe axes), `visible` false when no body or the upper body (shoulders, elbows, wrists) is too occluded, `camera` where
  *   the hips are from the camera ([x, y, z] m, MediaPipe camera axes; cameraTranslation) or null;
  *   null if no body.
  * @returns { startRecording, stopRecording, isRecording, fps, stop }
@@ -107,7 +107,7 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
       } else {
         if (smooth) [world, landmarks] = smoothed(filter, now / 1000, world, landmarks);
         const vis = landmarks.map((p) => p.visibility ?? 0);
-        const visible = BODY.reduce((s, i) => s + vis[i], 0) / BODY.length >= MIN_VISIBILITY;
+        const visible = isSeen((i) => vis[i]);
         const w = video.videoWidth;
         const h = video.videoHeight;
         onPose?.({ landmarks, world, visible, t: now / 1000, camera: cameraTranslation(world, landmarks, w, h) });

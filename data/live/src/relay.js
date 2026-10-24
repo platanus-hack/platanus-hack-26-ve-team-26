@@ -12,7 +12,7 @@
 // The One Euro filter runs once, on the phone (inside createLiveCapture); the Mac plays the frames
 // as they are. Works in the browser and in Node 18+ (fetch), like upload.js; scripts/check-relay.mjs
 // runs both halves against the real server.
-import { BODY, MIN_VISIBILITY, buildPoseClip, cameraTranslation } from './poseclip.js';
+import { buildPoseClip, cameraTranslation, isSeen } from './poseclip.js';
 import { UploadError } from './upload.js';
 
 // The phone posts every 100 ms (3 frames at 30 fps, ~5 KB). One request per frame would be 30 a
@@ -147,7 +147,7 @@ export function createImageGrabber(video) {
 export function toPose(frame) {
   if (!frame.world) return null;
   const landmarks = frame.image.map(([x, y, visibility]) => ({ x, y, visibility }));
-  const visible = BODY.reduce((sum, i) => sum + landmarks[i].visibility, 0) / BODY.length >= MIN_VISIBILITY;
+  const visible = isSeen((i) => landmarks[i].visibility);
   return { landmarks, world: frame.world.map(([x, y, z]) => ({ x, y, z })), visible, t: frame.t };
 }
 

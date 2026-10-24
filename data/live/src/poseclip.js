@@ -16,6 +16,15 @@ const FEET = [
 // out of frame; their 3D is a guess.
 export const MIN_VISIBILITY = 0.5;
 
+// What must be seen for a frame to count, live: the shoulders, elbows and wrists. Someone at a desk
+// or close to the laptop shows only that, and asking for the whole body (head to feet) sent people
+// two meters back for nothing: the retargeting (physics/ retarget.js) keeps whatever is not seen,
+// the legs, in the stand pose, and the robot's path (root.js) only uses the feet it sees.
+export const UPPER_BODY = [11, 12, 13, 14, 15, 16];
+
+/** True when the upper body is seen well enough; `visibility` is MediaPipe's, per landmark. */
+export const isSeen = (visibility) => UPPER_BODY.reduce((sum, i) => sum + visibility(i), 0) / UPPER_BODY.length >= MIN_VISIBILITY;
+
 // Laptop webcams film about 60-70 degrees across the long side; it only sets the scale of the
 // camera-based trajectory (data/lift.py assumes 65 degrees for phones, the same).
 const HFOV_DEG = 65;
@@ -58,7 +67,7 @@ export function buildPoseClip(samples, { width, height, id = defaultId() }) {
   fixCameraOutliers(items);
 
   const validIdx = items.flatMap((s, k) => (s.valid ? [k] : []));
-  if (validIdx.length < 2) throw new Error(`se vio el cuerpo en ${validIdx.length} cuadros y hacen falta al menos 2: que se vea el cuerpo entero`);
+  if (validIdx.length < 2) throw new Error(`se vio el cuerpo en ${validIdx.length} cuadros y hacen falta al menos 2: que se vean los hombros, los brazos y las manos`);
   items = items.slice(validIdx[0], validIdx.at(-1) + 1);
 
   // Resample to CLIP_FPS. Each output frame interpolates between the valid samples around it;
