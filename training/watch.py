@@ -27,8 +27,16 @@ RECENT = 25
 
 
 def read(path: Path) -> list[dict[str, float]]:
+    """The rows of progress.csv. An update where no episode ended has episode_s = nan: it is
+    carried from the previous row, so averages and the curve never see a NaN."""
+    rows = []
     with path.open() as f:
-        return [{k: float(v) for k, v in row.items()} for row in csv.DictReader(f)]
+        for row in csv.DictReader(f):
+            parsed = {k: float(v) for k, v in row.items()}
+            if parsed["episode_s"] != parsed["episode_s"]:  # NaN
+                parsed["episode_s"] = rows[-1]["episode_s"] if rows else 0.0
+            rows.append(parsed)
+    return rows
 
 
 def duration(seconds: float) -> str:
