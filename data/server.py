@@ -1,24 +1,33 @@
-"""HTTP server for uploaded videos: chunked upload -> queue -> PoseClip, with progress per stage.
+"""HTTP server for uploaded videos and per-clip training.
 
     uv run --project data python -m data.server [--port 8000]
 
-The API is in docs/contrato.md ("API del servidor de video"). Only PoseClips are kept; videos are
-deleted once processed. Jobs live in memory: a restart forgets them (the clips stay on disk).
+Videos: chunked upload -> queue -> PoseClip, with progress per stage. Camera clips arrive already
+as PoseClips (POST /clips). Any clip can then be trained: a second queue, one at a time, runs
+retarget -> training (every checkpoint exported to ONNX) -> data, each as a subprocess, and serves
+the motion, the policies and the dataset. The API is in docs/contrato.md ("API del servidor de
+video"). Only PoseClips and what training makes from them are kept; videos are deleted once
+processed. Jobs and trainings live in memory: a restart forgets them (their files stay on disk).
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import json
+import math
 import os
 import queue
 import re
 import shutil
+import signal
+import subprocess
 import threading
 import time
 import uuid
 import zipfile
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 
 import cv2
@@ -27,7 +36,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 
-from .extract import VIDEO_EXTS, write_clip
+from .extract import VIDEO_EXTS, _clip_id, write_clip
 from .lift import lift_subject
 from .track import Subject, Tracking, select_subject, track_people
 
@@ -59,6 +68,29 @@ CORS_ORIGINS = os.environ.get(
 ).split(",")
 
 ID = re.compile(r"^[0-9a-f]{32}$")
+CLIP_ID = re.compile(r"^clip_[A-Za-z0-9_-]+$")
+POLICY_ID = re.compile(r"^clip_[A-Za-z0-9_-]+-step-\d+$")
+
+ROOT = Path(__file__).resolve().parent.parent
+
+# Camera clips (POST /clips). A 30 s PoseClip at 30 fps weighs ~0.9 MB (measured on data/clips/):
+# 5 MB leaves room without accepting anything. Below 0.8 valid_ratio the body was missing in more
+# than 1 frame of 5, and the robot would imitate the gaps; it applies to uploaded clips too.
+MAX_CLIP_BYTES = 5 * 1024 * 1024
+MIN_VALID_RATIO = 0.8
+JOINTS = 33
+
+# Training. 20 M steps is ~30 min with 64 robots on an M2 (11.4k steps/s); a checkpoint every 2 M
+# steps gives the web a new robot every ~3 min. 3 waiting at ~30 min each: the last one waits an
+# hour and a half, and more than that is no longer a demo. All three can be lowered to test the
+# chain end to end (TRIDI_TRAIN_STEPS=20000 trains in seconds; the robot will not walk).
+TRAIN_STEPS = int(os.environ.get("TRIDI_TRAIN_STEPS", 20_000_000))
+TRAIN_EVERY = int(os.environ.get("TRIDI_TRAIN_EVERY", 2_000_000))
+TRAIN_WAITING = int(os.environ.get("TRIDI_TRAIN_WAITING", 3))
+ROLLOUT_EPISODES = int(os.environ.get("TRIDI_ROLLOUT_EPISODES", 8))
+TRAIN_STEPS_PER_S = 11_400  # an M2, for the estimate before the first progress row
+DATA_STAGE_S = 60  # retarget + dataset rollout, a rough estimate for eta_s
+TRAIN_POLL_S = 2
 UPLOAD_EXTS = VIDEO_EXTS | {".zip"}
 
 
@@ -280,7 +312,7 @@ class Click(BaseModel):
 
 @app.get("/health")
 def health() -> dict:
-    return {"ok": True, "queue": len(pending)}
+    return {"ok": True, "queue": len(pending), "train_queue": len(train_pending)}
 
 
 @app.post("/uploads", status_code=201)
@@ -412,15 +444,321 @@ def choose_subject(job_id: str, n: int, body: Click) -> dict:
 
 @app.get("/clips/{clip_id}.json")
 def get_clip(clip_id: str) -> Response:
-    if not re.fullmatch(r"clip_[A-Za-z0-9_-]+", clip_id):
+    return Response(_clip_path(clip_id).read_bytes(), media_type="application/json")
+
+
+# --- Camera clips -------------------------------------------------------------------------------
+
+
+def _number(x) -> bool:
+    return isinstance(x, (int, float)) and not isinstance(x, bool) and math.isfinite(x)
+
+
+def _check_clip(clip) -> str | None:
+    """What is wrong with a PoseClip's shape (docs/contrato.md), or None."""
+    if not isinstance(clip, dict):
+        return "el cuerpo debe ser un PoseClip (un objeto JSON)"
+    if clip.get("skeleton") != "mediapipe33":
+        return 'skeleton debe ser "mediapipe33"'
+    if not _number(clip.get("fps")) or clip["fps"] <= 0:
+        return "fps debe ser un número mayor que 0"
+    frames = clip.get("frames")
+    if not isinstance(frames, list) or len(frames) < 2:
+        return "frames debe tener al menos 2 cuadros"
+    for i, f in enumerate(frames):
+        joints = f.get("joints") if isinstance(f, dict) else None
+        if not isinstance(f, dict) or not _number(f.get("t")) or not isinstance(joints, list) or len(joints) != JOINTS:
+            return f"el cuadro {i} debe tener t y {JOINTS} joints"
+        if not all(isinstance(j, list) and len(j) == 4 and all(_number(v) for v in j) for j in joints):
+            return f"cada joint del cuadro {i} debe ser [x, y, z, visibility]"
+    if not isinstance(clip.get("quality"), dict) or not _number(clip["quality"].get("valid_ratio")):
+        return "falta quality.valid_ratio"
+    return None
+
+
+def _clip_path(clip_id: str) -> Path:
+    if not CLIP_ID.match(clip_id):
         raise HTTPException(404, "el clip no existe")
     path = DATA_DIR / "clips" / f"{clip_id}.json"
     if not path.exists():
         raise HTTPException(404, "el clip no existe")
-    return Response(path.read_bytes(), media_type="application/json")
+    return path
+
+
+@app.post("/clips", status_code=201)
+async def post_clip(request: Request) -> dict:
+    body = bytearray()
+    async for part in request.stream():
+        body += part
+        if len(body) > MAX_CLIP_BYTES:
+            raise HTTPException(413, f"el clip pesa más de {MAX_CLIP_BYTES // 2**20} MB")
+    try:
+        clip = json.loads(body)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        raise HTTPException(400, "el cuerpo no es JSON")
+    problem = _check_clip(clip)
+    if problem:
+        raise HTTPException(400, problem)
+    duration = clip["frames"][-1]["t"] - clip["frames"][0]["t"]
+    if duration > MAX_DURATION_S:
+        raise HTTPException(422, f"el clip dura {duration:.0f} s y el máximo es {MAX_DURATION_S:.0f} s")
+    ratio = clip["quality"]["valid_ratio"]
+    if ratio < MIN_VALID_RATIO:
+        raise HTTPException(422, f"el cuerpo se vio en el {ratio:.0%} de los cuadros y hace falta el {MIN_VALID_RATIO:.0%}: "
+                                 "graba con el cuerpo entero en cuadro")
+    # Ids name files: the browser's id is replaced by the server's own.
+    with lock:
+        (DATA_DIR / "clips").mkdir(parents=True, exist_ok=True)
+        clip_id = _clip_id("camara", DATA_DIR / "clips")
+        clip.update({"id": clip_id, "source": "camera", "source_file": None})
+        (DATA_DIR / "clips" / f"{clip_id}.json").write_text(json.dumps(clip, separators=(",", ":")))
+    return {"clip_id": clip_id}
+
+
+# --- Training queue -----------------------------------------------------------------------------
+
+
+@dataclass
+class Train:
+    id: str
+    clip_id: str
+    duration_s: float
+    total_steps: int = TRAIN_STEPS
+    state: str = "queued"  # queued | running | done | failed
+    stage: str | None = None  # retarget | training | data
+    steps: int = 0
+    steps_per_s: float = TRAIN_STEPS_PER_S
+    followed_s: float | None = None
+    checkpoints: list[dict] = field(default_factory=list)
+    error: str | None = None
+    cancelled: bool = False
+    proc: subprocess.Popen | None = None
+    started_at: str = ""  # UTC ISO, like policy.json created_at: older exports are not this training's
+
+    @property
+    def dir(self) -> Path:
+        return DATA_DIR / "train" / self.id
+
+    def remaining_s(self) -> float:
+        """Seconds until this training is done, if it started now or is running."""
+        if self.state == "done":
+            return 0.0
+        left = (self.total_steps - self.steps) / max(self.steps_per_s, 1.0)
+        return left + (DATA_STAGE_S if self.stage != "data" else DATA_STAGE_S / 2)
+
+    def public(self, position: int, eta_s: float) -> dict:
+        return {
+            "train_id": self.id,
+            "clip_id": self.clip_id,
+            "state": self.state,
+            "position": position,
+            "stage": self.stage,
+            "steps": self.steps,
+            "total_steps": self.total_steps,
+            "followed_s": self.followed_s,
+            "duration_s": self.duration_s,
+            "checkpoints": self.checkpoints,
+            "eta_s": round(eta_s),
+            "error": self.error,
+        }
+
+
+trains: dict[str, Train] = {}
+train_by_clip: dict[str, str] = {}  # a clip queued, running or done is not trained twice
+train_work: queue.Queue[str] = queue.Queue()
+train_pending: list[str] = []
+running_train: list[str] = []  # 0 or 1 id
+
+
+class StageFailed(RuntimeError):
+    pass
+
+
+def _run_stage(t: Train, stage: str, cmd: list[str], watch=None) -> None:
+    """Runs one step of the chain as a subprocess in its own process group (training spawns worker
+    processes, and cancelling must stop them all), logging to train/<id>/<stage>.log."""
+    t.stage = stage
+    log_path = t.dir / f"{stage}.log"
+    with open(log_path, "w") as log:
+        t.proc = subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        while t.proc.poll() is None:
+            time.sleep(TRAIN_POLL_S)
+            if watch:
+                watch()
+    code, t.proc = t.proc.returncode, None
+    if watch:
+        watch()
+    if t.cancelled:
+        raise StageFailed("cancelado")
+    if code != 0:
+        tail = log_path.read_text(errors="replace").strip().splitlines()[-1:] or ["sin salida"]
+        raise StageFailed(f"falló la etapa {stage} (código {code}): {tail[0][:300]}")
+
+
+def _read_progress(t: Train) -> None:
+    """Steps from training/runs/<id>/progress.csv and checkpoints from the exported policy .json files."""
+    csv_path = ROOT / "training" / "runs" / t.id / "progress.csv"
+    if csv_path.exists():
+        rows = list(csv.DictReader(csv_path.read_text().splitlines()))
+        if rows:
+            t.steps = min(int(rows[-1]["step"]), t.total_steps)
+            seconds = float(rows[-1]["seconds"])
+            if seconds > 0:
+                t.steps_per_s = int(rows[-1]["step"]) / seconds
+    found = []
+    for path in (DATA_DIR / "policies").glob(f"{t.clip_id}-step-*.json"):
+        try:
+            meta = json.loads(path.read_text())
+        except json.JSONDecodeError:  # being written right now
+            continue
+        if not path.with_suffix(".onnx").exists() or meta.get("created_at", "") < t.started_at:
+            continue  # a leftover of an earlier training of the same clip
+        found.append(meta)
+    found.sort(key=lambda m: m["steps"])
+    t.checkpoints = [{"steps": m["steps"], "policy_id": m["id"]} for m in found]
+    if found:
+        t.followed_s = found[-1].get("followed_s")
+        t.duration_s = found[-1].get("duration_s", t.duration_s)
+
+
+def _train(t: Train) -> None:
+    for sub in ("motions", "policies", "datasets"):
+        (DATA_DIR / sub).mkdir(parents=True, exist_ok=True)
+    t.dir.mkdir(parents=True, exist_ok=True)
+    clip = DATA_DIR / "clips" / f"{t.clip_id}.json"
+    motion = DATA_DIR / "motions" / f"{t.clip_id}.json"
+    policies = DATA_DIR / "policies"
+    _run_stage(t, "retarget", ["node", "physics/scripts/retarget-clip.mjs", str(clip), "--out", str(motion.parent)])
+    _run_stage(t, "training", [
+        "uv", "run", "--project", "training", "python", "-m", "training.ppo", "--task", "mimic",
+        "--motion", str(motion), "--run", t.id, "--steps", str(t.total_steps), "--every", str(TRAIN_EVERY),
+        "--export-dir", str(policies), "--policy-prefix", t.clip_id,
+    ], lambda: _read_progress(t))
+    if not t.checkpoints:
+        raise StageFailed("el entrenamiento terminó sin exportar ninguna política")
+    t.steps = t.total_steps
+    final = policies / f"{t.checkpoints[-1]['policy_id']}.json"
+    _run_stage(t, "data", [
+        "uv", "run", "--project", "training", "python", "-m", "training.rollout", str(final),
+        "--motion", str(motion), "--episodes", str(ROLLOUT_EPISODES),
+        "--out", str(DATA_DIR / "datasets" / f"{t.clip_id}.zip"),
+    ])
+
+
+def _train_worker() -> None:
+    while True:
+        train_id = train_work.get()
+        with lock:
+            if train_id in train_pending:
+                train_pending.remove(train_id)
+            t = trains.get(train_id)
+            if t is None or t.cancelled:
+                continue
+            t.state = "running"
+            running_train.append(t.id)
+        t.started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        try:
+            _train(t)
+            t.state = "done"
+        except Exception as e:  # one broken clip must not stop the queue
+            t.state = "failed"
+            t.error = str(e) if isinstance(e, RuntimeError) else f"error inesperado: {e}"
+            with lock:
+                if train_by_clip.get(t.clip_id) == t.id:
+                    del train_by_clip[t.clip_id]  # a failed clip can be trained again
+        finally:
+            with lock:
+                running_train.clear()
+
+
+def _position_eta(t: Train) -> tuple[int, float]:
+    with lock:
+        ahead = train_pending.index(t.id) if t.id in train_pending else 0
+        before = [trains[i] for i in running_train if i != t.id] + [trains[i] for i in train_pending[:ahead]]
+    if t.state in ("done", "failed"):
+        return 0, 0.0
+    return ahead, sum(o.remaining_s() for o in before) + t.remaining_s()
+
+
+@app.post("/clips/{clip_id}/train", status_code=202)
+def train_clip(clip_id: str) -> dict:
+    path = _clip_path(clip_id)
+    with lock:
+        existing = train_by_clip.get(clip_id)
+        if existing:
+            return {"train_id": existing}
+        if len(train_pending) >= TRAIN_WAITING:
+            raise HTTPException(409, f"la cola de entrenamiento está llena ({TRAIN_WAITING} en espera): prueba en un rato")
+    clip = json.loads(path.read_text())
+    ratio = clip.get("quality", {}).get("valid_ratio", 0)
+    if ratio < MIN_VALID_RATIO:
+        raise HTTPException(422, f"el cuerpo se vio en el {ratio:.0%} de los cuadros y hace falta el {MIN_VALID_RATIO:.0%} para entrenar")
+    frames = clip["frames"]
+    t = Train(uuid.uuid4().hex, clip_id, round(frames[-1]["t"] - frames[0]["t"], 2))
+    with lock:
+        trains[t.id] = t
+        train_by_clip[clip_id] = t.id
+        train_pending.append(t.id)
+    train_work.put(t.id)
+    return {"train_id": t.id}
+
+
+@app.get("/train/{train_id}")
+def get_train(train_id: str) -> dict:
+    t: Train = _get(trains, train_id, "el entrenamiento")
+    return t.public(*_position_eta(t))
+
+
+@app.delete("/train/{train_id}", status_code=204)
+def cancel_train(train_id: str) -> Response:
+    t: Train = _get(trains, train_id, "el entrenamiento")
+    t.cancelled = True
+    with lock:
+        if train_id in train_pending:
+            train_pending.remove(train_id)
+        if train_by_clip.get(t.clip_id) == t.id:
+            del train_by_clip[t.clip_id]
+        del trains[train_id]
+    proc = t.proc
+    if proc and proc.poll() is None:
+        os.killpg(proc.pid, signal.SIGTERM)  # the worker sees `cancelled` and moves on
+    return Response(status_code=204)
+
+
+# --- What training made -------------------------------------------------------------------------
+
+
+def _served(folder: str, name: str, pattern: re.Pattern, what: str) -> Path:
+    stem = name.rsplit(".", 1)[0]
+    path = DATA_DIR / folder / name
+    if not pattern.match(stem) or not path.exists():
+        raise HTTPException(404, f"{what} no existe")
+    return path
+
+
+@app.get("/motions/{clip_id}.json")
+def get_motion(clip_id: str) -> FileResponse:
+    return FileResponse(_served("motions", f"{clip_id}.json", CLIP_ID, "el movimiento"), media_type="application/json")
+
+
+@app.get("/policies/{policy_id}.onnx")
+def get_policy_onnx(policy_id: str) -> FileResponse:
+    return FileResponse(_served("policies", f"{policy_id}.onnx", POLICY_ID, "la política"), media_type="application/octet-stream")
+
+
+@app.get("/policies/{policy_id}.json")
+def get_policy_json(policy_id: str) -> FileResponse:
+    return FileResponse(_served("policies", f"{policy_id}.json", POLICY_ID, "la política"), media_type="application/json")
+
+
+@app.get("/datasets/{clip_id}.zip")
+def get_dataset(clip_id: str) -> FileResponse:
+    path = _served("datasets", f"{clip_id}.zip", CLIP_ID, "el dataset")
+    return FileResponse(path, media_type="application/zip", filename=f"{clip_id}.zip")
 
 
 threading.Thread(target=_worker, daemon=True, name="tridi-worker").start()
+threading.Thread(target=_train_worker, daemon=True, name="tridi-train-worker").start()
 threading.Thread(target=_janitor, daemon=True, name="tridi-janitor").start()
 
 
@@ -432,7 +770,7 @@ def main() -> None:
     p.add_argument("--port", type=int, default=int(os.environ.get("PORT", 8000)))
     p.add_argument("--host", default=os.environ.get("HOST", "127.0.0.1"))
     args = p.parse_args()
-    for sub in ("uploads", "jobs", "clips"):
+    for sub in ("uploads", "jobs", "clips", "motions", "policies", "datasets", "train"):
         (DATA_DIR / sub).mkdir(parents=True, exist_ok=True)
     print(json.dumps({"data_dir": str(DATA_DIR), "cors": CORS_ORIGINS}))
     uvicorn.run(app, host=args.host, port=args.port)

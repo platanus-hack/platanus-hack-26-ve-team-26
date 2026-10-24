@@ -28,6 +28,7 @@ La web sube videos al servidor ([`server.py`](server.py)), que los procesa en co
 data/serve.sh             # servidor en la Mac + túnel; imprime y copia el link de la web con ?api=<túnel>
 uv run --project data python -m data.server              # solo el servidor, en http://127.0.0.1:8000
 uv run --project data python -m data.check_server video1.mp4 video2.mp4  # prueba de punta a punta
+uv run --project data python -m data.check_training  # clips de la cámara y cola de entrenamiento, con la cadena real (~20 s)
 ```
 
 - **Dónde corre:** en la Mac de Juan (MPS: ~40 s por video de 10 s) con un túnel rápido de Cloudflare (`brew install cloudflared`). El túnel no pide cuenta, pero **su URL cambia cada vez que arranca**: por eso la web la lee de `?api=` y `serve.sh` imprime el link listo. Antes de la demo: correr `data/serve.sh` y abrir ese link en la pantalla del stand. El mismo código corre en Render (lee `PORT`) si después hace falta, pero sin GPU es varias veces más lento.
@@ -35,6 +36,7 @@ uv run --project data python -m data.check_server video1.mp4 video2.mp4  # prueb
 - **Límites por estar en internet:** 60 MB por subida (`TRIDI_MAX_UPLOAD_MB`) y 30 s por video (`TRIDI_MAX_DURATION_S`), solo extensiones de video o `.zip`, ids aleatorios validados, y CORS solo para la web desplegada y los servidores de desarrollo (`TRIDI_CORS_ORIGINS`).
 - **Solo se guardan los `PoseClip`:** el video se borra al fallar o cancelar, y a los 10 minutos de terminar (el tiempo para elegir a otra persona). Topes: 60 MB por subida y 30 s por video ([decisión](../docs/decisiones/2026-10-24-servidor-de-video-en-la-mac.md)).
 - **Los trabajos viven en memoria:** si el servidor se reinicia, la web pierde el progreso de lo que estaba en cola. Los clips quedan en `data/server_data/clips/` (no se versiona).
+- **Clips de la cámara y entrenamiento:** `POST /clips` recibe el `PoseClip` de la cámara (5 MB, 30 s y `valid_ratio` ≥ 0,8; el servidor le pone su propio id). `POST /clips/{clip_id}/train` lo pone en una **cola aparte** de la de videos: de a uno y 3 en espera (`TRIDI_TRAIN_WAITING`). Cada entrenamiento corre como subprocesos `node physics/scripts/retarget-clip.mjs --out` → `training.ppo --task mimic --motion` (exporta cada checkpoint a ONNX al guardarlo, cada `TRIDI_TRAIN_EVERY` pasos) → `training.rollout`, con logs en `server_data/train/<train_id>/`. El progreso sale de `progress.csv` y de los `.json` exportados (`followed_s`). Resultados en `server_data/motions/`, `policies/` y `datasets/`, servidos por los `GET` del contrato. `TRIDI_TRAIN_STEPS` (20 M por defecto, ~30 min en una M2) baja el presupuesto para probar.
 
 ## Cómo funciona
 
