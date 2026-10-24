@@ -2,7 +2,7 @@
 
 - **Fecha:** 2026-10-24 · **Quién:** Pastor · **Estado:** propuesta aprobada por Pastor; falta revisarla con Juan, César y Ale.
 
-Cuenta el producto en un solo texto para leer en voz alta. No está cronometrado: el guion con tiempos es [`guion-3-minutos.md`](guion-3-minutos.md) (Ale), y este texto sirve para ajustarlo. Respeta [Lo que NO podemos decir](diferencia.md#lo-que-no-podemos-decir).
+Cuenta el producto en un solo texto para leer en voz alta. No está cronometrado: el guion con tiempos es [`guion-3-minutos.md`](guion-3-minutos.md) (Ale), y este texto sirve para ajustarlo. Respeta [Lo que NO podemos decir](diferencia.md#lo-que-no-podemos-decir). Cómo se construye: [`../plan-producto.md`](../plan-producto.md).
 
 ## El pitch
 

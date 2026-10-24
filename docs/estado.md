@@ -13,7 +13,8 @@ Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, rend
 - **Funciona:** el G1 en MuJoCo WASM dentro del navegador, con three.js, a tiempo real ([`physics/README.md`](../physics/README.md)). Sobre eso: `view.mimic(pose)` (copia a una persona desde la cámara), `view.playClip(motion)` (reproduce un `RobotMotion`, con el reloj de la web), `view.loadPolicy(onnx, json)` (una política de `training/`: se equilibra y se recupera de empujones; la v2 aguanta los 250 N del botón desde los cuatro lados) y `npm run retarget` (un `PoseClip` completo → `physics/motions/`, con recorrido y rumbo de la pelvis). `npm run check` prueba física, retargeting y política en Node. **Integrado en `web/`:** la pantalla de simulaciones muestra al robot repitiendo el clip junto al esqueleto, con la política cargada (Empujar y un selector de checkpoints). **Deploy:** https://tridi-alpha.vercel.app.
 - **En curso:** —
 - **Bloqueado por:** nada. Falta probar `mimic` con una webcam real.
-- **Sigue:** probar `mimic` (pantalla En vivo) con una webcam real.
+- **Propuesta para los 4:** [pitch del producto](pitch/pitch-producto.md) (Physical AI: video → robot que aprende el movimiento por imitación en mundos variados → política + datos) y su [plan técnico](plan-producto.md), con el flujo completo, el despliegue, los cambios de contrato y las tareas de cada uno por horario. Falta que Juan, César y Ale lo acepten.
+- **Sigue:** P1 y P2 del plan (el navegador corre políticas de imitación, con prueba contra Python), P4, y después los mundos (P3). Probar `mimic` (pantalla En vivo) con una webcam real.
 
 ---
 

@@ -16,6 +16,7 @@ Comparar el repo con la visión del producto: video o cámara → esqueleto 3D �
 
 - Revisión de `docs/estado.md`, las bitácoras, el contrato, `physics/`, `training/` y `web/`, incluido el commit `5f29ace` de Juan (imitación), que está en `origin/main` y todavía no en esta rama.
 - Pitch del producto en [`../pitch/pitch-producto.md`](../pitch/pitch-producto.md), con una tabla que separa lo que es verdad hoy de lo que es plan. No reemplaza el guion de Ale.
+- Plan técnico en [`../plan-producto.md`](../plan-producto.md): el flujo completo en 7 pasos, dónde corre cada parte, los cambios de contrato propuestos (`POST /clips`, cola de entrenamiento, políticas, datos y mundos) y las tareas J1-J6, P1-P5, C1-C4 y A1-A3 por horario hasta el cierre. Puntero en mi sección de [`../estado.md`](../estado.md).
 
 ## Qué se encontró (para quien siga)
 
@@ -44,10 +45,16 @@ Propuestas por Pastor, pendientes de los otros 3. Cuando se acepten, van a [`../
 - Se entregan dos cosas: la política (ONNX) y los datos corregidos por la física.
 - Cada video del usuario se entrena por imitación, en cola, sin movimientos preentrenados. La cámara empieza a grabar al encenderse.
 - Esquivar obstáculos y probar en un robot real se prometen como lo que sigue, nunca como hechos.
+- Despliegue del plan: todo lo pesado en la Mac de Juan (servidor, extracción, retargeting en Node y entrenamiento de a uno, con tope de cola); la web sigue estática en Vercel. La segunda Mac entrena las precargadas de noche. Sumarla como trabajador remoto queda para después: no hace falta para el domingo.
+- Los mundos se definen una sola vez en `physics/worlds/` y los leen el entrenamiento y la web, para que lo que se ve sea lo que se entrenó.
+- Las precargadas salen del mismo flujo que un video de usuario (no se hacen a mano).
 
 ## Sigue
 
-- Los 4: revisar el pitch. Ale lo pasa al guion de 3 minutos y lo cronometra.
+El detalle, con dueños y horarios, está en [`../plan-producto.md`](../plan-producto.md). En corto:
+
+- Los 4: revisar el pitch y el plan. Ale pasa el pitch al guion de 3 minutos y lo cronometra.
+- Juan y Pastor: el cambio de contrato, primero y en un commit aparte.
 - Juan: que la imitación aprenda, con empujones prendidos; `--motion <ruta>`.
 - Pastor: `policy.js` para políticas de imitación (la observación de 126 de `MimicEnv`, con la referencia suavizada en 0,3 s), probada en `npm run check` contra Python. Antes, traer `5f29ace` a esta rama.
 - Después de que la imitación aprenda: piedras, viento, piso resbaloso y física del robot al azar en `training/env.py` y en la escena de `physics/`.
