@@ -10,8 +10,8 @@ const POLICIES = new URL('../../training/policies/', import.meta.url);
 const FRAME_S = 1 / 60;
 // A fall: pelvis below 0.5 m, the training's own threshold (training/env.py FALL_HEIGHT).
 const FALL_HEIGHT = 0.5;
-// training/README.md measured, over 5 starts of 20 s: no pushes -> stands all 20 s; the four
-// shoves (front, left, back, right) held at 150 N; at the web button's 250 N, 2.2 of 4 on average.
+// training/README.md measured for g1-stand (v2, 40 M steps), over 5 starts of 20 s: it stands all
+// 20 s and holds the four shoves (front, left, back, right) up to 250 N, the web button's force.
 const STAND_SECONDS = 20;
 const PUSH_AT = 4;
 const SIDES = [['front', 0], ['left', Math.PI / 2], ['back', Math.PI], ['right', -Math.PI / 2]];
@@ -54,7 +54,7 @@ sim.policy = ids['g1-stand'];
   expect(fell === null, `stands ${STAND_SECONDS} s with no pushes${fell === null ? '' : ` (fell at ${fell.toFixed(1)} s)`}`);
   expect(Math.abs(sim.bodyPosition('pelvis')[2] - 0.78) < 0.05, `pelvis at ${sim.bodyPosition('pelvis')[2].toFixed(2)} m, standing height`);
 }
-for (const [newtons, atLeast] of [[150, 4], [250, 2]]) {
+for (const [newtons, atLeast] of [[150, 4], [250, 4]]) {
   const held = [];
   for (const [side, angle] of SIDES) if ((await run(STAND_SECONDS, { pushAt: PUSH_AT, angle, newtons })) === null) held.push(side);
   expect(held.length >= atLeast, `takes a ${newtons} N shove from ${held.length} of 4 sides, at least ${atLeast} (${held.join(', ') || 'none'})`);

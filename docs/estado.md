@@ -10,10 +10,10 @@ Dónde está cada parte **ahora**. Es lo primero que lee un agente al empezar. C
 
 Escena MuJoCo, robot Unitree G1, retargeting de `PoseClip` a `RobotMotion`, render three.js; arranca `training/` ([decisión](decisiones/2026-10-23-robot-g1.md)).
 
-- **Funciona:** el G1 en MuJoCo WASM dentro del navegador, con three.js, a tiempo real ([`physics/README.md`](../physics/README.md)). Sobre eso: `view.mimic(pose)` (copia a una persona desde la cámara), `view.playClip(motion)` (reproduce un `RobotMotion`, con el reloj de la web), `view.loadPolicy(onnx, json)` (una política de `training/`: se equilibra y se recupera de empujones, 150 N de los cuatro lados y 250 N de tres) y `npm run retarget` (un `PoseClip` completo → `physics/motions/`, con recorrido y rumbo de la pelvis). `npm run check` prueba física, retargeting y política en Node. **Integrado en `web/`:** la pantalla de simulaciones muestra al robot repitiendo el clip junto al esqueleto, con la política cargada (Empujar y un selector de checkpoints). **Deploy:** https://tridi-alpha.vercel.app.
+- **Funciona:** el G1 en MuJoCo WASM dentro del navegador, con three.js, a tiempo real ([`physics/README.md`](../physics/README.md)). Sobre eso: `view.mimic(pose)` (copia a una persona desde la cámara), `view.playClip(motion)` (reproduce un `RobotMotion`, con el reloj de la web), `view.loadPolicy(onnx, json)` (una política de `training/`: se equilibra y se recupera de empujones; la v2 aguanta los 250 N del botón desde los cuatro lados) y `npm run retarget` (un `PoseClip` completo → `physics/motions/`, con recorrido y rumbo de la pelvis). `npm run check` prueba física, retargeting y política en Node. **Integrado en `web/`:** la pantalla de simulaciones muestra al robot repitiendo el clip junto al esqueleto, con la política cargada (Empujar y un selector de checkpoints). **Deploy:** https://tridi-alpha.vercel.app.
 - **En curso:** —
 - **Bloqueado por:** nada. Falta probar `mimic` con una webcam real.
-- **Sigue:** con Juan, que el botón Empujar (250 N) salga bien siempre; probar `mimic` (pantalla En vivo) con una webcam real.
+- **Sigue:** probar `mimic` (pantalla En vivo) con una webcam real.
 
 ---
 

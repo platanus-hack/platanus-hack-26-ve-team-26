@@ -87,14 +87,14 @@ view.reset(); // de pie otra vez
 
 | Prueba | Resultado |
 | --- | --- |
-| `g1-stand` sin empujones | Se sostiene los 20 s, pelvis a 0,78 m |
-| Empujón de 150 N (de frente, izquierda, atrás y derecha) | Aguanta los cuatro (Juan: los cuatro) |
-| Empujón de 250 N, el del botón | Aguanta 3 de 4 (Juan: 2,2 de 4 de media) |
+| `g1-stand` (v2, 40 M de pasos) sin empujones | Se sostiene los 20 s, pelvis a 0,78 m |
+| Empujón de 150 N (de frente, izquierda, atrás y derecha) | Aguanta los cuatro |
+| Empujón de 250 N, el del botón | Aguanta los cuatro (Juan: los cuatro; con la v1 eran 2,2 de 4) |
 | `g1-stand-step-0`, sin entrenar | Se cae a los 1,2 s (Juan: 1,1 s): la prueba sí puede fallar |
 
-En el navegador, lo mismo: 150 N aguantado desde los cuatro lados.
+En el navegador, con la v1: 150 N aguantado desde los cuatro lados.
 
-**Riesgo para el pitch: el botón empuja con 250 N, y a esa fuerza todavía se cae desde algunas direcciones** (en las pruebas, desde la izquierda). Con 150 N aguanta siempre. Si el momento central de la demo tiene que salir bien, o se entrena más, o el botón empuja menos (`PUSH_NEWTONS` en `src/sim.js`).
+**El botón Empujar (250 N) lo aguanta, con una excepción.** Desde las cuatro direcciones de las pruebas lo aguanta todo, y probado desde 60 direcciones repartidas alrededor del robot aguanta 56 (93 %): las 4 que fallan son seguidas, de 186° a 204° (un sector de unos 20° por detrás), así que el botón, que empuja en una dirección cualquiera, derriba al robot más o menos 1 de cada 15 veces. Es la política `g1-stand`, la política que Juan entrenó en dos vueltas (la primera solo aguantaba 2,2 de 4: es el escalón de 20 M de la escalera). Con 300 N aguanta 3,2 de 4 y con 350 N, 1,2.
 
 ## Un clip completo: `RobotMotion`
 
