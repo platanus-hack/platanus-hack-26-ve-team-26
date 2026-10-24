@@ -174,7 +174,7 @@ export function mountStage(root) {
       setRobotLabel('No se pudo cargar lo que aprendió el robot.');
     } finally {
       $('policy').disabled = false;
-      root.querySelector('.push').disabled = false;
+      root.querySelector('.push').disabled = !robot.view; // never before the robot is there
     }
     // The user may have picked another clip while it loaded: an imitation is only for its own clip.
     if (imitating() && imitationOf(level).clip !== current?.clip.id) {
@@ -201,7 +201,7 @@ export function mountStage(root) {
       setRobotLabel('No se pudo cambiar de mundo.');
     } finally {
       $('world').disabled = false;
-      root.querySelector('.push').disabled = false;
+      root.querySelector('.push').disabled = !robot.view; // never before the robot is there
     }
     copying = false;
     syncSliders(); // the new world's own values
@@ -226,7 +226,7 @@ export function mountStage(root) {
       setRobotLabel('No se pudo armar el lugar.');
     } finally {
       $('place').disabled = false;
-      root.querySelector('.push').disabled = false;
+      root.querySelector('.push').disabled = !robot.view; // never before the robot is there
     }
     copying = false;
     resume();
