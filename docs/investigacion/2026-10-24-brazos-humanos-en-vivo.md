@@ -1,6 +1,6 @@
 # En vivo: que el robot mueva los brazos como una persona (planning)
 
-- **Fecha:** 2026-10-24 · **Quién:** Juan (con Claude) · **Estado:** plan, **para repartir**
+- **Fecha:** 2026-10-24 · **Quién:** Juan (con Claude) · **Estado:** hecho salvo B7 (ver "Resultado" al final)
 
 Por qué importa: lo que el G1 copia en "En vivo" es lo que se graba como `PoseClip` y entrena la política. Si el robot no ve hacia dónde mira la palma, o confunde "subo el codo" con "bajo la mano", el dato con el que aprende está mal, y ningún entrenamiento lo arregla después. Este documento sigue a [`2026-10-24-manos-y-dedos-en-vivo.md`](2026-10-24-manos-y-dedos-en-vivo.md): de esa lista ya están hechos el giro del hombro de frente (`SHOULDER_TWIST_FACING`), el doblez de la muñeca, los 60 fps, el filtro doble y los choques de manos (`clearance.js`).
 
@@ -78,3 +78,21 @@ Fuera de alcance (el G1 no lo tiene): encoger los hombros (no hay escápula), mo
 - **El pulgar de la pose (21/22) es el punto más débil** de MediaPipe Pose; con el puño cerrado o de perfil puede no verse. B1 debe caer a "mantener el último giro" y no a 0.
 - **Calibrar huesos (B2)** falla si la persona arranca con el brazo hacia la cámara: pedir los brazos abiertos al inicio, o tomar el máximo de los primeros segundos.
 - Cada costo nuevo del IK cuesta tiempo por cuadro: medir que En vivo siga sobre 30 fps con `fps()`.
+
+---
+
+## Resultado (24/10, noche)
+
+| # | Estado | Qué quedó |
+| --- | --- | --- |
+| B0 | hecho | `physics/scripts/check-gestures.mjs` en `npm run check`: 13 casos sintéticos con manos (palmas en 5 orientaciones, con ruido de profundidad, alas, codos hacia la cámara, golpe, saludo, modelo de manos, brazo oculto). Faltan los clips reales de webcam para comparar |
+| B1 | hecho | `wrist_roll` entra a la mano y un costo por la normal de la palma (meñique → índice y pulgar). Antes: 8 de 8 casos de palmas fallaban (78–102° de error); ahora todos bajo 45°, el peor con 2 cm de ruido es 35° |
+| B2 | hecho | `data/live/src/bones.js`: el largo de cada segmento del brazo se aprende y la profundidad que falta vuelve (`check-bones`: un codo que MediaPipe da a 8,7 cm adelante vuelve a 29). Entra al `PoseClip` grabado |
+| B3 | no hizo falta | Con geometría exacta, alas y codos hacia la cámara ya pasaban: el problema era la profundidad (B2) y el espejo (B4), no el peso del IK |
+| B4 | hecho | El brazo oculto solo se espeja de perfil (de frente inventaba 22 cm de balanceo, medido). `mimic()` devuelve `fixes`; `?debug` en la dirección muestra distancia y arreglos en En vivo |
+| B5 | ya estaba | El `PoseClip` ya guarda la visibilidad por punto, y el retargeting deja quieto lo que no ve. Además los clips de cámara ahora se reapuntan con palmas y muñecas (`motion.js`), así entrenan con lo que el robot hizo |
+| B6 | hecho | Casilla "Seguir las palmas de cerca" en En vivo (solo laptop): `HandLandmarker` junto a la pose, cada mano a la muñeca más cercana, y la palma sale de sus 21 puntos |
+| B7 | pendiente | Dedos Dex3: suma ~20 MB de mallas justo después de bajar las del G1 a 4,3 MB, y toca el visor. Para decidir |
+| B8 | hecho | Pecho en `clearance.js`: el hombro va hacia adelante hasta que la mano queda 5 cm delante (66° en el peor caso, medido) |
+
+**Falta probar con webcam real** (en el panel de Claude no hay cámara ni pudo abrirse el servidor): palmas adelante/atrás, codos hacia la cámara, brazos cruzados, y la casilla de manos a 1–1,5 m. Abrir con `?debug` y mirar la línea de arreglos.
