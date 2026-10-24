@@ -6,7 +6,7 @@ inicio: 2026-10-24 01:10
 estado: en curso
 ---
 
-# La competencia, dentro del skill
+# La competencia en el skill, y la escalera en el guion
 
 ## Objetivo
 
@@ -35,8 +35,20 @@ Que el estudio de los otros equipos no dependa de que alguien se acuerde de pedi
 - **El skill nombra la rutina pero no el contenido.** Este repo es público: el skill dice que la pasada existe y cómo correrla; las fichas de los rivales y las recomendaciones de pitch se quedan en platanus-ideas. Ale lo pidió explícitamente sabiendo que el skill se publica.
 - El agendado vive en la sesión de Claude Code, no en el sistema: si se cierra, se vuelve a pedir.
 
+## Qué se hizo después (01:50)
+
+- **Borrador 3 del guion** ([`pitch/guion-3-minutos.md`](../pitch/guion-3-minutos.md)): el bloque de la escalera con los números medidos de `training/README.md`, su tabla de checkpoints y la cuenta de dónde sale "decenas de miles de caídas". Recronometrado: 151 s de habla + 24 s de pantalla = 175 s, con 5 s de margen (antes 143 + 29).
+- El bloque del empujón pasó de "se cae" a **comparación**: la política v2 aguanta los cuatro empujones de 250 N, así que se empuja al entrenado (aguanta) y al sin entrenar (se cae). Hoja de cola actualizada.
+- Salió del guion la frase de los pasos de física por segundo hasta que Pastor confirme el número con una política cargada: `physics/` va a 2 ms, pero la política decide cada 20 ms sobre `scene_mjx.xml`, que usa pasos de 4 ms.
+- [`pitch/diferencia.md`](../pitch/diferencia.md): la recomendación 1 queda marcada como hecha con los números reales, y se agregó a "lo que NO podemos decir" la frase *"el robot aprendió a caminar con tu video"*.
+
+## Decisión de contenido
+
+**La escalera se cuenta por lo que es: aprender a sostenerse de pie y aguantar empujones, no imitar el clip.** El borrador 2 decía "el robot intentó parecerse a ese video"; `training/env.py` entrena otra cosa (recompensa de erguido, altura, pose y quietud) y la imitación de hoy es retargeting cinemático. Con un jurado que interroga a un agente dentro del repo, esa frase era un error verificable.
+
 ## Sigue
 
-- Decidir el empujón de la demo: la política aguanta los cuatro empujones de 150 N pero solo 2,2 de 4 a 250 N, y el botón de `physics/` empuja con 250 N. O el botón de la demo baja a 150 N, o el guion asume la caída.
-- Actualizar el guion con la escalera real (0 / 3M / 10M / 20M pasos, 38,5 min en una M2); `pitch/diferencia.md` todavía dice 0/1k/10k/100k.
+- ~~Decidir el empujón de la demo.~~ Resuelto por la política v2: aguanta los cuatro de 250 N, que es lo que empuja el botón de la web. Si alguna vez se quiere una caída del entrenado en vivo, hay que subir a 350 N (ahí aguanta 1,2 de 4).
+- **Para César:** la vista de los cuatro checkpoints lado a lado en `web/`. Hoy `view.loadPolicy` corre una política, no cuatro. Es el plano que más vale del pitch y el guion ya lo da por hecho a los 0:16.
+- **Para Pastor:** confirmar los pasos de física por segundo con una política cargada, para poder decir el número en el bloque del empujón.
 - Idea prestada del equipo 25: una tabla de estado pieza por pieza en el `README.md` de Tridi, porque el jurado y su agente entran por ahí.

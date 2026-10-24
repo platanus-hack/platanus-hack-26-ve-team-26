@@ -1,6 +1,6 @@
 # En qué se diferencia Tridi de lo que ya existe
 
-- **Fecha:** 2026-10-23 · **Quién:** Ale · **Estado:** vigente, para revisar entre los 4
+- **Fecha:** 2026-10-23, actualizado el 24 · **Quién:** Ale · **Estado:** vigente, para revisar entre los 4
 
 Investigación hecha para responder la última línea de la [decisión de la idea](../decisiones/2026-10-23-idea-tridi.md): *"existen trabajos de video → robot. Hay que tener lista la diferencia antes del domingo."* Los jueces buscan en internet y le piden a un agente que busque ([capítulo 10](../../../platanus-ideas/docs/preparacion/10-bienvenida-caracas.md): originalidad, 15 %). Esto es lo que van a encontrar y qué contestamos.
 
@@ -90,13 +90,16 @@ Es la diferencia más chica y la **más fácil de demostrar en 15 segundos**: se
 | "No necesitas GPU ni cuenta" | Tampoco en Ultimate Bots | Usarlo como comodidad, nunca como diferencia |
 | "Tenemos nuestro propio motor de física" | `physics/package.json` declara `@mujoco/mujoco` 3.16.0 y el G1 es el de MuJoCo Menagerie **sin cambios**. El agente del juez lo ve en diez segundos, y ahí se cae todo lo demás que digamos | "El solver es MuJoCo, como en todos. El simulador —escena, visor, lazo, test de física y entorno de entrenamiento— es nuestro" |
 | "Un LLM aprende a caminar" | Es falso y es la frase que más rápido nos hunde con un jurado técnico | "Una política neuronal pequeña, entrenada por imitación y refuerzo" |
-| "El robot aprendió en vivo" (si mostramos un checkpoint) | El entrenamiento real toma horas en Mac | "Esto se entrenó anoche en esta laptop, en X minutos y Y pasos; lo que ven ahora es la política entrenada" |
+| "El robot aprendió en vivo" (si mostramos un checkpoint) | El entrenamiento real toma horas en Mac | "Esto se entrenó anoche en esta laptop: cuarenta millones de pasos, setenta y tres minutos; lo que ven ahora es la política entrenada" |
+| "El robot aprendió a caminar con tu video" | Falso hoy: la política entrenada es de **sostenerse de pie y aguantar empujones**, y lo que sigue al video es retargeting cinemático. `training/env.py` lo dice en su tabla de recompensa | "Con tu video el robot se mueve por retargeting. Lo que aprendió solo, con refuerzo, es a sostenerse y a aguantar que lo empujen" |
 
 ## Lo que hace falta para que la diferencia sea verdad
 
 Para Pastor, Juan y César, en orden de cuánto le suman al pitch:
 
-1. **Un checkpoint intermedio guardado, no solo el final** (Pastor / training): con 4 checkpoints (0, 1k, 10k, 100k pasos) se arma *la escalera del aprendizaje*: cuatro robots lado a lado con el mismo clip, el primero se cae de una, el último aguanta. **Es el mejor plano del pitch, es 3D puro y es la prueba visual de que entrenamos.** Nadie lo muestra. Cuesta guardar un archivo cada tanto.
+1. ~~**Un checkpoint intermedio guardado, no solo el final**~~ **Hecho** (Pastor, 24 de octubre): están los cuatro ONNX en `training/policies/` y `view.loadPolicy` los corre en el navegador. Los números medidos, que son los que va al guion: sin entrenar se cae a 1,1 s y no aguanta ningún empujón; a 3 M pasos, 4,2 s; a 10 M, 9,6 s y 1,2 empujones de 4; a 20 M, 13,4 s y 2,2; la política de hoy (40 M, dos vueltas de 38,5 y 34,5 min en una M2) aguanta los 20 s completos y los cuatro empujones de 250 N. **Es el mejor plano del pitch y nadie lo muestra.** Lo que falta es de César: la vista de los cuatro lado a lado en `web/`.
+
+   Dos precisiones que el guion ya recoge y que no hay que decir mal, porque el agente del juez abre `training/`: la escalera es de **sostenerse de pie y aguantar empujones**, no de imitar el clip (la imitación de hoy es retargeting, cinemática); y el empujón de 250 N de la web ya **no tumba** a la política entrenada, así que el plano es la comparación contra la sin entrenar, no una caída.
 2. **Una política entrenada con más de un clip** (training): es el punto 2 de arriba, nuestra ambición (20 %).
 3. **El botón de empujar, visible y sin scroll en la app desplegada** (César): `physics/` ya lo expone como `view.push()`. Es cuatro segundos del pitch y es lo que convierte "miren el robot" en "empújenlo ustedes". Cuando haya política, el mismo botón demuestra que aprendió a recuperarse.
 4. **Un video difícil en la galería de precargadas** (Juan / César): varias personas, para el punto 4.
