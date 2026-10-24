@@ -5,6 +5,7 @@ import { BODY, MIN_VISIBILITY, buildPoseClip } from './poseclip.js';
 
 export { buildPoseClip } from './poseclip.js';
 export { drawSkeleton } from './draw.js';
+export { checkApi, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, uploadVideo, watchJob } from './upload.js';
 
 // The WASM runtime and the models come from their official hosts, pinned to the package version
