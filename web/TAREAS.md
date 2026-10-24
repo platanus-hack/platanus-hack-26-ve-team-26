@@ -10,15 +10,15 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M0. Base (bloquea todo lo demás)
 
-- [x] **W0.1 Proyecto.** Vite + React + TypeScript en `web/`, con scripts `dev`, `build` y `lint`.
-- [ ] **W0.2 Deploy temprano.** Publicar en Vercel una página vacía y poner la URL real en `deploy-url` de `platanus-hack-project.jsonc`. Depende de cómo se espeje el repo (ver preguntas abiertas).
-- [~] **W0.3 Tipos del contrato.** Copia provisional del borrador en `web/src/contract.ts`. Cuando el contrato pase a "vigente", se mueve al archivo de tipos compartido en un commit de contrato aparte, y se agrega el manifiesto de precargadas.
+- [x] **W0.1 Proyecto.** JavaScript y three.js sin framework; Vite solo para desarrollar y empaquetar a un `dist/` estático ([decisión](../docs/decisiones/2026-10-23-web-sin-framework.md)).
+- [ ] **W0.2 Deploy temprano.** Publicar `web/dist/` en el host que elija Pastor y poner la URL real en `deploy-url` de `platanus-hack-project.jsonc`.
+- [~] **W0.3 Tipos del contrato.** Copia provisional del borrador, como JSDoc, en `web/src/contract.js`. Cuando el contrato pase a "vigente", se mueve al archivo de tipos compartido en un commit de contrato aparte, y se agrega el manifiesto de precargadas.
 - [x] **W0.4 Datos falsos.** `web/public/preloaded/clip_synthetic_march_01.json`: 2,4 s de una persona marchando en el lugar, generado por `web/scripts/make-synthetic-clip.mjs`.
 
 ## M1. Layout y estados
 
-- [ ] **W1.1 Pantalla única.** El visor ocupa casi toda la pantalla; al costado, un panel con tres pestañas: Capturar, Subir y Galería. Los botones principales se ven sin hacer scroll, también en el proyector.
-- [ ] **W1.2 Máquina de estados.** `idle → capturando | subiendo → procesando → en cola → listo`, y `error` desde cualquiera. Un solo store, para que cada pantalla sepa qué mostrar.
+- [ ] **W1.1 Pantalla única.** HTML y CSS a mano. El visor ocupa casi toda la pantalla; al costado, un panel con tres pestañas: Capturar, Subir y Galería. Los botones principales se ven sin hacer scroll, también en el proyector.
+- [ ] **W1.2 Máquina de estados.** `idle → capturando | subiendo → procesando → en cola → listo`, y `error` desde cualquiera. Un objeto de estado con suscriptores en JS plano, para que cada panel sepa qué mostrar.
 
 ## M2. Galería de precargadas (lo que se ve siempre)
 
@@ -28,7 +28,7 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 ## M3. Visor de la simulación (junto con Pastor)
 
-- [ ] **W3.1 Interfaz con `physics/`.** Acordar con Pastor algo como `createSimView(canvas) → { loadClip, loadPolicy, play, pause, setSpeed, dispose }`. Pastor pone la escena, el robot y el render; la web pone el canvas y los controles.
+- [ ] **W3.1 Interfaz con `physics/`.** Pastor ya la publicó: `createSimView(canvas, { onProgress, onStats })` con `play`, `pause`, `setSpeed`, `reset`, `push` y `dispose` ([`physics/README.md`](../physics/README.md)). Falta importarla en la web; `loadClip` y `loadPolicy` llegan después.
 - [ ] **W3.2 Visor provisional.** Esqueleto del `PoseClip` en three.js, para tener algo que mostrar antes de que exista el robot.
 - [ ] **W3.3 Controles.** Play y pausa, velocidad, reiniciar, cámara orbital, y ver humano, robot o los dos lado a lado.
 - [ ] **W3.4 Carga pesada.** MuJoCo WASM, onnxruntime-web y la política se descargan con barra de progreso, y la precargada ya visible no se corta.
@@ -68,7 +68,7 @@ Estado de cada tarea: `[ ]` pendiente, `[~]` en curso, `[x]` lista.
 
 | De | Qué | Para |
 | --- | --- | --- |
-| Pastor | Interfaz del visor (W3.1) y escena MuJoCo WASM | M3 |
+| Pastor | Host del deploy (W0.2); `loadClip` y `loadPolicy` en `createSimView` | W0.2, M3 |
 | Juan | Módulo de pose en vivo y endpoint para subir y procesar | M4, M5, M6 |
 | `training/` | Una `policy.onnx` de prueba, aunque sea mala | W3.4 |
 | Los 4 | Contrato aceptado y formato del manifiesto de precargadas | W0.3, W2.1 |

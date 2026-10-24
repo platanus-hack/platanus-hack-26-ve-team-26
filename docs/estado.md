@@ -32,9 +32,9 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** plan de subtareas en [`../web/TAREAS.md`](../web/TAREAS.md) (M0 a M7). Proyecto Vite + React + TS en `web/` con un `PoseClip` sintético.
-- **En curso:** W0.2 deploy en Vercel (falta la cuenta y el espejo del repo).
-- **Bloqueado por:** nada para empezar (se trabaja con datos falsos). Para integrar: interfaz del visor (Pastor) y servidor de subida (ver preguntas abiertas).
+- **Funciona:** plan de subtareas en [`../web/TAREAS.md`](../web/TAREAS.md) (M0 a M7). `web/` en JavaScript y three.js sin framework, con build estático que se sirve desde cualquier host ([decisión](decisiones/2026-10-23-web-sin-framework.md)), y un `PoseClip` sintético.
+- **En curso:** W0.2 deploy: Pastor elige el host.
+- **Bloqueado por:** nada para empezar (se trabaja con datos falsos). Para integrar: servidor de subida (ver preguntas abiertas).
 - **Sigue:** M1 (layout y estados) y M2 (galería de precargadas).
 
 ---
