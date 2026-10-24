@@ -1,7 +1,8 @@
 // The phone as the live camera (#/camara/<session>): the page the QR on En vivo opens on the
 // phone (docs/contrato.md, "El teléfono como cámara"). It runs the same MediaPipe as the webcam on
 // the phone's back camera (createLiveCapture from data/live) and posts the poses to the Mac's
-// session (createPhoneSender); the robot on the Mac copies whoever this phone films. Nothing else
+// session (createPhoneSender), with a small image of the camera (createImageGrabber) so the Mac
+// shows what the phone sees under the skeleton; the robot on the Mac copies whoever this phone films. Nothing else
 // loads here: no robot, no 3D, so a phone opens it in a moment. The server's address comes in
 // ?api= of the QR's link, which web/src/api.js already reads.
 export const title = 'Cámara del teléfono';
@@ -57,6 +58,7 @@ export function mount(root, { api }, [sessionId] = []) {
   let capture = null; // the tridi-live module
   let live = null; // createLiveCapture
   let sender = null; // createPhoneSender
+  let grabber = null; // createImageGrabber: the camera image for the Mac
   let wakeLock = null;
   let server = { state: 'sending' }; // the last status the sender reported
   let unwatchedSince = 0;
@@ -86,7 +88,7 @@ export function mount(root, { api }, [sessionId] = []) {
   function onPose(pose) {
     if (overlay.width !== video.videoWidth) [overlay.width, overlay.height] = [video.videoWidth, video.videoHeight];
     capture.drawSkeleton(ctx, pose?.landmarks, pose?.visible);
-    sender?.push(pose, video.videoWidth, video.videoHeight);
+    sender?.push(pose, video.videoWidth, video.videoHeight, grabber?.grab());
 
     const now = performance.now();
     if (now - lastReport < REPORT_MS) return;
@@ -128,6 +130,7 @@ export function mount(root, { api }, [sessionId] = []) {
       if (disposed) return session.stop();
       live = session;
       sender = capture.createPhoneSender(api.url, sessionId, { onStatus });
+      grabber = capture.createImageGrabber(video);
       keepAwake();
       $('.phone').classList.add('camera-on');
       startButton.hidden = true;
@@ -144,6 +147,7 @@ export function mount(root, { api }, [sessionId] = []) {
   function end(message, isError = false) {
     sender?.stop();
     sender = null;
+    grabber = null;
     live?.stop();
     live = null;
     wakeLock?.release().catch(() => {});

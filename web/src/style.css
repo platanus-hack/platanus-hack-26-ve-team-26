@@ -736,6 +736,7 @@ select:disabled {
 
 /* The camera and its skeleton show as a mirror, the way people expect to see themselves. */
 .camera-pane video,
+.phone-image,
 .camera-overlay {
   position: absolute;
   inset: 0;
@@ -891,6 +892,17 @@ select:disabled {
 
 .phone-on .camera-pane video,
 .phone-on .camera-off {
+  display: none;
+}
+
+/* The phone films someone else with its back camera: its image and skeleton show as filmed, not
+   mirrored. */
+.phone-on .phone-image,
+.phone-on .camera-overlay {
+  transform: none;
+}
+
+.phone-image[hidden] {
   display: none;
 }
 

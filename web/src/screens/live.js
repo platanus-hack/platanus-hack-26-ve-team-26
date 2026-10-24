@@ -6,8 +6,9 @@
 //
 // Optional: a phone as the camera (docs/contrato.md, "El teléfono como cámara"). "Usar el teléfono
 // como cámara" opens a session on the video server and shows a QR; the phone opens #/camara and
-// sends its poses; createPhoneCapture plays them here with the same interface as the webcam, so
-// everything below (the skeleton, mimic, Grabar) does not know which camera it is. Without the
+// sends its poses with a small image of its camera; createPhoneCapture plays them here with the same
+// interface as the webcam, so everything below (the skeleton, mimic, Grabar) does not know which
+// camera it is, and the image goes where the webcam's video would, under the skeleton. Without the
 // server the button only says why; the webcam is untouched.
 import { addUserClip } from '../preloaded.js';
 import { mountRobotPane, robotPaneHTML } from '../robot-pane.js';
@@ -45,6 +46,7 @@ export function mount(root, { dots, api }) {
       <div class="live-grid">
         <section class="pane camera-pane">
           <video playsinline muted></video>
+          <img class="phone-image" alt="" hidden>
           <canvas class="camera-overlay"></canvas>
           <div class="camera-off">
             <ol class="steps">
@@ -84,6 +86,7 @@ export function mount(root, { dots, api }) {
 
   const $ = (selector) => root.querySelector(selector);
   const video = $('video');
+  const phoneImage = $('.phone-image');
   const overlay = $('.camera-overlay');
   const ctx = overlay.getContext('2d');
   const button = $('.camera-toggle');
@@ -159,6 +162,8 @@ export function mount(root, { dots, api }) {
     live = null;
     robot.view?.reset();
     ctx.clearRect(0, 0, overlay.width, overlay.height);
+    phoneImage.hidden = true;
+    phoneImage.removeAttribute('src');
     root.querySelector('.live').classList.remove('camera-on', 'phone-on');
     $('.phone-qr').hidden = true;
     $('.camera-label').textContent = 'Tú';
@@ -247,7 +252,7 @@ export function mount(root, { dots, api }) {
       $('.qr').innerHTML = renderSVG(url, { ecc: 'M', border: 2, pixelSize: 6, blackColor: '#0d0d0b', whiteColor: '#ffffff' });
       $('.qr-session').textContent = `sesión ${sessionId}`;
       $('.phone-qr').hidden = false;
-      live = capture.createPhoneCapture(api.url, sessionId, { onPose, onStatus: onPhoneStatus });
+      live = capture.createPhoneCapture(api.url, sessionId, { onPose, onImage, onStatus: onPhoneStatus });
       root.querySelector('.live').classList.add('phone-on');
       $('.camera-label').textContent = 'Tu teléfono';
       phoneButton.textContent = 'Dejar de usar el teléfono';
@@ -259,6 +264,13 @@ export function mount(root, { dots, api }) {
     } finally {
       phoneButton.disabled = false;
     }
+  }
+
+  // The phone's camera image, just before the pose it came with: where the webcam's video would be.
+  function onImage(src) {
+    if (!isPhone()) return;
+    phoneImage.src = src;
+    phoneImage.hidden = false;
   }
 
   function onPhoneStatus({ state }) {
