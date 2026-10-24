@@ -844,11 +844,10 @@ export function mount(root, { api }) {
   api.checked.then((ok) => {
     if (ok || gone) return;
     const card = $('[data-route="subir"]');
+    // Still a link: the upload screen explains it and can try the server again.
     card.classList.add('unavailable');
-    card.removeAttribute('href');
-    card.setAttribute('aria-disabled', 'true');
-    card.querySelector('.try-detail').textContent = 'El servidor de videos está apagado ahora';
-    card.querySelector('.try-go').textContent = 'No disponible ahora';
+    card.querySelector('.try-detail').textContent = 'El servidor de videos no responde ahora';
+    card.querySelector('.try-go').textContent = 'Ver por qué →';
   });
 
   return () => {

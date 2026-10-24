@@ -106,9 +106,11 @@ export function mount(root, { dots, api }) {
             <h2>Subir videos no está disponible ahora</h2>
             <p class="lead">El equipo que mira los videos está apagado. Mientras tanto, puedes usar la cámara o ver lo que Tridi ya aprendió.</p>
             <div class="row">
-              <a class="button primary" href="#/en-vivo">Usar la cámara</a>
+              <button class="primary retry" type="button">Reintentar</button>
+              <a class="button" href="#/en-vivo">Usar la cámara</a>
               <a class="button" href="#/simulaciones">Ver simulaciones</a>
             </div>
+            <p class="note server-url"></p>
           </div>
         </div>
       </div>
@@ -271,6 +273,17 @@ export function mount(root, { dots, api }) {
   }
 
   // Where to start: no server, an upload in progress from before, or a fresh pick.
+  // Off: says which server it tried, and can ask again (the tunnel may just have been slow).
+  $('.server-url').textContent = api.url ? `Servidor: ${api.url}` : 'No hay un servidor configurado: abre la web con el link que imprime data/serve.sh (lleva ?api=).';
+  $('.retry').onclick = async () => {
+    $('.retry').disabled = true;
+    $('.retry').textContent = 'Probando…';
+    const ok = await api.recheck();
+    $('.retry').disabled = false;
+    $('.retry').textContent = 'Reintentar';
+    if (!gone && ok) show('pick');
+  };
+
   api.checked.then((ok) => {
     if (gone) return;
     if (!ok) return show('off');
