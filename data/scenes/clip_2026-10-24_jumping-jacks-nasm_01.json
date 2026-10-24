@@ -1,0 +1,9 @@
+{
+  "id": "clip_2026-10-24_jumping-jacks-nasm_01",
+  "title": "Lugar del video",
+  "floor": {
+    "friction_hint": null
+  },
+  "objects": [],
+  "why": "Detectado con yolo11m.pt en el primer cuadro del clip. Piso: el plano bajo los pies de la persona, con la cámara a 1.79 m de altura; cada objeto se apoya donde el rayo por la base de su caja toca ese piso, su ancho y alto se miden en la imagen y el fondo es un tamaño típico. El rumbo sigue el recorrido de la persona. Fricción: sin pistas, la del mundo."
+}
