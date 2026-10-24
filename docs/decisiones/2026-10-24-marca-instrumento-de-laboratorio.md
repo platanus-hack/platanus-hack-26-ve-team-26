@@ -38,3 +38,12 @@ Después de una ronda de preguntas con Juan:
 - **Estilo (sin fijar todavía):** cinemático y oscuro (`#0a0a09`), el robot iluminado a pantalla completa, naranja señal como único acento. La escena 3D también es oscura (`SCENE_THEME` en `web/src/skeleton.js`). La meta: que se sienta ambicioso.
 - **4 bloques:** el robot que se empuja (hero) · cómo funciona en 3 pasos · la prueba (aprende cayéndose, escalera de checkpoints, curva y lo que viene) · para quién y pruébalo.
 - **La caminata se muestra etiquetada:** hoy el robot la reproduce como títere ("copiando el video · sin física"). Al empujarlo pasa a física real con la política, y si se cae, el contador lo dice.
+
+## Revisión 2 (mismo día): la landing como película
+
+Juan pidió más animación entre secciones, un nivel visual a la altura del producto (referencias: Apple, [figure.ai](https://www.figure.ai/)) y menos "texto de IA" (nada de titulares en dos tonos ni estructura de PowerPoint).
+
+- **Sin videos de stock, con lo que tenemos:** el G1 real queda fijo detrás de la página y el scroll dirige la cámara de plano en plano (primer plano del torso, la caminata de perfil, el gimnasio, las piernas). Para eso `physics/` expone `viewer` (cámara, controles y altura de mira), sin cambiar nada más.
+- **Capítulos con nombre de producto**, base para el pitch deck y los demás productos: **Tridi Capture** (el video real de `data/samples/mixkit-4855.mp4`, su esqueleto 3D y el robot, sincronizados con el reloj del video), **Tridi Gym** (el entrenamiento avanza con el scroll: cada parada es un checkpoint real, empujado cada 2,5 s; el contador y la curva corren con el scroll) y **Tridi Policy** (lo que se entrega, en cifras).
+- **Pies de foto estilo Figure:** mayúsculas, una línea de texto, un solo color. Transiciones con GSAP ScrollTrigger y scroll suave con Lenis.
+- **Stack:** se queda en Vite + JavaScript ([decisión](2026-10-23-web-sin-framework.md)). Astro no anima nada por sí solo; lo pesado (MuJoCo, three.js y un solo robot compartido entre pantallas) es del cliente igual, y migrar la app de César la noche antes del cierre es riesgo sin ganancia visible. La landing queda separada por capítulos, lista para pasarla a Astro después si el equipo lo quiere.
