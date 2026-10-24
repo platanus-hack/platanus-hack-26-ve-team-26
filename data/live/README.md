@@ -37,15 +37,18 @@ La web pone el `<video>` (y un `<canvas>` encima para `drawSkeleton`, con el tam
 ## Subir videos al servidor (César, W5 y W6)
 
 ```js
-import { uploadVideo, watchJob, chooseSubject, firstFrameUrl, fetchClip, UploadError } from 'tridi-live';
+import { resolveApiUrl, checkApi, uploadVideo, watchJob, chooseSubject, firstFrameUrl, fetchClip, UploadError } from 'tridi-live';
 
-const base = 'https://xxxx.trycloudflare.com'; // la URL que imprime data/serve.sh
+const base = resolveApiUrl({ fallback: 'http://127.0.0.1:8000' }); // ?api= del link, o la última vista
+if (!(await checkApi(base))) mostrarSoloGaleria(); // servidor apagado: la web sigue con las precargadas
 const jobId = await uploadVideo(base, file, { onProgress: ({ sent, total }) => {} }); // reintenta cada pedazo
 const job = await watchJob(base, jobId, { onUpdate: (job) => {} }); // etapas y avance de cada video
 const clip = await fetchClip(base, job.videos[0].clip_id);
 // W5.3: dibujar job.videos[n].people sobre firstFrameUrl(base, jobId, n); con un click:
 await chooseSubject(base, jobId, n, x, y); // y otra vez watchJob
 ```
+
+**URL del servidor:** el túnel cambia de URL en cada arranque, así que `data/serve.sh` imprime y copia el link de la web con `?api=<url del túnel>` (por ejemplo `https://tridi-alpha.vercel.app/?api=https://xxxx.trycloudflare.com`). `resolveApiUrl` lo lee y lo guarda en el navegador, así que recargar o volver sin el parámetro sigue funcionando. Solo acepta URLs `http(s)`.
 
 Los errores del servidor llegan como `UploadError` con el mensaje en español. Formato de cada respuesta en el [contrato](../../docs/contrato.md).
 
@@ -56,6 +59,7 @@ Los errores del servidor llegan como `UploadError` con el mensaje en español. F
 | `src/index.js` | Carga MediaPipe (WASM desde jsDelivr y el modelo desde Google, versión fija), abre la cámara, procesa cada cuadro nuevo en modo VIDEO y guarda las muestras mientras se graba |
 | `src/poseclip.js` | Muestras → `PoseClip`. Los mismos pasos y umbrales que [`../lift.py`](../lift.py): visibilidad mínima, frames "volteados", trayectoria de las caderas por pie apoyado y por ajuste a la cámara, ejes y origen del contrato. Además remuestrea a 30 fps fijos, porque las webcams entregan cuadros a ritmo irregular |
 | `src/draw.js` | El esqueleto sobre el video, mismos colores que `data.overlay` |
+| `src/api.js` | Dónde está el servidor: `?api=` o la última URL guardada, y si responde |
 | `src/upload.js` | Cliente del servidor de video: subida por partes con reintentos, progreso, elegir sujeto |
 | `scripts/check.mjs` | Prueba sin navegador |
 

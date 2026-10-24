@@ -58,11 +58,18 @@ CLI `python -m data.extract <video|zip> [--click x,y]` que sigue a un sujeto ent
 - Los mensajes de error del pipeline pasaron a español, porque la web los muestra tal cual.
 - Ojo: la decisión de deploy de Pastor dice "servidor en Render"; Juan eligió su Mac con túnel por la GPU. El código sirve para los dos. Queda como pregunta abierta la URL fija.
 
+## URL del servidor en la web
+
+- Juan decidió: la web lee la URL de `?api=` y Juan arranca `data/serve.sh` antes de la demo. `resolveApiUrl` y `checkApi` en `data/live/src/api.js`; `serve.sh` imprime y copia `https://tridi-alpha.vercel.app/?api=<túnel>`.
+- Probado en el navegador con un túnel real: el link da la URL, se recuerda al recargar sin el parámetro, `checkApi` da `true` por el túnel (CORS ok) y `false` con un servidor que no existe; `?api=javascript:…` se ignora. Todo apagado después.
+- No se tocó `web/`: es de César; la llamada va en su W5.
+
 ## Sigue
 
 - Pastor: probar el retargeting con `data/clips/*.npz`.
 - Grabar a Pastor/César caminando y corriendo de perfil con el teléfono (focal conocida) para precargadas propias.
 - César: integrar `createLiveCapture` en W4 (ver `data/live/README.md`).
 - César: W5/W6 con `uploadVideo` y `watchJob` (`data/live/README.md`).
-- Decidir la URL fija del servidor (pregunta abierta) y probar la demo de `data/live` con la webcam real.
+- César: `resolveApiUrl`/`checkApi` al arrancar la web; si no hay servidor, solo galería.
+- Juan: probar la demo de `data/live` con la webcam real; antes de la demo, `data/serve.sh`.
 - Shipeado a `main` como `14045b3`. Al rebasear entró el G1 de Pastor; su pregunta de la traslación de la pelvis quedó respondida en [`../preguntas-abiertas.md`](../preguntas-abiertas.md): ya viene en el `PoseClip`. Ojo Pastor: el contrato usa y arriba, MuJoCo z arriba.
