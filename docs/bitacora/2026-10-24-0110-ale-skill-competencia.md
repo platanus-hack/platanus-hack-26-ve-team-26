@@ -23,6 +23,8 @@ Que el estudio de los otros equipos no dependa de que alguien se acuerde de pedi
 
 - Probado el comando tal como lo escribe el skill, desde este repo: `../platanus-ideas/docs/research/competencia/actualizar.sh` corre bien y detectó 2 equipos con cambios.
 - La pasada automática quedó agendada y la copia de usuario del skill se recargó sola (la descripción nueva ya está activa).
+- La pasada automática de la 01:16 salió `SIN NOVEDADES` y no escribió ni commiteó nada: la regla de pararse en seco funciona.
+- Shipeado a `main` con `scripts/ship.sh`.
 
 ## Qué no funcionó
 
