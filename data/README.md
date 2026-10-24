@@ -65,5 +65,8 @@ En [`clips/`](clips), de videos de [Mixkit](https://mixkit.co) (licencia libre d
 | --- | --- | --- |
 | `clip_2026-10-23_caminar-perfil_01` | Mixkit 4855, Young man walking listening to music | 100% válido, 11.8 s, 0.71 m/s |
 | `clip_2026-10-23_correr-perfil_01` | Mixkit 4831, View of a park while a girl runs across | 97% válido, 3.8 s, 2.6 m/s |
+| `clip_2026-10-24_jumping-jacks-nasm_01` | YouTube [`uLVt6u15L98`](https://www.youtube.com/watch?v=uLVt6u15L98), NASM, How to do a Jumping Jack (segundos 0 a 5,2) | 100% válido, 5.2 s, en el lugar |
+
+El de jumping jacks es el respaldo de ENT-1: un movimiento en el lugar, sin recorrido del que alejarse. Del video se usan solo los primeros 5,2 s (de pie y ~4 ciclos a velocidad real, 1,2 s por ciclo): de 5,3 a 8,3 s la cámara hace zoom y corta cabeza y pies, y un zoom cambia la escala del esqueleto 3D. En el repo queda solo el `PoseClip`, nunca el video. Los videos se bajan de YouTube con `yt-dlp --cookies-from-browser chrome -f "bv*[ext=mp4]/bv*"` (sin audio); desde la red del evento YouTube pide sesión, por eso las cookies.
 
 Prueba de selección con varias personas: Mixkit 4519, Students walking in a university: 5 personas de espaldas, los 5 ids se mantienen todo el video y el sujeto automático es el del centro; con `--click` se sigue a otra.
