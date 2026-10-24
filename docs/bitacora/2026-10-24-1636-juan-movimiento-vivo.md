@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: en curso
+estado: cerrada
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
