@@ -171,8 +171,8 @@ El video trae el temblor de MediaPipe cuadro a cuadro, y el robot lo copiaba: se
 
 | Camino | Qué se hace | Caminata real de `data/clips/`, crudo → ahora |
 | --- | --- | --- |
-| `playClip` | `smoothForDisplay` (`src/motion.js`): la referencia limpia del entrenamiento (`reference.js`) y la altura de la pelvis suavizada 0,2 s | Aceleración vertical de la pelvis 24,4 → 5,0 m/s² (p95; una persona camina con 2 a 5), rodilla 191 → 91 rad/s², pies a menos de 1,5 cm del piso en el 95 % de los cuadros |
-| `mimic` (cámara) | `createRobotPoseFilter` (`src/filters.js`): One Euro sobre la altura, el rumbo y las 29 articulaciones del robot | Pelvis 22,2 → 5,4 m/s², rodilla 166 → 66 rad/s², a cambio de 33 ms de retraso (un cuadro de cámara) |
+| `playClip` | `smoothForDisplay` (`src/motion.js`): la referencia limpia del entrenamiento (`reference.js`) y la altura de la pelvis suavizada 0,2 s | Aceleración vertical de la pelvis 24,4 → 3,2 m/s² (p95; una persona camina con 2 a 5), rodilla 191 → 77 rad/s², pies a menos de 2 cm del piso en el 95 % de los cuadros. Desde el suavizado de `data/` los clips ya llegan con 11,5 y 95 |
+| `mimic` (cámara) | `createRobotPoseFilter` (`src/filters.js`): One Euro sobre la altura, el rumbo y las 29 articulaciones del robot | Pelvis 22,2 → 3,0 m/s², rodilla 166 → 60 rad/s², a cambio de 33 ms de retraso (un cuadro de cámara). Con el filtro de `data/live` la cámara ya llega con 12,6 y 75 |
 
 `scripts/check-smooth.mjs` lo exige en `npm run check`. El entrenamiento sigue usando la referencia sin el suavizado extra de la altura: los pies de una política tienen que estar de verdad en el piso.
 
