@@ -5,6 +5,7 @@ import { LOOP_BLEND_S, motionDuration, retargetClipAsync, sampleLoopStart, sampl
 import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
+import { createRootTracker } from './root.js';
 import { createRobotPoseFilter } from './filters.js';
 import { RobotView } from './viewer.js';
 import { placeXml, SCENE_ORDER } from './scenes.js';
@@ -98,6 +99,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   let tracker = null;
   let retargeter = null;
   let smoother = null; // the live pose filter (filters.js createRobotPoseFilter)
+  let rootTracker = null; // where the copying robot is on the floor (root.js)
   // Retargeting runs on its own model of the G1: the kinematic chain and the soles, without meshes
   // (a model with them takes ~3 s to build in a browser, and would freeze the first camera frame).
   // It does not depend on which model the simulation shows, and its joints are laid out exactly
@@ -160,7 +162,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     if (clip) return void (clipTime = 0);
     sim.reset();
     retargeter?.delete();
-    tracker = retargeter = smoother = null;
+    rootTracker?.delete();
+    tracker = retargeter = smoother = rootTracker = null;
   }
 
   return {
@@ -182,10 +185,11 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * robot, without dynamics. It follows play(), pause() and setSpeed(), and reset() rewinds it.
      * What shows is the motion cleaned of the video's jitter (smoothForDisplay in motion.js).
      * @param options.loop  start over at the end (default), or hold the last frame
-     * @param options.plantFeet  for a clip that walks: the pelvis path re-made so the foot on the
-     *   floor does not slide (motion.js plantFeet). Not for runs or jumps.
+     * @param options.plantFeet  the pelvis path re-made so the foot on the floor does not slide
+     *   (motion.js plantFeet): 'auto' (default) does it unless the clip's feet do not explain its
+     *   travel (a run seen from the side); true or false force it.
      */
-    playClip(motion, { loop = true, plantFeet = false } = {}) {
+    playClip(motion, { loop = true, plantFeet = 'auto' } = {}) {
       // The robot's own values (36), not the model's: a place with loose objects adds 7 per object.
       const robotValues = kinematicModel().nq;
       if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== robotValues) {
@@ -305,18 +309,25 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     /**
      * Makes the G1 copy a person, one camera frame at a time. Pass what createLiveCapture's
      * onPose gives. A null pose or one too occluded keeps the last pose. reset() ends it.
-     * @returns { tracked, residual } residual is the worst distance (m) between a limb and where
-     *   the person put it; above ~0.08 the G1 cannot do that move.
+     * With the pose's `camera` (where the hips are from the camera) the robot also goes where the
+     * person goes: it walks across the floor with its planted foot still, and leaves it in a jump
+     * (root.js). Without it, it still walks by its feet, but cannot jump.
+     * @returns { tracked, residual, airborne } residual is the worst distance (m) between a limb
+     *   and where the person put it; above ~0.08 the G1 cannot do that move. airborne: in a jump.
      */
     mimic(pose) {
-      if (!pose?.visible) return { tracked: false, residual: 0 };
+      if (!pose?.visible) return { tracked: false, residual: 0, airborne: false };
       clip = null;
       tracker ??= createPoseTracker();
       retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
       smoother ??= createRobotPoseFilter(kinematicModel().nq); // the robot's own values, not a place's objects
-      const { qpos, tracked, residual } = retargeter.solve(tracker.update(pose.world, pose.landmarks, pose.t));
-      if (tracked) sim.puppet(smoother.filter(qpos, pose.t));
-      return { tracked, residual };
+      rootTracker ??= createRootTracker(sim.mujoco, kinematicModel(), { mirror, legLength: retargeter.legLength });
+      const points = tracker.update(pose.world, pose.landmarks, pose.t);
+      const { qpos, tracked, residual } = retargeter.solve(points, { travelYaw: rootTracker.travelYaw() });
+      // The path is made from the filtered pose, the one drawn: made from the raw one, the planted
+      // foot would slide by whatever the filter holds back.
+      if (tracked) sim.puppet(rootTracker.update(smoother.filter(qpos, pose.t), pose));
+      return { tracked, residual, airborne: rootTracker.airborne() };
     },
     dispose() {
       disposed = true;
@@ -324,6 +335,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       sim.policy?.dispose();
       view.dispose();
       retargeter?.delete();
+      rootTracker?.delete();
       kinematic?.delete();
       sim.delete();
     },
