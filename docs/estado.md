@@ -43,7 +43,7 @@ App web: captura, subida, galería de precargadas, vista de la simulación y pro
 
 Pitch, README, diferencia con lo que ya existe, video para el voto público.
 
-- **Funciona:** —
-- **En curso:** —
-- **Bloqueado por:** —
-- **Sigue:** —
+- **Funciona:** investigación de competencia cerrada y escrita en [`pitch/diferencia.md`](pitch/diferencia.md); borrador 1 del guion de 3 minutos en [`pitch/guion-3-minutos.md`](pitch/guion-3-minutos.md), con el banco de preguntas del jurado.
+- **En curso:** cronometrar el guion y decidir quién presenta.
+- **Bloqueado por:** el bloque más fuerte del pitch (la escalera del aprendizaje) necesita **checkpoints intermedios guardados** del entrenamiento (0, 1k, 10k, 100k pasos). Sin eso hay que reescribir el guion.
+- **Sigue:** plan B grabado el sábado en la noche (video de 40 s de la demo, sirve también para el voto público); `README.md` y los archivos de entrega cuando haya deploy.
