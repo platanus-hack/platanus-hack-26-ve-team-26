@@ -91,7 +91,8 @@ Lo corre `data/` (Juan); lo llama la web para subir videos (W5) y seguir el prog
       "stage": "waiting" | "tracking" | "pose3d" | "done" | "failed",
       "progress": 0.42,               // 0 a 1 dentro de la etapa
       "frame_size": [1280, 720],      // null hasta que empieza
-      "people": [                     // personas del primer frame, al terminar "tracking"
+      "first_frame": 12,              // primer cuadro con personas (el 0 puede estar vacío); null hasta que termina "tracking"
+      "people": [                     // personas de ese cuadro, al terminar "tracking"
         { "track_id": 3, "box": [x0, y0, x1, y1], "selected": true }
       ],
       "clip_id": "clip_…",            // al terminar "pose3d"
@@ -108,8 +109,8 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 
 | Método y ruta | Cuerpo | Respuesta |
 | --- | --- | --- |
-| `GET /jobs/{job_id}/videos/{n}/first-frame.jpg` | | el primer frame, en sus píxeles originales, para dibujar `people` encima |
-| `POST /jobs/{job_id}/videos/{n}/subject` | `{ "x": 640, "y": 360 }`, píxeles del primer frame | `202`; el video vuelve a `pose3d` con esa persona (`selected_by: "user"`), sin repetir el tracking |
+| `GET /jobs/{job_id}/videos/{n}/first-frame.jpg` | | el cuadro `first_frame`, en sus píxeles originales, para dibujar `people` encima |
+| `POST /jobs/{job_id}/videos/{n}/subject` | `{ "x": 640, "y": 360 }`, píxeles del cuadro `first_frame` | `202`; el video vuelve a `pose3d` con esa persona (`selected_by: "user"`), sin repetir el tracking |
 
 **Resultado.** `GET /clips/{clip_id}.json` devuelve el `PoseClip`. `GET /health` responde `{ "ok": true, "queue": 0 }`.
 
