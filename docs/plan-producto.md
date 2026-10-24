@@ -76,8 +76,10 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Entrenamiento (`training/`)
 
-- [ ] **ENT-1. Que la imitación aprenda la caminata.** Lo más importante: sin esto no hay producto. En este orden:
-  - Reproducir la referencia con la pelvis sostenida (sin red y sin que pueda caerse) y medir si los motores siguen los ángulos y si los pies apoyan sin hundirse ni flotar. Si no, la referencia es inviable y se corrige en el retargeting. Sin sostenerla, caerse es lo esperado (sin red tampoco se sostiene de pie), así que la fila "sin política" de `evaluate_walk.py` no dice si la referencia sirve.
+- [~] **ENT-1. Que la imitación aprenda la caminata.** Lo más importante: sin esto no hay producto. En este orden:
+  - [x] Reproducir la referencia con la pelvis sostenida (sin red y sin que pueda caerse) y medir si los motores siguen los ángulos y si los pies apoyan sin hundirse ni flotar: `training/diagnose_reference.py`. Sin sostenerla, caerse es lo esperado (sin red tampoco se sostiene de pie), así que la fila "sin política" de `evaluate_walk.py` no dice si la referencia sirve. Encontró dos errores, ya arreglados en `imitate.Motion`: suavizar la altura de la pelvis dejaba pies hundidos o en el aire, y los objetivos de los pies no coincidían con la pose. Queda uno: caderas y tobillos van 60 a 100 ms detrás de la referencia, y la observación la muestra solo 20 ms adelante.
+  - Entrenar con la referencia limpia y comparar con `walk-v2` (0,9 s por episodio a los 5 M pasos).
+  - Si sigue lento, sumar a la observación la referencia más adelante (por ejemplo a 0,1 y 0,25 s) para que la red pueda anticiparse. Cambia `obs_dim`: conviene decidirlo antes de SIM-1.
   - Mirar cada término de la recompensa en `progress.csv`, para saber cuál no sube.
   - Probar con 2 a 3 s de un ciclo de paso en vez del clip entero.
   - Los empujones, recién cuando camine.
@@ -88,7 +90,7 @@ Por área. Cada tarea dice qué necesita antes; se marca `[ ]` pendiente, `[~]` 
 
 ### Simulador (`physics/`)
 
-- [ ] **SIM-1. El navegador corre políticas de imitación.** En `src/policy.js`: la referencia en JS (muestreo, suavizado de 0,3 s y velocidades, igual que `imitate.Motion`), la observación de 126 números y el arranque en la primera pose del clip con los pies en el piso (como `reset_at` y `_touch_ground`). Interfaz: `view.loadPolicy(onnx, json, { motion })`; `clipTime()` sigue sincronizando el esqueleto. *Necesita:* los campos nuevos de `policy.json`.
+- [ ] **SIM-1. El navegador corre políticas de imitación.** En `src/policy.js`: la referencia en JS (la misma limpieza, muestreo y velocidades que `imitate.Motion`), la observación de 126 números y el arranque en la primera pose del clip con los pies en el piso (como `reset_at` y `_touch_ground`). Interfaz: `view.loadPolicy(onnx, json, { motion })`; `clipTime()` sigue sincronizando el esqueleto. *Necesita:* los campos nuevos de `policy.json`.
 - [ ] **SIM-2. Igual que en Python.** Un archivo de prueba generado en Python (observaciones y `ctrl` de N pasos) que `npm run check` compara con lo que arma el navegador. Si la observación difiere, el robot se cae aunque todo "corra". *Necesita:* SIM-1.
 - [ ] **SIM-3. Los mundos.** `physics/worlds/` con plano, piedras, resbaloso y viento; la escena con terreno de piedras (un mapa de alturas de pocos centímetros, para que la altura de la pelvis de la referencia siga valiendo), y `view.setWorld(id)`, que cambia fricción, viento, masas y fuerza de los motores. El lector en Python para `training/env.py` va en un commit aparte, porque toca otra carpeta.
 - [ ] **SIM-4. `--out` en el retargeting.** Para que el servidor escriba los `RobotMotion` de los usuarios en su carpeta de datos y no en `physics/motions/`, que está versionada.

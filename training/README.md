@@ -10,7 +10,10 @@ Requiere [uv](https://docs.astral.sh/uv/). Desde la raíz del repo:
 uv run --project training python -m training.ppo --steps 20000000 --run stand      # ~30 min en una M2
 uv run --project training python -m training.evaluate training/runs/stand/step_*.pt  # de pie y empujones, por checkpoint
 uv run --project training python -m training.export training/runs/stand/step_20000000.pt --id g1-stand
+uv run --project training python -m training.diagnose_reference [clip_id ...]        # ¿el G1 puede hacer este RobotMotion? Antes de imitarlo
 ```
+
+`diagnose_reference.py` revisa una referencia de imitación sin política, en 2 s: pies contra el piso, objetivos de los pies de la recompensa, rangos de los motores, y la referencia jugada por los motores con la pelvis sostenida (error, retraso de cada motor y contacto de los pies).
 
 Los checkpoints quedan en `training/runs/<run>/` (no se versionan) en los pasos 0, 10k, 100k, 1M, 3M, 10M… y al final, con `progress.csv` para la curva. Las políticas exportadas van a [`policies/`](policies).
 
