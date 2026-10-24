@@ -11,3 +11,6 @@ export async function savedMotion(clipId) {
   const response = await fetch(url);
   return response.ok ? response.json() : null;
 }
+
+/** true if the clip has a saved RobotMotion (it plays at once, with no retargeting). */
+export const hasSavedMotion = (clipId) => urlById.has(clipId);

@@ -69,8 +69,9 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 Pedido de César: volver al estilo claro de antes de M9 y abrir con una intro de dos slides ([decisión](../docs/decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)).
 
 - [x] **W10.1 Estilo claro.** Vuelven Quicksand y Nunito, los robots de puntos con cara, las tarjetas inclinables y el fondo de puntos. Las funciones nuevas (robot único, carga rápida, política) se quedan.
-- [x] **W10.2 Slide 1: qué es Tridi.** Título, una frase y el flujo Video → Movimiento 3D → Robot. La figura de puntos se arma y pasa por actividades que entrenan la movilidad de un robot: bailar, boxeo, guitarra y coser (5,5 s cada una; entre una y otra los puntos se sueltan y se vuelven a armar). Debajo, una fila muestra la actividad actual y permite saltar a otra (`web/src/dots/figure.js`). En celular la figura queda tenue detrás del texto y los botones entran sin scroll.
-- [x] **W10.3 Slide 2: elige cómo empezar.** Solo el título y las tres tarjetas con textos cortos; suben al aparecer la slide.
+- [x] **W10.2 Slide 1: qué es Tridi.** Textos del pitch del equipo: "Los humanoides ya tienen cuerpo. Les falta experiencia", "Tridi convierte video en experiencia", el flujo Video → Esqueleto 3D → Práctica en física real → Política y datos, y "El video le dice qué hacer. La simulación le enseña cómo". Al lado, el G1 real (el mismo de Simulaciones) pasa solo por los movimientos precargados (caminar, correr) y Empujar muestra cómo lo atrapa la política; después vuelve al movimiento. Los botones entran sin scroll también en celular.
+- [x] **W10.3 Slide 2: elige cómo empezar.** El título, las tres tarjetas con textos cortos y la aclaración del pitch: el motor de física es MuJoCo, lo nuestro es lo que va encima, y no es un LLM.
+- [x] **W10.4 Pantalla de carga sin 3D.** Solo el nombre, la barra y el estado: la animación de puntos competía con la carga del robot.
 
 ## M9. Marca corporativa (reemplazada por M10)
 

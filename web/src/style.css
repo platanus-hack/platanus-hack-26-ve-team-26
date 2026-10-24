@@ -148,17 +148,16 @@ select:disabled {
   text-decoration: none;
 }
 
-/* Splash: shown while the robot loads (main.js); the menu starts as it fades away. Its dot
-   robot is drawn on the page canvas behind, so it has no background of its own. */
+/* Splash: shown while the robot loads (main.js); the home starts as it fades away. */
 #splash {
   position: fixed;
   inset: 0;
   z-index: 3;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  place-content: center;
   justify-items: center;
-  gap: 14px;
-  padding: clamp(28px, 7vh, 72px) 16px clamp(28px, 8vh, 80px);
+  gap: 18px;
+  padding: 16px;
   transition: opacity 0.4s ease;
 }
 
@@ -174,11 +173,6 @@ select:disabled {
   line-height: 1;
   letter-spacing: -0.03em;
   color: var(--ink);
-}
-
-.splash-scene {
-  width: min(520px, 100%);
-  min-height: 0;
 }
 
 #splash .track {
@@ -213,10 +207,10 @@ html.snap {
   padding: clamp(28px, 6vh, 64px) clamp(16px, 4vw, 48px);
 }
 
-/* Slide 1: the explanation on the left, the walking figure on the right. */
+/* Slide 1: the explanation on the left, the robot on the right. */
 .intro {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); /* the figure gets the larger share */
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); /* the robot gets the larger share */
   gap: clamp(16px, 3vw, 40px);
   align-items: center;
   will-change: opacity, transform; /* scrolling fades it out (home.js) */
@@ -228,7 +222,7 @@ html.snap {
   max-width: 520px;
 }
 
-/* How it works, as one line: Video → Movimiento 3D → Robot. */
+/* How it works, as one line: Video → Esqueleto 3D → Práctica → Política y datos. */
 .flow {
   display: flex;
   flex-wrap: wrap;
@@ -280,85 +274,40 @@ html.snap {
   margin: 0;
 }
 
-/* The figure is drawn on the page canvas behind; this box is where (dots/stage.js addScene). */
-.intro-figure {
-  position: relative;
-  height: min(88vh, 800px);
+/* The real robot (robot-pane.js) and a line under it. */
+.intro-robot {
+  display: grid;
+  gap: 12px;
 }
 
-/* What the figure is learning, under it: the one playing is highlighted, a click jumps to another. */
-.activities {
-  position: absolute;
-  left: 50%;
-  bottom: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 6px;
-  padding: 6px;
-  border-radius: 999px;
-  background: var(--surface);
-  backdrop-filter: blur(10px);
-  box-shadow: var(--shadow);
-  transform: translateX(-50%);
-  width: max-content; /* one row: left: 50% alone would cap it at half the figure's width */
-  max-width: 100%;
+.intro-robot .robot-pane {
+  height: min(74vh, 680px);
 }
 
-.activities-title {
-  padding: 0 8px 0 10px;
+.demo-note {
+  margin: 0;
   color: var(--muted);
-  font-size: 14px;
+  text-align: center;
 }
 
-.activities button {
-  min-height: 38px;
-  padding: 0 14px;
-  border: 0;
-  background: transparent;
-  color: var(--muted);
-  font-size: 15px;
-}
-
-.activities button[aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--accent-ink);
-}
-
-.joint-label {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: var(--surface);
-  color: var(--muted);
-  font-size: 13px;
-  white-space: nowrap;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.joint-label::before {
-  content: '';
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--accent);
-  transform: translateX(-2px);
-}
-
-.joint-label b {
-  color: var(--accent);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
+/* The pitch's one-liner, set apart. */
+.motto {
+  margin: 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--accent);
+  color: var(--ink);
+  font: 600 19px/1.35 var(--title);
 }
 
 /* Slide 2: the three choices. */
+
+.honest {
+  max-width: 760px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  text-align: center;
+}
 .choose {
   display: flex;
   flex-direction: column;
@@ -1116,22 +1065,19 @@ html.snap {
   /* Phones: the three choices must fit on one screen with no scroll, so each card lies
      sideways, robot on the left and words on the right. */
 
-  /* Slide 1: the figure walks faintly behind the words instead of beside them. */
+  /* Slide 1: words first (the buttons fit on the first screen), the robot right under them. */
   .intro {
     grid-template-columns: 1fr;
   }
 
-  .intro-figure {
-    position: absolute;
-    inset: 0;
-    height: auto;
+  .intro-robot .robot-pane {
+    height: 62vh;
   }
 
-  .intro-copy {
-    position: relative;
+  .motto {
+    font-size: 16px;
   }
 
-  /* The buttons must fit on the first screen: shorter text, the three steps in one row. */
   .intro-copy {
     gap: 12px;
   }
@@ -1154,23 +1100,6 @@ html.snap {
     font-size: 14px;
   }
 
-  .activities {
-    bottom: 12px;
-    width: calc(100% - 24px);
-  }
-
-  .activities-title {
-    display: none;
-  }
-
-  .activities button {
-    min-height: 34px;
-    padding: 0 10px;
-  }
-
-  .joint-label {
-    display: none;
-  }
   .choose-title {
     font-size: 30px;
   }

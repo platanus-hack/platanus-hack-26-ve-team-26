@@ -85,7 +85,6 @@ export class DotStage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.setScissorTest(true);
     this.views = [];
-    this.scenes = []; // custom scenes drawn in an element's rectangle (addScene)
 
     this.field = { scene: new THREE.Scene(), camera: new THREE.PerspectiveCamera(50, 1, 0.1, 50) };
     this.field.points = dotField();
@@ -154,24 +153,6 @@ export class DotStage {
     this.views = this.views.filter((v) => v !== view);
   }
 
-  /**
-   * Draws any three.js scene inside `element`, on this same canvas and render loop, e.g. the
-   * home intro's walking figure. `update(t, dt, rect)` runs before each draw while the element
-   * is on screen; it sets the camera aspect from `rect` itself.
-   * @param {{ scene: THREE.Scene, camera: THREE.Camera, update?: Function }} item
-   * @returns the item, to pass to removeScene
-   */
-  addScene(element, item) {
-    const entry = { ...item, element };
-    this.scenes.push(entry);
-    return entry;
-  }
-
-  removeScene(entry) {
-    this.scenes = this.scenes.filter((s) => s !== entry);
-    entry.dispose?.();
-  }
-
   resize() {
     const { innerWidth: w, innerHeight: h } = window;
     const size = this.renderer.getSize(new THREE.Vector2());
@@ -202,16 +183,6 @@ export class DotStage {
     this.renderer.setScissor(0, 0, w, h);
     this.renderer.clear();
     this.renderer.render(scene, camera);
-
-    for (const entry of this.scenes) {
-      const rect = entry.element.getBoundingClientRect();
-      if (rect.bottom < 0 || rect.top > h || rect.width === 0) continue; // off screen: skip
-      entry.update?.(t, dt, rect);
-      const bottom = h - rect.bottom;
-      this.renderer.setViewport(rect.left, bottom, rect.width, rect.height);
-      this.renderer.setScissor(rect.left, bottom, rect.width, rect.height);
-      this.renderer.render(entry.scene, entry.camera);
-    }
 
     const cards = this.views.filter((v) => v.variant.card);
     const touchTurn = cards[Math.floor(t / TOUCH_TURN_S) % Math.max(1, cards.length)];

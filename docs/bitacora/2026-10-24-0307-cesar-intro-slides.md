@@ -6,7 +6,7 @@ inicio: 2026-10-24 03:07
 estado: en curso
 ---
 
-# Vuelta al estilo claro, intro de dos slides y figura con actividades
+# Vuelta al estilo claro, intro de dos slides con el robot real y textos del pitch
 
 ## Objetivo
 
@@ -22,15 +22,19 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Decisión: [`../decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md`](../decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md). Plan: M10 en `web/TAREAS.md`.
 - Segunda vuelta (César ya habló con Juan): menos texto y mejor uso del espacio. La slide 1 quedó en título, una frase, el flujo Video → Movimiento 3D → Robot y los botones; la figura ocupa 7 de 12 columnas. La slide 2 quedó en el título y las tarjetas, con textos cortos.
 - La figura ya no camina: pasa por bailar, boxeo, guitarra y coser, actividades que estiran la movilidad de un robot. Un esqueleto con parámetros (`rig` en `dots/figure.js`: giro e inclinación del torso, ángulos de brazos y piernas, cabeza) pone el pie más bajo en el piso, así que las rodillas dobladas agachan y los muslos horizontales sientan. La guitarra son puntos que salen del torso cuando toca. Una fila bajo la figura marca la actividad y permite saltar a otra.
+- Tercera vuelta: la pantalla de carga perdió la animación de puntos (la volvía lenta) y queda en nombre, barra y estado, con un mínimo de 0,9 s. En la slide 1, el G1 real reemplaza a la figura de puntos: pasa solo por los movimientos precargados que tienen `RobotMotion` guardado (caminar y correr, 9 s cada uno; `hasSavedMotion` en `web/src/motions.js`), y tras un empujón la etiqueta dice "se recupera solo" y a los 4 s vuelve al movimiento. César no quiso botones para elegir el movimiento. Textos tomados del pitch del equipo. Se borraron `dots/figure.js` y `addScene`, que ya no se usaban.
 
 ## Qué funcionó
 
 - Capturas con `puppeteer-core` y Chrome sin GPU, en 1280×800 y 390×844: pantalla de carga con la cara, figura armándose, figura caminando con etiquetas, transición (la figura se dispersa y suben las tarjetas) y slide 2. Sin desborde horizontal ni errores en la consola.
 - Simulaciones con el estilo claro y el robot repitiendo el clip; al salir del inicio se quita el scroll-snap.
 - `npm run build` pasa.
+- Robot de la slide 1, con Chrome sin GPU: empieza caminando, a los 9 s corre, el empujón cambia la etiqueta a "se recupera solo" y luego retoma el movimiento. Sin desborde en 390 px.
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- Si el cambio automático de movimiento caía justo después de un empujón, el robot retomaba el clip antes de recuperarse: el empujón ahora pausa la alternancia.
 
 - La fila de actividades se partía en dos líneas (con `left: 50%` su ancho quedaba limitado a la mitad) y tapaba los pies: `width: max-content` y la cámara mira un poco más abajo.
 - La guitarra se confundía con el torso; ahora sale más adelante y es más grande.
@@ -39,6 +43,8 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Las clases viejas `.intro-text` e `.intro-grid` de la hoja restaurada le daban estilo de tarjeta al texto de la slide; la slide usa `.intro-copy` y las viejas se borraron (ningún archivo las usaba).
 
 ## Decisiones
+
+- Del pitch solo se puso en la web lo que el repo respalda: el entrenamiento empuja al robot (`PUSH_EVERY_S` en `training/env.py`), pero no hay piedras, viento, piso resbaloso ni cambios de peso, así que eso no aparece.
 
 - Las tarjetas de la slide 2 usan los robots de puntos de antes, no las escenas del zip (elección de César).
 - La vuelta al estilo claro contradice la decisión "innegociable" de Juan; se registró como decisión de César enlazando la suya, sin editarla.
