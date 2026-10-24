@@ -44,14 +44,18 @@ Pesos: técnico 25 %, ambición 20 %, ejecución 20 %, impacto 20 %, originalida
 > "Son cuatro pasos. El video entra y detectamos y seguimos a una sola persona, cuadro por cuadro. Esa persona se convierte en un esqueleto 3D en metros. El esqueleto se traduce a los ángulos de las articulaciones del robot, que no tiene las proporciones de un humano. Y con eso se entrena una política: una red neuronal pequeña, no un modelo de lenguaje.
 > La física es MuJoCo, el simulador que usa Google DeepMind, compilado a WebAssembly. La política entrenada se exporta a ONNX. Las dos cosas corren **en el navegador de ustedes**: no hay GPU en el servidor."
 
-### 1:35–2:05 · Pruébenlo (ejecución)
+### 1:35–2:10 · Pruébenlo, y empújenlo (ejecución y originalidad)
 
 **En pantalla:** QR grande, galería de simulaciones precargadas corriendo detrás.
 
 > "Está desplegado y es open source. Abran el QR y suban un video suyo ahora mismo: mientras se procesa van a ver estas simulaciones, nunca una pantalla de carga en blanco.
-> Lo que está corriendo detrás son clips nuestros ya entrenados."
+> Y hagan una cosa más: **denle al botón de empujar.** *[empujón en vivo: 250 newtons, el robot se tambalea]*
+> Eso son 250 newtons durante una décima de segundo sobre un robot de 33 kilos. No es una animación: es física resolviéndose en su teléfono, 500 pasos por segundo.
+> **Un video de un robot no se deja empujar.**"
 
-### 2:05–2:35 · Por qué (impacto y ambición)
+*El empujón es el mejor momento del pitch y dura cuatro segundos. Es la prueba, sin explicar nada, de que detrás hay un mundo con física. Y cuando la política esté entrenada, es también la prueba de que aprendió: el robot se recupera en vez de caerse.*
+
+### 2:10–2:35 · Por qué (impacto y ambición)
 
 > "El cuello de botella de la robótica hoy no es el hardware: son los datos de movimiento. Un laboratorio los consigue con trajes de captura o teleoperando un robot que cuesta lo que un carro, hora por hora, en un galpón.
 > Y hay millones de horas de gente moviéndose, grabadas con celulares, que no se pueden usar.
@@ -60,7 +64,9 @@ Pesos: técnico 25 %, ambición 20 %, ejecución 20 %, impacto 20 %, originalida
 ### 2:35–2:55 · La diferencia, dicha por nosotros primero (originalidad)
 
 > "Esto ya existe en investigación: VideoMimic lo hizo el año pasado con un robot real de dieciséis mil dólares. Y existe un producto gratis, Ultimate Bots Studio, que lleva tu video del celular a un robot en el navegador.
-> La diferencia es una sola: ellos **usan un modelo que NVIDIA ya tenía entrenado**. Nosotros entrenamos el nuestro, desde cero, en una laptop, y la función de recompensa está en el repo para que la lean."
+> Y la física la resuelve MuJoCo, el mismo simulador de Google DeepMind. Eso no lo escribió nadie en 36 horas, ni nosotros ni ellos.
+> La diferencia son dos cosas. Ellos **usan un modelo que NVIDIA ya tenía entrenado**; nosotros entrenamos el nuestro desde cero, en una laptop, y la recompensa está en el repo para que la lean.
+> Y lo de ellos es un visor. **Lo nuestro es el mundo donde el robot aprendió** — la escena, el lazo de simulación, el test de física y el entorno de entrenamiento. Por eso el robot de ellos se ve, y el nuestro se puede empujar."
 
 ### 2:55–3:00 · Cierre
 
@@ -79,6 +85,7 @@ Pesos: técnico 25 %, ambición 20 %, ejecución 20 %, impacto 20 %, originalida
 | **¿Qué hicieron ustedes y qué es librería?** | Librería: MuJoCo, MediaPipe, YOLO, PyTorch, three.js. Nuestro: el pipeline completo, la selección y seguimiento del sujeto, el retargeting a los ángulos del robot, la recompensa y el entrenamiento, y que todo corra en el navegador de quien lo prueba |
 | **¿Qué pasa con un video malo?** | Cada clip trae un `valid_ratio` (cuadros con el sujeto bien detectado / total). Por debajo del umbral se avisa en pantalla en vez de entrenar basura |
 | **¿Cuántos videos hacen falta?** | *(pendiente de medir el sábado: hay que tener el número real, no una estimación)* |
+| **¿La física es suya o es MuJoCo?** | **MuJoCo, y lo decimos nosotros primero.** Nuestro es el simulador que va encima: el lazo de pasos fijos de 2 ms sincronizado con el reloj, el visor que dibuja cualquier MJCF, el test que corre la misma física en Node sin navegador, el modelo de empujón y el entorno de entrenamiento con su recompensa. El solver se instala con `npm install`; el mundo donde el robot aprende, no |
 | **¿Por qué MuJoCo y no un motor propio?** | Porque física de contacto fiel no sale en 36 horas y MuJoCo es el estándar de robótica. Lo nuestro es la escena, el render, los datos y el entrenamiento |
 | **¿Y los 10 TB?** | Es la arquitectura (subida por partes, procesamiento por lotes), no la demo. En la demo se suben megas |
 

@@ -8,7 +8,10 @@ Investigación hecha para responder la última línea de la [decisión de la ide
 
 **Video del celular → robot humanoide en el navegador ya existe, es gratis y es open source.** Se llama **Ultimate Bots Studio**, salió alrededor del **7 de mayo de 2026**, y usa casi nuestro mismo stack: MuJoCo compilado a WebAssembly, ONNX Runtime Web y un Unitree G1, todo corriendo en el navegador del visitante. Si entramos al pitch diciendo "somos los primeros en llevar un robot que aprende de un video al navegador", el agente del juez lo desmiente en una búsqueda y perdemos originalidad y confianza en la misma frase.
 
-La buena noticia: **ninguno de los que existen entrena una política con el video del usuario.** Ultimate Bots *retargetea* el movimiento y lo evalúa con **GEAR-SONIC de NVIDIA**, un modelo base de control que ya venía entrenado. Ahí está nuestro hueco.
+La buena noticia son dos, y las dos se sostienen solas:
+
+1. **Ninguno de los que existen entrena una política con el video del usuario.** Ultimate Bots *retargetea* el movimiento y lo evalúa con **GEAR-SONIC de NVIDIA**, un modelo base de control que ya venía entrenado.
+2. **Lo de ellos es un visor; lo nuestro es un entorno de simulación con su entorno de entrenamiento.** El solver (MuJoCo) es el mismo, pero el mundo, el lazo, el test de física y la recompensa son nuestros, y están en el repo para leerlos.
 
 ## Lo que existe
 
@@ -36,7 +39,29 @@ La buena noticia: **ninguno de los que existen entrena una política con el vide
 
 ## La diferencia de Tridi, de más a menos defendible
 
-### 1. Entrenamos la política; los demás la prestan
+### 1. El simulador es nuestro; el solver es de todos
+
+Lo honesto primero, porque el agente del juez abre `physics/package.json` y ve `@mujoco/mujoco`: **la física la resuelve MuJoCo**, igual que en Ultimate Bots, igual que en Google DeepMind y en NVIDIA. Nadie escribe un integrador de contacto en 36 horas, y presumir de eso es la manera más rápida de perder al juez que sí sabe. Nuestra propia [decisión de la idea](../decisiones/2026-10-23-idea-tridi.md) ya lo dice: *"MuJoCo y no un motor desde cero… lo nuestro es la escena, el render, el pipeline de datos y el entrenamiento"*.
+
+Y resulta que eso es mucho más de lo que suena. **MuJoCo es el solver, como OpenGL es el driver: lo que uno construye encima es el simulador.** Todo esto está en `physics/` y se puede leer:
+
+| Qué es nuestro | Dónde | Por qué un juez técnico lo valora |
+| --- | --- | --- |
+| **El lazo de simulación:** pasos fijos de 2 ms (500 por segundo) sincronizados con el reloj de pared, con un techo de recuperación de 1/30 s para que una pestaña oculta no congele la página | `physics/src/sim.js` | Es una decisión de ingeniería con el porqué escrito al lado, que es lo que pide el repo |
+| **El visor genérico:** un objeto de three.js por cada geometría de MuJoCo. No sabe nada del G1: dibuja cualquier MJCF | `physics/src/viewer.js` | Arquitectura, no demo. El día que cambie el robot no se reescribe nada |
+| **La misma física corriendo sin navegador:** `npm run check` usa el mismo WASM en Node y comprueba que el robot aguante 10 s de pie y se caiga al empujarlo | `physics/scripts/check.mjs` | **Es un test de física.** Casi ningún proyecto de hackathon tiene uno |
+| **El empujón de verdad:** 250 N durante 0,1 s en el torso (25 N·s, unos 0,75 m/s sobre 33 kg) | `physics/src/sim.js` | Es física, no animación. Y es el botón que demuestra si la política aprendió algo |
+| **El entorno de entrenamiento:** observaciones, acciones, recompensa de imitación y condición de caída | `training/` (pendiente) | **La pieza que nadie regala.** Un entorno de RL *es* lo que uno desarrolla; el solver se instala con `npm install` |
+| **Todo en el navegador del visitante, sin servidor de física:** 500 pasos/s a tiempo real y 60 fps; 25.000 pasos/s en Node, 50 veces el tiempo real | `physics/README.md` | Números medidos en una Mac M5, con fecha |
+
+**La frase:**
+
+> "La física la resuelve MuJoCo, el mismo simulador que usa Google DeepMind. Pero **el mundo donde el robot aprende lo construimos nosotros**: la escena, el visor, el lazo, el test de física y el entorno de entrenamiento con su recompensa.
+> Ellos tienen un visor con un robot adentro. Nosotros tenemos el mundo donde ese robot aprendió. **Por eso ustedes lo pueden empujar.**"
+
+**Y el remate, que es el que desarma la pregunta de originalidad:** que el público pueda empujar al robot en vivo es algo que un previsualizador de movimiento no puede ofrecer. Un video de un robot no se deja empujar. Es la prueba, en dos segundos y sin explicar nada, de que detrás hay un mundo con física y no una animación retargeteada.
+
+### 2. Entrenamos la política; los demás la prestan
 
 Ultimate Bots evalúa tu movimiento con GEAR-SONIC, un modelo base de NVIDIA ya entrenado. Nosotros entrenamos una red pequeña desde cero, por imitación + PPO dentro de MuJoCo, en una Mac, por clip.
 
@@ -44,13 +69,13 @@ Nuestro robot es **peor** que el suyo, y eso está bien: *nosotros construimos e
 
 **La frase:** "El robot de los demás ya sabía caminar. El nuestro aprendió con tu video, y se cayó mil veces antes."
 
-### 2. Varios videos, un comportamiento
+### 3. Varios videos, un comportamiento
 
 Todo lo que existe es **un video → un clip de movimiento**. Un movimiento por video, y se acabó. La [decisión de la idea](../decisiones/2026-10-23-idea-tridi.md) dice otra cosa: que el robot aprenda de **muchos** videos y después se mueva solo. Si el domingo mostramos una política entrenada con *N* clips que se sostiene sin caerse, eso no lo tiene ninguno de los cinco productos de arriba.
 
 **Es también nuestro mayor riesgo:** si al final solo mostramos un clip retargeteado, somos un Ultimate Bots peor. Hay que decidirlo temprano, no el domingo a las 9.
 
-### 3. El video del mundo real tiene más de una persona
+### 4. El video del mundo real tiene más de una persona
 
 Los demás asumen un video limpio con una sola persona de cuerpo entero. Nuestra decisión ya incluye **elegir y seguir al sujeto** (YOLO pose + ByteTrack, automático y corregible con un click en el primer frame).
 
@@ -63,6 +88,7 @@ Es la diferencia más chica y la **más fácil de demostrar en 15 segundos**: se
 | "Somos los primeros en pasar de video a robot" | VideoMimic (2025) ya lo hizo y llegó a un robot físico | "Esto lo empezó VideoMimic el año pasado, con un laboratorio y un robot de 16.000 dólares" |
 | "Somos los primeros en el navegador" | Ultimate Bots Studio, gratis y open source, desde mayo | "La parte de mostrar física en el navegador ya es un componente; lo nuestro es lo que pasa antes" |
 | "No necesitas GPU ni cuenta" | Tampoco en Ultimate Bots | Usarlo como comodidad, nunca como diferencia |
+| "Tenemos nuestro propio motor de física" | `physics/package.json` declara `@mujoco/mujoco` 3.16.0 y el G1 es el de MuJoCo Menagerie **sin cambios**. El agente del juez lo ve en diez segundos, y ahí se cae todo lo demás que digamos | "El solver es MuJoCo, como en todos. El simulador —escena, visor, lazo, test de física y entorno de entrenamiento— es nuestro" |
 | "Un LLM aprende a caminar" | Es falso y es la frase que más rápido nos hunde con un jurado técnico | "Una política neuronal pequeña, entrenada por imitación y refuerzo" |
 | "El robot aprendió en vivo" (si mostramos un checkpoint) | El entrenamiento real toma horas en Mac | "Esto se entrenó anoche en esta laptop, en X minutos y Y pasos; lo que ven ahora es la política entrenada" |
 
@@ -72,8 +98,9 @@ Para Pastor, Juan y César, en orden de cuánto le suman al pitch:
 
 1. **Un checkpoint intermedio guardado, no solo el final** (Pastor / training): con 4 checkpoints (0, 1k, 10k, 100k pasos) se arma *la escalera del aprendizaje*: cuatro robots lado a lado con el mismo clip, el primero se cae de una, el último aguanta. **Es el mejor plano del pitch, es 3D puro y es la prueba visual de que entrenamos.** Nadie lo muestra. Cuesta guardar un archivo cada tanto.
 2. **Una política entrenada con más de un clip** (training): es el punto 2 de arriba, nuestra ambición (20 %).
-3. **Un video difícil en la galería de precargadas** (Juan / César): varias personas, para el punto 3.
-4. **Que el número de pasos y el tiempo de entrenamiento salgan en pantalla** (César): "13 min en una MacBook, 120k pasos". Un número medido vale más que un adjetivo.
+3. **El botón de empujar, visible y sin scroll en la app desplegada** (César): `physics/` ya lo expone como `view.push()`. Es cuatro segundos del pitch y es lo que convierte "miren el robot" en "empújenlo ustedes". Cuando haya política, el mismo botón demuestra que aprendió a recuperarse.
+4. **Un video difícil en la galería de precargadas** (Juan / César): varias personas, para el punto 4.
+5. **Que el número de pasos y el tiempo de entrenamiento salgan en pantalla** (César): "13 min en una MacBook, 120k pasos". Un número medido vale más que un adjetivo.
 
 ## Fuentes
 
