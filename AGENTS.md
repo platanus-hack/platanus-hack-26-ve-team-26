@@ -1,10 +1,11 @@
 # Team 26: context for agents
 
-Official repo of team 26 at **Platanus Hack 26 Caracas** (October 23 to 25, 2026), track **🧊 Three-Dimensional**: Juan, Pastor, César and Ale. The idea is **Tridi**: human video → 3D pose of one subject → simulated robot (MuJoCo) that learns to move by itself with a small neural policy trained by imitation. See [`docs/decisiones/2026-10-23-idea-tridi.md`](docs/decisiones/2026-10-23-idea-tridi.md). The repo is public, it closes Sunday 08:30, and judges read it with AI agents: keep it clean, and write the reason next to every threshold or magic number.
+Official repo of team 26 at **Platanus Hack 26 Caracas** (October 23 to 25, 2026), track **🧊 Three-Dimensional**: Juan, Pastor, César and Ale. The product is **Tridi**, for Physical AI: it turns video into training data for humanoid robots. Video or camera → 3D skeleton of one person → the motion on a simulated Unitree G1 (MuJoCo) → the robot learns it by imitation, with pushes and varied worlds → it delivers a small trained policy (ONNX) and the physics-corrected motion data. Pitch, and what is true today versus planned: [`docs/pitch/pitch-producto.md`](docs/pitch/pitch-producto.md); how it is built, by area: [`docs/plan-producto.md`](docs/plan-producto.md). Origin of the idea: [`docs/decisiones/2026-10-23-idea-tridi.md`](docs/decisiones/2026-10-23-idea-tridi.md). The repo is public, it closes Sunday 08:30, and judges read it with AI agents: keep it clean, and write the reason next to every threshold or magic number.
 
 ## Start of every session
 
 1. Read [`docs/estado.md`](docs/estado.md) (where each part is now) and the latest files in [`docs/bitacora/`](docs/bitacora) (what happened while this person was away).
+   Before writing product copy or claims (web, README, pitch), check the "Qué es verdad hoy y qué es plan" table in [`docs/pitch/pitch-producto.md`](docs/pitch/pitch-producto.md): what is planned is never shown as done.
 2. Research, pitches, judges and the study guide live in the team's **private** sibling repo `../platanus-ideas` (start at `docs/preparacion/00-empieza-aqui.md`). Use it as context; never copy private material (chats, personal notes) into this public repo.
 
 ## Git workflow (mandatory)
