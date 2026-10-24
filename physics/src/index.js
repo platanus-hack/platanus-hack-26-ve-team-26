@@ -182,14 +182,16 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
      * robot, without dynamics. It follows play(), pause() and setSpeed(), and reset() rewinds it.
      * What shows is the motion cleaned of the video's jitter (smoothForDisplay in motion.js).
      * @param options.loop  start over at the end (default), or hold the last frame
+     * @param options.plantFeet  for a clip that walks: the pelvis path re-made so the foot on the
+     *   floor does not slide (motion.js plantFeet). Not for runs or jumps.
      */
-    playClip(motion, { loop = true } = {}) {
+    playClip(motion, { loop = true, plantFeet = false } = {}) {
       // The robot's own values (36), not the model's: a place with loose objects adds 7 per object.
       const robotValues = kinematicModel().nq;
       if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== robotValues) {
         throw new Error(`This RobotMotion is not for the ${robotValues}-value G1 (robot: ${motion.robot}).`);
       }
-      clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion), duration: motionDuration(motion), loop, shown: 0, wrapped: false };
+      clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion, { plantFeet }), duration: motionDuration(motion), loop, shown: 0, wrapped: false };
       clipTime = 0;
     },
     /**

@@ -176,11 +176,14 @@ El video trae el temblor de MediaPipe cuadro a cuadro, y el robot lo copiaba: se
 
 `scripts/check-smooth.mjs` lo exige en `npm run check`. El entrenamiento sigue usando la referencia sin el suavizado extra de la altura: los pies de una política tienen que estar de verdad en el piso.
 
+**El pie apoyado patinaba.** El recorrido de la pelvis (el de la persona, escalado a las piernas del G1) da 7,5 m en la caminata, pero la zancada del robot da 9,8 m: el pie que carga el peso se deslizaba hacia atrás a 0,35 m/s (mediana), como en una cinta, y la caminata se veía como un *moonwalk*. `playClip(motion, { plantFeet: true })` rehace el recorrido horizontal desde el pie más bajo (lo que ese pie se mueve respecto a la pelvis es la pelvis moviéndose al revés, como hace `data/lift.py` con la persona) y lo suaviza 0,2 s: el pie baja a 0,13 m/s (`motion.js`, `plantFeet`, con la medición de las alternativas). Es opcional porque solo vale para caminar: en una carrera el pie más bajo va en el aire durante el vuelo (la carrera pasaba de 8,8 m a 0,5 m) y en los *jumping jacks* los pies que se abren mecerían la pelvis. La landing lo usa en Capture; `check-smooth.mjs` lo mide.
+
 ### Reproducirlo: `view.playClip(motion)`
 
 ```js
 const motion = await (await fetch('/motions/clip_2026-10-23_caminar-perfil_01.json')).json();
 view.playClip(motion);               // en bucle; { loop: false } sostiene el último cuadro
+view.playClip(motion, { plantFeet: true }); // un clip que camina: el pie apoyado no patina (ver arriba)
 ```
 
 Sin dinámica, igual que `mimic`: el G1 se coloca en cada pose. Usa los mismos controles que la simulación: `pause()`, `play()` y `setSpeed()` valen para el clip, y `reset()` lo rebobina. Como el esqueleto de la web, avanza con `tiempo real × velocidad`, así que los dos siguen juntos; para engancharse al segundo exacto está `clipTime()` y `seek(s)`. Un clip de 24 a 30 cuadros por segundo se muestra a 60 mezclando los cuadros vecinos (`sampleMotion`). **Empujar** durante un clip lo suelta y vuelve al robot físico, que es el que se cae. Rechaza un `RobotMotion` de otro robot.

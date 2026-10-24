@@ -9,6 +9,7 @@
 import { createPoseTracker } from './pose.js';
 import { createReference } from './reference.js';
 import { createRetargeter } from './retarget.js';
+import { idOf } from './sim.js';
 
 // Below this speed the person is standing or shuffling, and the direction of travel is noise:
 // the heading comes from the hips instead. Walking is about 1 m/s.
@@ -151,29 +152,82 @@ function travelHeading(frames, hips, i) {
 // it is (reference.js mirrors Python), because a policy's feet must really be on the floor.
 const DISPLAY_HEIGHT_SMOOTH_S = 0.2;
 
-const displayed = new WeakMap(); // RobotMotion -> its smoothed copy, computed once
+// Why the foot on the floor slides, and what plantFeet does (measured on data/clips' walk, at 60
+// frames per second): the pelvis path, the person's scaled to the robot's legs, covers 7.5 m in
+// 11.85 s (0.63 m/s), while the robot's own stride covers 9.8 m, so the foot carrying the weight
+// slides backward at 0.35 m/s (median; p95 1.30), as on a treadmill. plantFeet re-makes the
+// horizontal path from that foot (the lower one): whatever it moves against the pelvis, the pelvis
+// moved the other way, as data/lift.py does with the person's feet. The foot then slides 0.13 m/s
+// (p95 0.48). Smoothing the new path over 0.1 s plants it harder (0.04) but the pelvis jerks at
+// each change of foot (15 m/s² of horizontal acceleration, p95, against 7 without plantFeet; 0.2 s
+// gives 9). Opt-in, for clips that walk: in a run the lower foot is in the air during flight (the
+// run went from 8.8 m to 0.5 m of travel), and in jumping jacks the feet spreading would swing the
+// pelvis sideways.
+const PLANT_SMOOTH_S = 0.2;
+const ANKLES = ['left_ankle_roll_link', 'right_ankle_roll_link'];
+
+const displayed = new WeakMap(); // RobotMotion -> { plain, planted }: its smoothed copies, computed once
+
+// Centered moving average of `values` over `window` samples, repeating the edges.
+function movingAverage(values, window) {
+  const n = values.length;
+  const pad = Math.floor(window / 2);
+  return values.map((_, i) => {
+    let sum = 0;
+    for (let k = i - pad; k < i - pad + window; k++) sum += values[Math.min(Math.max(k, 0), n - 1)];
+    return sum / window;
+  });
+}
+
+// Rewrites the pelvis x and y of `qpos` (rows of the G1's 36 values) so that the lower foot stays
+// where it is on the floor from one frame to the next (see PLANT_SMOOTH_S).
+function plantFeet(mujoco, model, qpos, fps) {
+  const data = new mujoco.MjData(model);
+  const feet = ANKLES.map((name) => idOf(mujoco, model, 'BODY', name));
+  // Each foot against the pelvis, in world axes, and its height.
+  const rel = qpos.map((q) => {
+    data.qpos.set(q);
+    mujoco.mj_kinematics(model, data);
+    return feet.map((b) => [data.xpos[3 * b] - q[0], data.xpos[3 * b + 1] - q[1], data.xpos[3 * b + 2]]);
+  });
+  data.delete();
+  const path = [[qpos[0][0], qpos[0][1]]];
+  for (let i = 1; i < qpos.length; i++) {
+    // The lower foot at this frame, followed from the previous one: the same foot on both sides of
+    // the step, so a change of stance foot does not jump.
+    const s = rel[i][0][2] < rel[i][1][2] ? 0 : 1;
+    const [x, y] = path[i - 1];
+    path.push([x - (rel[i][s][0] - rel[i - 1][s][0]), y - (rel[i][s][1] - rel[i - 1][s][1])]);
+  }
+  const window = Math.max(1, Math.round(PLANT_SMOOTH_S * fps));
+  const xs = movingAverage(path.map((p) => p[0]), window);
+  const ys = movingAverage(path.map((p) => p[1]), window);
+  qpos.forEach((row, i) => {
+    row[0] = xs[i];
+    row[1] = ys[i];
+  });
+}
 
 /**
  * The RobotMotion the robot shows: the training's clean reference (joints and path smoothed, feet
  * on the floor; reference.js) at each frame, with the pelvis height smoothed for the eye. Same frames
  * and fps, so it plays in step with the person's skeleton.
  * @param model  a model of the G1 with its feet (g1_kinematics.xml is enough)
+ * @param options.plantFeet  for a clip that walks: the pelvis path re-made so the foot on the floor
+ *   does not slide (plantFeet above). Not for runs or jumps.
  */
-export function smoothForDisplay(mujoco, model, motion) {
-  if (displayed.has(motion)) return displayed.get(motion);
+export function smoothForDisplay(mujoco, model, motion, { plantFeet: planted = false } = {}) {
+  const key = planted ? 'planted' : 'plain';
+  const cached = displayed.get(motion) ?? {};
+  if (cached[key]) return cached[key];
   const reference = createReference(mujoco, model, motion);
   const qpos = motion.qpos.map((_, i) => reference.sample(i / motion.fps).q);
-  const n = qpos.length;
   const window = Math.max(1, Math.round(DISPLAY_HEIGHT_SMOOTH_S * motion.fps));
-  const pad = Math.floor(window / 2);
-  const height = qpos.map((row) => row[2]);
-  qpos.forEach((row, i) => {
-    let sum = 0;
-    for (let k = i - pad; k < i - pad + window; k++) sum += height[Math.min(Math.max(k, 0), n - 1)];
-    row[2] = sum / window;
-  });
+  const height = movingAverage(qpos.map((row) => row[2]), window);
+  qpos.forEach((row, i) => (row[2] = height[i]));
+  if (planted) plantFeet(mujoco, model, qpos, motion.fps);
   const smoothed = { ...motion, qpos };
-  displayed.set(motion, smoothed);
+  displayed.set(motion, { ...cached, [key]: smoothed });
   return smoothed;
 }
 

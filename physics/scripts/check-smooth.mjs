@@ -66,6 +66,43 @@ console.log('playClip: the walk as the screen shows it, at 60 frames per second'
   expect(feet < FEET_M, `feet within ${(100 * feet).toFixed(1)} cm of the floor in 95% of frames, under ${100 * FEET_M}`);
 }
 
+console.log('playClip with plantFeet: the walk with its foot on the floor kept still');
+{
+  // A foot carrying the weight does not move. Without plantFeet the walk's slides backward at
+  // 0.35 m/s (median), as on a treadmill; with it, 0.13 (motion.js PLANT_SMOOTH_S). The limit
+  // catches a return to sliding, not the noise between those two.
+  const SLIDE_M_S = 0.2;
+  const motion = read('../motions/clip_2026-10-23_caminar-perfil_01.json');
+  const duration = (motion.qpos.length - 1) / motion.fps;
+  const footPositions = (q) => {
+    data.qpos.set(q);
+    mujoco.mj_kinematics(kinematic, data);
+    return feetBodies.map((b) => [data.xpos[3 * b], data.xpos[3 * b + 1], data.xpos[3 * b + 2]]);
+  };
+  // Horizontal speed of the lower foot, over the screen frames where it stays the lower one.
+  const slide = (shown) => {
+    const speeds = [];
+    let previous = null;
+    for (let t = 0; t <= duration; t += SCREEN_DT) {
+      const feet = footPositions(sampleMotion(shown, t, new Float64Array(sim.model.nq)));
+      const low = feet[0][2] < feet[1][2] ? 0 : 1;
+      if (previous && previous.low === low) speeds.push(Math.hypot(feet[low][0] - previous.feet[low][0], feet[low][1] - previous.feet[low][1]) / SCREEN_DT);
+      previous = { low, feet };
+    }
+    return speeds.sort((a, b) => a - b)[Math.floor(speeds.length / 2)];
+  };
+  const planted = smoothForDisplay(mujoco, kinematic, motion, { plantFeet: true });
+  const plain = slide(smoothForDisplay(mujoco, kinematic, motion));
+  const still = slide(planted);
+  expect(still < SLIDE_M_S, `the foot on the floor slides ${still.toFixed(2)} m/s (median; ${plain.toFixed(2)} without plantFeet), under ${SLIDE_M_S}`);
+  const rows = [];
+  for (let t = 0; t <= duration; t += SCREEN_DT) rows.push(Array.from(sampleMotion(planted, t, new Float64Array(sim.model.nq))));
+  const height = accel(rows.map((q) => q[2]), SCREEN_DT);
+  expect(height < PELVIS_ACCEL, `pelvis height acceleration ${height.toFixed(1)} m/s^2 (p95), under ${PELVIS_ACCEL}`);
+  const travel = Math.hypot(rows.at(-1)[0] - rows[0][0], rows.at(-1)[1] - rows[0][1]);
+  console.log(`       (the walk covers ${travel.toFixed(1)} m with plantFeet, ${Math.hypot(motion.qpos.at(-1)[0] - motion.qpos[0][0], motion.qpos.at(-1)[1] - motion.qpos[0][1]).toFixed(1)} as retargeted)`);
+}
+
 console.log('starting a clip over: no jump from its last pose to its first');
 {
   // Each loop used to jump from the last pose to the first: 67 degrees in a joint in the run, 147 in
