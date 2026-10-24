@@ -22,6 +22,12 @@ const STAND_OBS = 3 + 3 + NU + NU + NU;
 // Imitation adds the reference 20 ms ahead (joints, pelvis velocity, pelvis height) and, for each
 // look-ahead instant of policy.json, its joints and pelvis position (imitate.MimicEnv.observe).
 const mimicObsDim = (lookahead) => STAND_OBS + NU + 3 + 1 + lookahead.length * (NU + 3);
+// A fall, as training ends an episode (env.py): pelvis below 0.5 m or the torso tilted past 60
+// degrees. An imitation policy that falls starts its clip over after FALL_PAUSE_S, long enough to
+// see the fall and short enough that the robot is not left lying on the floor for the rest of the clip.
+const FALL_HEIGHT = 0.5;
+const FALL_UPRIGHT = 0.5;
+const FALL_PAUSE_S = 1;
 
 /**
  * @param ort    the onnxruntime-web module (or onnxruntime-node)
@@ -99,6 +105,17 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
 
   // Clip time of an imitation policy: one decision is 20 ms of the clip (MimicEnv.t).
   const clipTime = (sim) => sim.steps * model.opt.timestep;
+  let fellAt = null; // clip time of the fall, while an imitation policy lies on the floor
+
+  // Starts the clip over at its end, or a moment after a fall. True if it did (sim.reset() was called).
+  function startOver(sim, t) {
+    const { qpos } = sim.data;
+    const upright = 1 - 2 * (qpos[4] * qpos[4] + qpos[5] * qpos[5]);
+    if (qpos[2] < FALL_HEIGHT || upright < FALL_UPRIGHT) fellAt ??= t;
+    if (t < reference.duration && (fellAt === null || t - fellAt < FALL_PAUSE_S)) return false;
+    sim.reset();
+    return true;
+  }
 
   function observe(data, t = 0) {
     if (mimic) observeMimic(data, t);
@@ -120,6 +137,7 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
     // it (MimicEnv.reset_at(0)); sim.reset() runs mj_forward after this.
     reset(sim) {
       if (!mimic) return void previous.set(standing);
+      fellAt = null;
       const { data } = sim;
       const { q, rootVel, jointVel } = reference.sample(0);
       data.qpos.set(q);
@@ -131,11 +149,11 @@ export async function createPolicy(ort, sim, onnx, meta, { motion } = {}) {
     },
     // One decision: the network's output already is the motor targets (it adds the reference or
     // the standing pose, applies the scale and clips to each motor's range), so it goes straight
-    // to ctrl. An imitation policy starts its clip over when it ends.
+    // to ctrl. An imitation policy starts its clip over when it ends, or a moment after a fall.
     async act(sim) {
       const { data } = sim;
       const t = clipTime(sim);
-      if (mimic && t >= reference.duration) return void sim.reset();
+      if (mimic && startOver(sim, t)) return;
       const result = await session.run({ [input]: new ort.Tensor('float32', observe(data, t), [1, obsDim]) });
       const ctrl = result[output].data;
       data.ctrl.set(ctrl);

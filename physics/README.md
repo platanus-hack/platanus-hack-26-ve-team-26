@@ -107,7 +107,7 @@ view.clipTime(); // en qué segundo del clip va, para mover el esqueleto de la p
 view.push();     // también se lo puede empujar
 ```
 
-Una política con `task: "mimic"` (de `training/imitate.py`) aprendió a hacer **un** clip con sus motores, no a quedarse de pie. `loadPolicy` necesita además el `RobotMotion` de ese clip (`policy.json` dice cuál en `motion`, y se niega si le pasan otro). El robot arranca en la primera pose del clip, lo hace con física y vuelve a empezar al terminarlo.
+Una política con `task: "mimic"` (de `training/imitate.py`) aprendió a hacer **un** clip con sus motores, no a quedarse de pie. `loadPolicy` necesita además el `RobotMotion` de ese clip (`policy.json` dice cuál en `motion`, y se niega si le pasan otro). El robot arranca en la primera pose del clip, lo hace con física y vuelve a empezar al terminarlo, o 1 s después de caerse (la caída del entrenamiento: pelvis bajo 0,5 m o torso inclinado más de 60°), para que no quede tirado el resto del clip.
 
 | Archivo | Qué hace |
 | --- | --- |

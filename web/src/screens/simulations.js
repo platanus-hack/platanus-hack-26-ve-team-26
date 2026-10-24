@@ -1,7 +1,7 @@
 // Ver simulaciones: the gallery of preloaded clips and the stage with the person and the robot.
 import { mountGallery } from '../gallery.js';
 import { WORLDS } from 'tridi-physics';
-import { FINAL_LEVEL, LEVELS } from '../policies.js';
+import { FINAL_LEVEL, IMITATIONS, LEVELS } from '../policies.js';
 import { robotPaneHTML } from '../robot-pane.js';
 import { mountStage } from '../stage.js';
 
@@ -39,6 +39,7 @@ export function mount(root, { dots }, [clipId] = []) {
             <label>Robot entrenado con
               <select id="policy">
                 ${LEVELS.map(({ id, label }) => `<option value="${id}"${id === FINAL_LEVEL ? ' selected' : ''}>${label}</option>`).join('')}
+                ${IMITATIONS.length ? `<optgroup label="Imita este video">${IMITATIONS.map(({ id, label }) => `<option value="${id}" disabled>${label}</option>`).join('')}</optgroup>` : ''}
               </select>
             </label>
             <button id="play" class="primary" type="button">Pausa</button>

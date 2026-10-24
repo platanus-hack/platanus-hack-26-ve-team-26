@@ -16,7 +16,15 @@ export const LEVELS = [
 
 export const FINAL_LEVEL = 'g1-stand';
 
-export const levelLabel = (id) => LEVELS.find((level) => level.id === id)?.label ?? id;
+// Imitation policies (training/imitate.py): each learned one clip, and does it with physics instead
+// of standing still. `clip` is the PoseClip/RobotMotion it learned; the option shows only for it.
+export const IMITATIONS = [
+  { id: 'g1-walk', clip: 'clip_2026-10-23_caminar-perfil_01', label: 'Imitando el video, con física (en entrenamiento)' },
+].filter(({ id }) => URLS[`../../training/policies/${id}.onnx`]);
+
+export const imitationOf = (id) => IMITATIONS.find((imitation) => imitation.id === id) ?? null;
+
+export const levelLabel = (id) => (LEVELS.find((level) => level.id === id) ?? imitationOf(id))?.label ?? id;
 
 /** @returns {{ onnx: string, json: string }} URLs for createSimView's loadPolicy */
 export function policyUrls(id) {

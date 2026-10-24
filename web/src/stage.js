@@ -8,9 +8,13 @@
 // keeping the robot up. "Empezar de nuevo" puts both back at the start of the clip. "Mundo" puts
 // the robot on another floor, grip, wind, mass and motor strength (physics/worlds); leaving the
 // screen puts it back on flat ground, since the app shares one robot.
+//
+// For a clip with an imitation policy (policies.js IMITATIONS), "Robot entrenado con" also offers
+// it: the robot then does the clip itself, with physics, from its first pose, and the skeleton
+// follows the robot's clock (view.clipTime) instead of the other way around.
 import { WORLDS } from 'tridi-physics';
 import { savedMotion } from './motions.js';
-import { FINAL_LEVEL, levelLabel, policyUrls } from './policies.js';
+import { FINAL_LEVEL, IMITATIONS, imitationOf, levelLabel, policyUrls } from './policies.js';
 import { mountRobotPane } from './robot-pane.js';
 import { SkeletonView } from './skeleton.js';
 
@@ -41,18 +45,25 @@ export function mountStage(root, dots) {
   let copying = false; // the robot is playing `motion`
   const motions = new Map(); // clip id -> RobotMotion, so a clip is retargeted once
 
+  const imitating = () => imitationOf(level) !== null;
+
   function setRobotLabel(text) {
     const world = robot.view?.world();
     const where = world && world.id !== 'plano' ? ` · ${world.title.toLowerCase()}` : '';
-    label.textContent = text ?? (copying ? `Robot · repite el movimiento${where}` : `Robot · se equilibra solo (${levelLabel(level).toLowerCase()})${where}`);
+    const doing = imitating()
+      ? 'imita el video con física (en entrenamiento)'
+      : copying ? 'repite el movimiento' : `se equilibra solo (${levelLabel(level).toLowerCase()})`;
+    label.textContent = text ?? `Robot · ${doing}${where}`;
   }
 
   let last = performance.now();
   let frameId = requestAnimationFrame(function frame(now) {
     const wall = Math.min(MAX_FRAME_S, Math.max(0, (now - last) / 1000));
     last = now;
-    if (playing) skeleton.advance(wall * speed);
-    // The skeleton's clock is the stage's: the robot follows it, so the two never drift apart.
+    // Imitating, the robot's physics sets the time and the skeleton follows it. Otherwise the
+    // skeleton's clock is the stage's and the robot follows it, so the two never drift apart.
+    if (imitating() && robot.view) skeleton.time = robot.view.clipTime();
+    else if (playing) skeleton.advance(wall * speed);
     if (copying && robot.view) robot.view.seek(skeleton.time);
     skeleton.render();
     frameId = requestAnimationFrame(frame);
@@ -82,7 +93,7 @@ export function mountStage(root, dots) {
   }
 
   function startMotion() {
-    if (!robot.view || !motion) return;
+    if (!robot.view || !motion || imitating()) return;
     robot.view.playClip(motion);
     robot.view.seek(skeleton.time);
     copying = true;
@@ -98,8 +109,12 @@ export function mountStage(root, dots) {
     setRobotLabel('Cargando lo que aprendió el robot…');
     try {
       const { onnx, json } = policyUrls(id);
-      await view.loadPolicy(onnx, json);
+      // An imitation policy also needs the RobotMotion of the clip it learned.
+      const imitation = imitationOf(id);
+      const learned = imitation && (motions.get(imitation.clip) ?? (await savedMotion(imitation.clip)));
+      await view.loadPolicy(onnx, json, imitation ? { motion: learned } : {});
       level = id;
+      if (imitation) skeleton.time = 0; // the robot starts the clip from its first pose
     } catch (error) {
       console.error(error);
       $('policy').value = level;
@@ -109,7 +124,7 @@ export function mountStage(root, dots) {
       root.querySelector('.push').disabled = false;
     }
     copying = false;
-    if (motion) startMotion();
+    if (motion && !imitating()) startMotion();
     else setRobotLabel();
   }
 
@@ -130,7 +145,7 @@ export function mountStage(root, dots) {
       root.querySelector('.push').disabled = false;
     }
     copying = false;
-    if (motion) startMotion();
+    if (motion && !imitating()) startMotion();
     else setRobotLabel();
   }
 
@@ -156,9 +171,21 @@ export function mountStage(root, dots) {
   };
   $('reset').onclick = () => {
     skeleton.time = 0;
-    if (motion) startMotion();
-    else robot.view?.reset();
+    if (motion && !imitating()) startMotion();
+    else robot.view?.reset(); // imitating: the policy puts the robot back in the clip's first pose
   };
+
+  // An imitation option is only for the clip it learned; leaving that clip goes back to standing.
+  function offerImitations(clip) {
+    for (const { id, clip: learned } of IMITATIONS) {
+      const option = $('policy').querySelector(`option[value="${id}"]`);
+      if (option) option.disabled = clip.id !== learned;
+    }
+    if (imitating() && imitationOf(level).clip !== clip.id) {
+      $('policy').value = FINAL_LEVEL;
+      loadLevel(FINAL_LEVEL);
+    }
+  }
 
   return {
     /** @param {import('./contract.js').PoseClip} clip  @param {string} title */
@@ -166,6 +193,7 @@ export function mountStage(root, dots) {
       skeleton.setClip(clip);
       $('human-label').textContent = `Persona · ${title}`;
       current = { clip, title };
+      offerImitations(clip);
       motion = motions.get(clip.id) ?? null;
       if (motion) startMotion();
       else copyCurrent();
