@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tridi · física</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <h1>Unitree G1 en MuJoCo</h1>
+        <p>La física corre en tu navegador. El robot sostiene la pose con sus motores; todavía no tiene política para equilibrarse.</p>
+      </div>
+      <nav>
+        <button id="push" disabled>Empujar</button>
+        <button id="reset" disabled>Reiniciar</button>
+      </nav>
+    </header>
+    <main id="stage">
+      <canvas id="view"></canvas>
+      <div id="loading">
+        <div class="track"><div id="progress-bar"></div></div>
+        <p id="progress-text">Cargando MuJoCo y el robot…</p>
+      </div>
+    </main>
+    <footer id="stats"></footer>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
