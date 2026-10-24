@@ -6,8 +6,11 @@ function describe(clip) {
   return `${seconds.toFixed(0)} segundos · se ve el ${Math.round(100 * clip.quality.valid_ratio)} % del tiempo`;
 }
 
-/** @param initialClip  id of the clip to show first (from #/simulaciones/<id>), else the first */
-export function mountGallery(root, stage, initialClip) {
+/**
+ * @param initialClip  id of the clip to show first (from #/simulaciones/<id>), else the first
+ * @param onSelect     called with the gallery item on every pick (the Entrenar box follows it)
+ */
+export function mountGallery(root, stage, initialClip, onSelect) {
   const list = root.querySelector('#gallery');
   const items = [...userClips, ...preloaded];
   const cards = items.map((item) => {
@@ -30,6 +33,7 @@ export function mountGallery(root, stage, initialClip) {
   async function select(item, button) {
     for (const card of cards) card.removeAttribute('aria-current');
     button.setAttribute('aria-current', 'true');
+    onSelect?.(item);
     try {
       stage.showClip(await fetchClip(item), item.title);
     } catch (error) {

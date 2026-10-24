@@ -1,8 +1,8 @@
 // Entrena a Tridi en vivo (W4, WEB-1 in docs/plan-producto.md): the camera on one side with the
 // person's skeleton drawn over it, and the G1 copying them on the other (view.mimic from physics/,
 // createLiveCapture from data/live). Turning the camera on also starts recording; stopping saves a
-// PoseClip to the gallery, where the robot repeats it. Sending it to the server waits for
-// POST /clips (SRV-1).
+// PoseClip to the gallery, where the robot repeats it; Simulaciones sends it to the server
+// (POST /clips) when you train it (training.js).
 import { addUserClip } from '../preloaded.js';
 import { mountRobotPane, robotPaneHTML } from '../robot-pane.js';
 

@@ -482,6 +482,60 @@ select:disabled {
   font-size: 20px;
 }
 
+/* Entrenar (WEB-2, screens/simulations.js): above the gallery, only for your own clips. */
+.train-box {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 20px;
+  padding: 0 0 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.train-box[hidden] {
+  display: none;
+}
+
+.train-box h2 {
+  margin: 0;
+}
+
+.train-box p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.train-box [data-train] {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+}
+
+.train-box [data-train][hidden] {
+  display: none;
+}
+
+.train-why,
+.train-note {
+  color: var(--muted);
+}
+
+.stages.compact {
+  gap: 8px;
+  margin: 0;
+}
+
+.stages.compact li {
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+  font-size: 14px;
+}
+
+.stages.compact li::before {
+  width: 26px;
+  height: 26px;
+  font-size: 13px;
+}
+
 #gallery {
   display: grid;
   gap: 10px;
