@@ -3,7 +3,7 @@ persona: Juan
 rama: juan/movimiento-vivo
 sesion: 27bac5c6-8df0-4d1c-9947-f9d999dbb804
 inicio: 2026-10-24 16:36
-estado: cerrada
+estado: en curso
 ---
 
 # El robot en vivo camina y salta de verdad, y la caminata reproducida ya no resbala
@@ -38,6 +38,13 @@ Juan: que la caminata se vea más natural, y que en vivo el robot vaya adonde va
 
 - No se toca la caminata con física (`walk-v4`, que se cae a los ~3,5 s): eso es entrenamiento (ENT-1, Pastor), no animación.
 - Los clips grabados todavía no guardan el salto: la altura de la pelvis del `RobotMotion` sale de apoyar el pie más bajo, y cambiarlo cambia la referencia que imitan las políticas ya entrenadas (jumping jacks tiene saltitos).
+
+## El robot del Hero se levanta solo
+
+- **Problema (Juan):** si el robot del Hero se caía, quedaba en el piso hasta recargar la página.
+- **Causa:** `web/src/screens/home.js` solo lo paraba con un temporizador fijo 5 s después del empujón. Una caída posterior, o volver al Hero con el robot caído, lo dejaba ahí.
+- **Arreglo** (carpeta de César): `standHeroUp`, cada cuadro en el Hero: pelvis bajo 0,45 m durante 1,6 s (`GYM_RESTART_S`, lo mismo que el Gym) → `view.reset()`. La caída solo se cuenta si hubo empujón. El aviso decía "1 de cada 15" y con `stand-v7d` es más o menos 1 de cada 4 (bitácora del balance de pie): ahora dice "se levanta y lo vuelve a intentar".
+- **Comprobado en el navegador:** acostado a mano sin empujón, se levanta en ~1,7 s y el HUD sigue "de pie"; con empujón, cuenta 1 caída, avisa y vuelve a "de pie con su política".
 
 ## Sigue
 
