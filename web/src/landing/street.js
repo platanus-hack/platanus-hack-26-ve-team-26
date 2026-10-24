@@ -1,7 +1,7 @@
-// The landing's floor: a street instead of the grid, so the robot reads as out in the world. A
-// texture drawn here (no image files): concrete sidewalk slabs, a curb, asphalt with a dashed
-// line, and the far sidewalk. The robot stands on the near sidewalk and walks along it (the walk
-// clip heads along MuJoCo +y, three.js -z, which is the texture's v direction on the floor).
+// A street floor drawn as a texture (no image files): concrete sidewalk slabs, a curb, asphalt with
+// a dashed line, and the far sidewalk, running along three.js z (the texture's v direction). The
+// sidewalk place of Simulaciones lies on it (props.js); the landing builds its own street in 3D,
+// with a real curb and the city around it (city.js).
 import * as THREE from 'three';
 
 const PX_PER_M = 128; // 1 cm ≈ 1 px: seams and speckle stay crisp up close

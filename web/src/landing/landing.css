@@ -100,8 +100,9 @@ html.is-landing.lenis body {
   z-index: 0;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgb(10 10 9 / calc(0.6 * var(--wash-left))), rgb(10 10 9 / calc(0.2 * var(--wash-left))) 32%, transparent 50%),
-    linear-gradient(270deg, rgb(10 10 9 / calc(0.6 * var(--wash-right))), rgb(10 10 9 / calc(0.2 * var(--wash-right))) 32%, transparent 50%),
+    /* Darker since the landing's street is lit and full of shops: the words sit over a busy picture. */
+    linear-gradient(90deg, rgb(10 10 9 / calc(0.78 * var(--wash-left))), rgb(10 10 9 / calc(0.42 * var(--wash-left))) 34%, transparent 56%),
+    linear-gradient(270deg, rgb(10 10 9 / calc(0.78 * var(--wash-right))), rgb(10 10 9 / calc(0.42 * var(--wash-right))) 34%, transparent 56%),
     linear-gradient(transparent 55%, rgb(10 10 9 / calc(0.8 * var(--wash-floor))) 85%);
 }
 

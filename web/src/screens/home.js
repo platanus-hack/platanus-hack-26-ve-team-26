@@ -10,7 +10,6 @@ import * as THREE from 'three';
 import '../landing/landing.css';
 import curve from '../landing/training-curve.json';
 import { dressCity } from '../landing/city.js';
-import { dressStreet } from '../landing/street.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
 // The walk being trained (training/): its step count feeds the roadmap, so the page follows the
@@ -306,8 +305,7 @@ export function mount(root, { api }) {
   let saved = null; // the viewer's camera as the app screens expect it, put back on unmount
   let lights = []; // the landing's extra lights
   let key = null; // the one of them that rides with the camera
-  let undressStreet = () => {}; // puts the floor back as the app screens expect it
-  let undressCity = () => {}; // takes the sky and the buildings out again
+  let undressCity = () => {}; // takes the street, the sky and the buildings out again
 
   // The camera eases toward the shot of the chapter on screen, blending between neighbours.
   const shot = { ...SHOTS.hero };
@@ -360,6 +358,68 @@ export function mount(root, { api }) {
     key?.position.copy(camera.position).add(KEY_LIFT);
   }
   const KEY_LIFT = new THREE.Vector3(0, 0.8, 0); // the key light sits a little above the lens
+
+  // ---- The push, drawn in the robot's scene: an arrow from where the shove comes, and the Gym's
+  // test ring on the floor around the robot it trains ----
+  const SIGNAL = 0xff4f1a; // --signal in landing.css
+  const ARROW_S = 0.9; // an arrow stays this long after its push (the push itself lasts 0.1 s)
+  const RING_M = 1.2; // a fall of the G1 reaches about this far from where it stood
+  let marks = null; // { arrow, ring, arrowMaterial, ringMaterial, pushedAt }
+  function makeMarks(scene) {
+    const arrowMaterial = new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, depthWrite: false, toneMapped: false });
+    const arrow = new THREE.Group();
+    const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.5, 10), arrowMaterial);
+    shaft.position.y = 0.25;
+    const head = new THREE.Mesh(new THREE.ConeGeometry(0.075, 0.18, 16), arrowMaterial);
+    head.position.y = 0.59;
+    arrow.add(shaft, head);
+    arrow.visible = false;
+    // The ring: a circle with a tick every 15°, flat on the sidewalk.
+    const ringMaterial = new THREE.MeshBasicMaterial({ color: SIGNAL, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, side: THREE.DoubleSide });
+    const ring = new THREE.Group();
+    ring.add(new THREE.Mesh(new THREE.RingGeometry(RING_M - 0.015, RING_M + 0.015, 128), ringMaterial));
+    for (let k = 0; k < 24; k++) {
+      const a = (k / 24) * 2 * Math.PI;
+      const length = k % 6 ? 0.06 : 0.16;
+      const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.02, length), ringMaterial);
+      tick.position.set(Math.cos(a) * (RING_M + 0.03 + length / 2), Math.sin(a) * (RING_M + 0.03 + length / 2), 0);
+      tick.rotation.z = a - Math.PI / 2;
+      ring.add(tick);
+    }
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.y = 0.006;
+    ring.visible = false;
+    scene.add(arrow, ring);
+    return { arrow, ring, arrowMaterial, ringMaterial, pushedAt: -Infinity };
+  }
+  // Right after view.push(): the force on the torso says where the shove comes from.
+  const tip = new THREE.Vector3();
+  const along = new THREE.Vector3();
+  function drawPush() {
+    if (!marks || !view) return;
+    const { sim } = view;
+    const force = sim.data.xfrc_applied;
+    const xpos = sim.data.xpos;
+    const i = sim.pushBodyId;
+    along.set(force[6 * i], 0, -force[6 * i + 1]).normalize(); // MuJoCo (x, y, z) is three.js (x, z, -y)
+    tip.set(xpos[3 * i], xpos[3 * i + 2], -xpos[3 * i + 1]).addScaledVector(along, -0.16); // just short of the torso
+    // Smaller in the hero, whose camera stands 1.35 m from the robot instead of 3.7 m.
+    const size = mode === 'gym' ? 1 : 0.6;
+    marks.arrow.scale.setScalar(size);
+    marks.arrow.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), along);
+    marks.arrow.position.copy(tip).addScaledVector(along, -0.68 * size);
+    marks.pushedAt = performance.now();
+  }
+  function updateMarks() {
+    if (!marks) return;
+    const t = (performance.now() - marks.pushedAt) / 1000;
+    marks.arrow.visible = t < ARROW_S;
+    marks.arrowMaterial.opacity = 1 - (t / ARROW_S) ** 3;
+    const goal = mode === 'gym' ? 0.6 : 0;
+    const ring = marks.ringMaterial;
+    ring.opacity += (goal - ring.opacity) * (reducedMotion ? 1 : 0.08);
+    marks.ring.visible = ring.opacity > 0.01;
+  }
 
   // ---- What the robot does in each chapter ----
   let level = FINAL_LEVEL; // the policy it has (robot-host loads the final one)
@@ -420,6 +480,7 @@ export function mount(root, { api }) {
   function pushHero() {
     if (!view || mode !== 'stand') return;
     view.push();
+    drawPush();
     hero.pushes += 1;
     hero.pushedAt = performance.now();
     hero.fallen = false;
@@ -525,6 +586,8 @@ export function mount(root, { api }) {
   // Times are the simulation's own clock, not the wall's: a slow or hidden tab cannot fake them.
   function startGymRun() {
     view.stop();
+    const [x, y] = view.sim.bodyPosition('pelvis');
+    marks?.ring.position.set(x, marks.ring.position.y, -y);
     const t = view.sim.data.time;
     // The first push comes at GYM_FIRST_PUSH_S, then every GYM_PUSH_EVERY_S.
     Object.assign(gym, { since: t || 1e-6, lastPush: t - (GYM_PUSH_EVERY_S - GYM_FIRST_PUSH_S), fallen: false });
@@ -557,6 +620,7 @@ export function mount(root, { api }) {
       gym.lastPush = now;
       gym.shownAt ||= performance.now() + GYM_SHOWN_PUSH_S * 1000;
       view.push();
+      drawPush();
       $('[data-gym="status"]').textContent = `Empujón de ${PUSH_N} N.`;
     }
   }
@@ -570,7 +634,8 @@ export function mount(root, { api }) {
   // A veil per chapter ended in a hard line where the chapter ended; one veil for the whole page,
   // eased toward each chapter's side, leaves no edge. On phones the words sit low: a floor instead.
   const washEl = $('.film-wash');
-  const WASH = { hero: [0, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
+  // The hero's title sits low on the left, over the café of the street (landing/city.js).
+  const WASH = { hero: [0.85, 0], capture: [1, 0], gym: [1, 0], policy: [0, 1], close: [0, 0] };
   const wash = { left: 0, right: 0, floor: 0 };
   function updateWash() {
     const mid = scrollY + innerHeight * 0.5;
@@ -587,6 +652,7 @@ export function mount(root, { api }) {
   // ---- Every frame ----
   let frameId = requestAnimationFrame(function frame() {
     updateWash();
+    updateMarks();
     if (view) {
       directCamera(view);
       setMode(modeAt());
@@ -631,9 +697,9 @@ export function mount(root, { api }) {
       saved.exposure = view.viewer.renderer.toneMappingExposure;
       view.viewer.renderer.toneMappingExposure = 1.35;
       lights.forEach((light) => view.viewer.scene.add(light));
-      // A street under the robot instead of the grid, while the landing has it.
-      undressStreet = dressStreet(view.viewer.scene, view.viewer.renderer);
-      undressCity = dressCity(view.viewer.scene, view.viewer.renderer); // dusk sky and a city block around it
+      // A city street at dusk around the robot instead of the grid, while the landing has it.
+      undressCity = dressCity(view.viewer.scene, view.viewer.renderer);
+      marks = makeMarks(view.viewer.scene);
       film.classList.add('ready');
       $$('.hero-push').forEach((button) => (button.disabled = false));
     },
@@ -744,8 +810,13 @@ export function mount(root, { api }) {
       view.viewer.followTau = 0; // the app screens follow the robot rigidly
       lights.forEach((light) => view.viewer.scene.remove(light));
       view.viewer.renderer.toneMappingExposure = saved.exposure;
-      undressStreet();
       undressCity();
+      if (marks) {
+        view.viewer.scene.remove(marks.arrow, marks.ring);
+        [marks.arrow, marks.ring].forEach((group) => group.traverse((o) => o.geometry?.dispose()));
+        marks.arrowMaterial.dispose();
+        marks.ringMaterial.dispose();
+      }
     }
     robot.detach();
   };
