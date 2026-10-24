@@ -36,6 +36,8 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Entornos visuales (con permiso de César para descargar): tres paquetes de Kenney (Furniture Kit, Survival Kit, City Kit Roads; CC0, 9,6 MB entre los tres) y solo 12 modelos copiados al repo (256 KB, con sus `License.txt` y `web/public/models/README.md`). `web/src/props.js` los pone sobre los objetos de los lugares, escalados a la caja o cilindro de la física (lo que se ve es lo que choca), y dibuja un piso por lugar. La calle de la landing pasó a `dressFloor`, reutilizable, y en la vereda su bordillo coincide con el cordón de la física. Poly Haven no hizo falta: los pisos se dibujan por código y no suman descargas.
 - "Al caerse empieza a temblar y a hacer breakdance": el entrenamiento termina cada intento al caer, así que la red nunca vio el suelo y ahí sus salidas son ruido. Medido en Node: `g1-stand` derribado con 600 N movía las articulaciones a ~55 rad/s en el suelo. Arreglo en `physics/src/policy.js` (carpeta de Pastor, commit propio): caído, la red deja de decidir y los motores sostienen la pose en que quedó; vuelve a decidir si se levanta claramente (pelvis sobre 0,6 m) o tras un reset. Queda en 0,02–0,03 rad/s, y `check-policy` lo prueba.
 - Entorno de la landing más bonito (pedido para Gym): en vez de un repo entero, piezas que ya trae three.js (`Sky` procedural y `PMREMGenerator` para que el robot refleje ese cielo) más 11 edificios del Kenney City Kit Commercial (CC0, 1,4 MB copiados de un zip de 4 MB). Los frentes están a 21 m del robot, más lejos que cualquier toma (6,5 m como máximo), y una bruma de 6 a 38 m los deja en silueta. Primero la bruma quedó más suave que la del visor (9–62 m contra 8–25 m) y los edificios se veían claros y encima del texto.
+- Simulaciones: (1) física desde el inicio: la causa era que el robot repetía el clip como títere (sin física) hasta un empujón; ahora el modo predeterminado es con física (imitación si existe, si no de pie con su política) y el títere queda como "Sin física". (2) Reproducción con íconos SVG y velocidad que rota. (3) La persona se ve en su video original con el esqueleto naranja encima: `joints2d` del `.npz` de `data/`, normalizado al video original (1280×720; la escala se comprobó dibujando los puntos sobre un cuadro), en `web/public/media/caminar.pose2d.json` (164 KB). Solo Caminar tiene video en el repo; Correr y los saltos siguen con el esqueleto 3D.
+- La landing: mis cambios sin entregar (mobiliario de la calle y terrenos en Gym) chocaron con la landing nueva de Juan y Pastor; se dejó la de ellos y los míos quedaron en `stash@{0}` (respaldo de los archivos en conflicto en `/tmp/tridi-backup/`).
 
 ## Qué funcionó
 
@@ -52,6 +54,9 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - Las cuatro actividades, en capturas de 1280×800 y 390×844: se reconocen el baile, la guardia de boxeo, la guitarra y la costura sentada; la fila de actividades marca la actual.
 
 ## Qué no funcionó
+
+- Carrera al cambiar de clip mientras cargaba la imitación de Caminar: la política llegaba tarde y quedaba puesta en Correr. Al terminar de cargar, una imitación que no es del clip actual se reemplaza por la de pie.
+- El lienzo del esqueleto 2D quedaba visible en clips sin video: `.pane canvas` le ganaba a la regla que lo ocultaba, y no se borraba el último cuadro.
 
 - Los GLB del Survival Kit y del City Kit Roads leen la textura `Textures/colormap.png` de afuera: hubo que copiarla junto a cada uno.
 - La primera calle de la vereda quedaba con el cordón de la física cruzando las losas: se alineó el bordillo de la textura con el borde del cordón.

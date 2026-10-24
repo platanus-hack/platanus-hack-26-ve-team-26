@@ -24,6 +24,14 @@ const MODELS = {
   maceta: { file: 'furniture/pottedPlant.glb' },
 };
 
+// Pieces without a model keep their shape but get a material that matches the street: the curb in
+// concrete, the stones' height field in dark asphalt gray (their physics colors are light and wash
+// out under the landing's lighting).
+const SURFACES = {
+  cordon: { color: '#5b5852', roughness: 0.95 },
+  stones: { color: '#3a3833', roughness: 1 },
+};
+
 const loader = new GLTFLoader();
 const cache = new Map();
 // Each model once, already turned z-up (Kenney models are y-up; MuJoCo and the viewer's geoms are
@@ -55,15 +63,22 @@ const hidden = new THREE.MeshBasicMaterial({ visible: false });
 /**
  * Puts models on the place's objects in the view (call after every setScene or setWorld: the
  * viewer rebuilds its geoms then). Objects without a model keep their colored shape.
+ * @param options.dim  multiplies the models' colors (the landing's dark street uses less than 1)
  * @returns a promise that settles when every model is on
  */
-export async function dressPlace(view) {
+export async function dressPlace(view, { dim = 1 } = {}) {
   const { sim } = view;
   const { mujoco, model } = sim;
   const jobs = [];
   for (const { id, object } of view.viewer.geoms) {
     const name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_GEOM.value, id) ?? '';
     const match = /^place_\d+_(.+)$/.exec(name);
+    const surface = SURFACES[match?.[1] ?? name];
+    if (surface && !object.userData.dressed) {
+      object.userData.dressed = true;
+      object.material = new THREE.MeshStandardMaterial(surface);
+      continue;
+    }
     const spec = match && MODELS[match[1]];
     if (!spec || object.userData.dressed) continue;
     object.userData.dressed = true;
@@ -83,6 +98,14 @@ export async function dressPlace(view) {
           const s = template.userData.size;
           copy.scale.set(piece.x / s.x, piece.y / s.y, piece.z / s.z);
           copy.position[along] = -size[along] / 2 + piece[along] * (k + 0.5);
+          if (dim !== 1) {
+            // Darker copies for a dark scene: materials are cloned so other screens keep the originals.
+            copy.traverse((o) => {
+              if (!o.isMesh) return;
+              o.material = o.material.clone();
+              o.material.color.multiplyScalar(dim);
+            });
+          }
           object.add(copy);
         }
         object.material = hidden; // the collision shape stays, unseen, under the model

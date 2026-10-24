@@ -3,7 +3,7 @@ import { mountGallery } from '../gallery.js';
 import { SCENES, WORLDS } from 'tridi-physics';
 import { FINAL_LEVEL, IMITATIONS, LEVELS } from '../policies.js';
 import { robotPaneHTML } from '../robot-pane.js';
-import { mountStage } from '../stage.js';
+import { ICONS, mountStage } from '../stage.js';
 import { cannotTrain, runFor, startTraining, subscribe } from '../training.js';
 
 export const title = 'Simulaciones';
@@ -47,26 +47,21 @@ export function mount(root, { dots, api }, [clipId] = []) {
           <div id="controls" class="controls">
             <section class="control-group" aria-labelledby="ctl-play">
               <h3 id="ctl-play">Reproducción</h3>
-              <div class="control-row">
-                <button id="play" class="primary" type="button">Pausa</button>
-                <button id="reset" type="button">Empezar de nuevo</button>
+              <div class="player">
+                <button id="play" class="icon-btn primary" type="button" aria-label="Pausa" title="Pausa">${ICONS.pause}</button>
+                <button id="reset" class="icon-btn" type="button" aria-label="Empezar de nuevo" title="Empezar de nuevo">${ICONS.restart}</button>
+                <button id="speed" class="icon-btn speed" type="button" aria-label="Cambiar la velocidad" title="Velocidad: 1×, 0,5× o 0,25×">1×</button>
+                <select id="show" aria-label="Qué ver">
+                  <option value="both" selected>Persona y robot</option>
+                  <option value="human">Solo la persona</option>
+                  <option value="robot">Solo el robot</option>
+                </select>
               </div>
-              <div class="fields">
-                <label class="field">Velocidad
-                  <select id="speed">
-                    <option value="0.25">Muy lenta</option>
-                    <option value="0.5">Lenta</option>
-                    <option value="1" selected>Normal</option>
-                  </select>
-                </label>
-                <label class="field">Ver
-                  <select id="show">
-                    <option value="both" selected>Los dos</option>
-                    <option value="human">Persona</option>
-                    <option value="robot">Robot</option>
-                  </select>
-                </label>
+              <div class="mode" role="group" aria-label="Cómo se mueve el robot">
+                <button type="button" data-physics="on" aria-pressed="true">Con física</button>
+                <button type="button" data-physics="off" aria-pressed="false">Sin física</button>
               </div>
+              <p class="mode-note">Con física el robot se mueve solo, con sus motores. Sin física repite el video como un títere: muestra el movimiento, no lo que puede hacer.</p>
             </section>
             <section class="control-group" aria-labelledby="ctl-world">
               <h3 id="ctl-world">Condiciones</h3>
