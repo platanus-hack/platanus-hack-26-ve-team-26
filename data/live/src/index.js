@@ -1,11 +1,13 @@
 // Public API of data/live for the web app: live camera -> MediaPipe pose every frame -> PoseClip.
 // The same PoseClip that data/extract.py makes from an uploaded video, with source "camera".
 import { FilesetResolver, PoseLandmarker } from '@mediapipe/tasks-vision';
+import { createFacingGuard } from './facing.js';
 import { PoseFilter } from './oneeuro.js';
 import { buildPoseClip, cameraTranslation, isSeen } from './poseclip.js';
 
 export { buildPoseClip, cameraTranslation } from './poseclip.js';
 export { PoseFilter } from './oneeuro.js';
+export { createFacingGuard } from './facing.js';
 export { drawSkeleton } from './draw.js';
 export { SERVER_GIST, checkApi, findApiUrl, publishedApiUrl, resolveApiUrl } from './api.js';
 export { UploadError, chooseSubject, fetchClip, firstFrameUrl, sendClip, trainClip, uploadVideo, watchJob, watchTraining } from './upload.js';
@@ -88,6 +90,7 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
   let running = true;
   const times = []; // when each of the last frames was processed, for fps()
   const filter = new PoseFilter();
+  const facing = createFacingGuard(); // MediaPipe's mirrored reads of a back, put right (facing.js)
 
   function frame() {
     if (!running) return;
@@ -102,9 +105,12 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
       let world = res.worldLandmarks[0];
       if (!landmarks || !world) {
         filter.reset(); // the body was lost: the next one starts fresh, not from where this one left
+        facing.reset();
         onPose?.(null);
         samples?.push({ t: (now - recordStart) / 1000, valid: false });
       } else {
+        // Before the filter, so it never blends a mirrored frame into the right ones.
+        ({ world, landmarks } = facing.fix(world, landmarks, now / 1000));
         if (smooth) [world, landmarks] = smoothed(filter, now / 1000, world, landmarks);
         const vis = landmarks.map((p) => p.visibility ?? 0);
         const visible = isSeen((i) => vis[i]);

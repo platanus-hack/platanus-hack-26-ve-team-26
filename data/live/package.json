@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "node scripts/check.mjs",
+    "check": "node scripts/check.mjs && node scripts/check-facing.mjs",
     "check-relay": "node scripts/check-relay.mjs"
   },
   "dependencies": {
