@@ -21,6 +21,8 @@ Juan reporta en En vivo: el robot no distingue palmas hacia adelante o hacia atr
 - `data/live/src/bones.js` (B2) + `check-bones.mjs`; `createLiveCapture({ hands })` con `HandLandmarker` (B6).
 - `web/src/screens/live.js`: `?debug` (distancia y arreglos) y casilla "Seguir las palmas de cerca".
 
+- Escena más clara (prompt aparte): `SCENE_THEME` (`web/src/skeleton.js`), `--scene` y `--panel` de `#0f1112` (casi negro) a `#2b3034` (carbón), piso y grilla a juego. Afecta En vivo, la entrega y toda escena sin "mundo" de Simulaciones. Sin probar en el navegador: el límite de 5 servidores lo ocupan otros chats.
+
 ## Qué funcionó
 
 - `npm run check` de `physics/` y de `data/live` pasan enteros; builds de `web/` y `data/live` pasan.
