@@ -57,8 +57,8 @@ function livePose(joints, t, rise = 0) {
 }
 
 function run(poses) {
-  const tracker = createPoseTracker();
-  const retargeter = createRetargeter(mujoco, kinematic, { mirror: false });
+  const tracker = createPoseTracker({ smooth: false }); // as view.mimic: data/live filtered already
+  const retargeter = createRetargeter(mujoco, kinematic, { mirror: false, live: true });
   const filter = createRobotPoseFilter(kinematic.nq);
   const root = createRootTracker(mujoco, kinematic, { mirror: false, legLength: retargeter.legLength });
   const leveler = createLeveler(mujoco, kinematic);

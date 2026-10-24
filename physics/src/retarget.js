@@ -11,7 +11,9 @@
 //   waist     torso orientation relative to the hips
 //   arms/legs the direction of the upper and lower segment, in the torso (arms) or hip (legs) frame
 //   feet      kept flat on the floor
-// What is not: head (the G1 has no neck), hands and fingers (MediaPipe's are too noisy).
+//   wrists   live only (options.live): how the hand bends off the forearm, from the pose's wrist,
+//             index and pinky points
+// What is not: head (the G1 has no neck), fingers (the G1 model here has none).
 // Whatever the camera does not see (legs of someone sitting at a desk) stays in the stand pose.
 import * as THREE from 'three';
 import { idOf } from './sim.js';
@@ -35,6 +37,19 @@ const HIP_TWIST_PENALTY = 0.02;
 // run's shoulder twist went from -43..40 to -3..3 degrees (p5..p95), and the walk's waist turn from
 // -21..12 to -12..7 (a person walking turns it about 10).
 const SHOULDER_TWIST_PENALTY = 0.05;
+// Live, a person facing the camera has the shoulder line across the image, not along its depth, and
+// 0.05 kept the arm's twist at ~17% of what a raised forearm needs (docs/investigacion/
+// 2026-10-24-manos-y-dedos-en-vivo.md): waving or arms up came out flattened. Facing the camera
+// the penalty drops to this, and it grows back to 0.05 as the person turns to profile.
+const SHOULDER_TWIST_FACING = 0.005;
+// The wrist (live) copies the hand's bend off the forearm (up-down and side to side), not its
+// turn: the pose's index and pinky points are ~5 cm apart with noisy depth, and the turn read from
+// them flipped between its limits (+-113 degrees) in data/clips' jumping jacks. The forearm's twist
+// comes from the shoulder instead. The bend is taken off the person's forearm and put on the
+// robot's, so a difference between their arms does not show as a bent wrist. Seen from the side
+// the hand is edge-on and its points are a guess: on data/clips' profile walk the wrist stayed
+// bent ~45 degrees the whole clip. So the bend counts fully facing the camera and fades to none in
+// profile (by cos^2 of the heading), the reverse of the shoulder's twist penalty.
 const WAIST_TWIST_PENALTY = 0.2;
 const HIP_INWARD_PENALTY = 0.05;
 // The penalties alone do not stop it: the data itself puts the knees and ankles inward, because
@@ -52,8 +67,8 @@ const RESEED_MARGIN = 0.7;
 // flips the pose), so the robot moves like your reflection: raise your right hand and the arm on
 // the same side of the screen goes up.
 const HUMAN = {
-  left: { shoulder: 11, elbow: 13, wrist: 15, hip: 23, knee: 25, ankle: 27 },
-  right: { shoulder: 12, elbow: 14, wrist: 16, hip: 24, knee: 26, ankle: 28 },
+  left: { shoulder: 11, elbow: 13, wrist: 15, pinky: 17, index: 19, hip: 23, knee: 25, ankle: 27 },
+  right: { shoulder: 12, elbow: 14, wrist: 16, pinky: 18, index: 20, hip: 24, knee: 26, ankle: 28 },
 };
 const OTHER = { left: 'right', right: 'left' };
 
@@ -70,6 +85,7 @@ const limbs = (side) => [
     mid: `${side}_elbow_link`,
     tip: `${side}_wrist_roll_link`,
     human: ['shoulder', 'elbow', 'wrist'],
+    hand: { joints: ['pitch', 'yaw'].map((j) => `${side}_wrist_${j}_joint`), link: `${side}_wrist_yaw_link` },
   },
   {
     name: `${side}_leg`,
@@ -89,9 +105,12 @@ const WAIST = { joints: ['waist_yaw_joint', 'waist_roll_joint', 'waist_pitch_joi
  * @param mujoco  the loaded @mujoco/mujoco module
  * @param model   the G1's MjModel (it must have the "stand" keyframe)
  * @param options.mirror  move like a reflection (default) or like the person, left with left
+ * @param options.live    for the live camera: the wrists follow the hand, and the shoulders may
+ *   twist freely while the person faces the camera. Off for clips, whose RobotMotions are the
+ *   training references and must not change.
  * @returns { solve(pose) -> { qpos, residual, tracked } }
  */
-export function createRetargeter(mujoco, model, { mirror = true } = {}) {
+export function createRetargeter(mujoco, model, { mirror = true, live = false } = {}) {
   const data = new mujoco.MjData(model);
   mujoco.mj_resetDataKeyframe(model, data, idOf(mujoco, model, 'KEY', 'stand'));
   const standQ = Float64Array.from(data.qpos); // the stand pose, what a hidden arm swings around
@@ -129,6 +148,7 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     midId: bodyId(c.mid),
     tipId: bodyId(c.tip),
     foot: c.foot && { joints: c.foot.joints.map(joint), body: bodyId(c.foot.link) },
+    hand: c.hand && { joints: c.hand.joints.map(joint), body: bodyId(c.hand.link) },
     targetMid: new THREE.Vector3(),
     targetTip: new THREE.Vector3(),
   }));
@@ -153,6 +173,16 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const rest = { torso: orientation(waist.body, new THREE.Quaternion()) };
   for (const c of chains) if (c.foot) rest[c.name] = orientation(c.foot.body, new THREE.Quaternion());
   const restTorsoInverse = rest.torso.clone().invert();
+  // The fingers run along the hand's +x (wrist_yaw_link; the chain runs along x).
+  const fingersOf = (id, out) => {
+    const m = data.xmat;
+    return out.set(m[9 * id], m[9 * id + 3], m[9 * id + 6]);
+  };
+  const handTarget = new THREE.Vector3();
+  const handNow = new THREE.Vector3();
+  const bend = new THREE.Quaternion();
+  const NO_TURN = new THREE.Quaternion();
+  const forearm = new THREE.Vector3();
 
   // Per-solve scratch.
   const S = Array.from({ length: 33 }, () => new THREE.Vector3()); // pose, flipped when mirroring
@@ -168,10 +198,14 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const basis = { fwd: new THREE.Vector3(), left: new THREE.Vector3(), up: new THREE.Vector3() };
   const mid = (i, j) => new THREE.Vector3().addVectors(S[i], S[j]).multiplyScalar(0.5);
 
+  // The shoulders' twist penalty for this solve (SHOULDER_TWIST_FACING when live and facing the
+  // camera), and how much of the hands' bend is trusted (1 facing the camera, 0 in profile).
+  let shoulderTwist = SHOULDER_TWIST_PENALTY;
+  let handTrust = 0;
   const penalty = (joints) => joints.reduce((sum, j) => {
     const v = getJoint(j);
     let cost = JOINT_PENALTY * v * v;
-    if (j.twist) cost += j.twist * v * v;
+    if (j.twist) cost += (j.name.endsWith('shoulder_yaw_joint') ? shoulderTwist : j.twist) * v * v;
     if (j.inward) cost += HIP_INWARD_PENALTY * Math.max(0, j.inward * v) ** 2;
     return sum + cost;
   }, 0);
@@ -181,6 +215,12 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     position(c.midId, a);
     position(c.tipId, b);
     return a.distanceToSquared(c.targetMid) + b.distanceToSquared(c.targetTip) + penalty(c.joints);
+  }
+
+  // How far the hand points from where the person's does (world axes, unit length).
+  function handCost(hand) {
+    fk();
+    return 1 - fingersOf(hand.body, handNow).dot(handTarget) + penalty(hand.joints);
   }
 
   function orientationCost(part, goal) {
@@ -266,6 +306,9 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     dir.set(1, 0, 0).applyQuaternion(headingFrame);
     const bodyYaw = Math.atan2(dir.y, dir.x);
     const yaw = travelYaw !== undefined && Math.cos(travelYaw - bodyYaw) > 0 ? travelYaw : bodyYaw;
+    // Facing the camera is a heading of 0 (robot +x is toward it); profile is 90 degrees.
+    shoulderTwist = live ? SHOULDER_TWIST_FACING + (SHOULDER_TWIST_PENALTY - SHOULDER_TWIST_FACING) * Math.sin(bodyYaw) ** 2 : SHOULDER_TWIST_PENALTY;
+    handTrust = Math.cos(bodyYaw) ** 2;
     pelvisQ.setFromAxisAngle(UP, yaw);
     // If the heading came from the direction of travel, the person's frames must turn with it.
     // Otherwise a hip line that is 15 degrees off the real heading turns every stride by 15
@@ -330,6 +373,18 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
         // Soles level with the floor: the foot's rest orientation turned with the pelvis' heading.
         target.copy(pelvisQ).multiply(rest[c.name]);
         solveJoints(c.foot.joints, () => orientationCost(c.foot, target));
+      }
+      if (c.hand && live && V[h.index] && V[h.pinky]) {
+        // The person's bend: the turn from their forearm (elbow to wrist) to their hand (wrist to
+        // knuckles), put on the robot's forearm as it ended up.
+        dir.subVectors(S[h.wrist], S[h.elbow]).normalize();
+        handTarget.subVectors(mid(h.index, h.pinky), S[h.wrist]).normalize();
+        bend.setFromUnitVectors(dir, handTarget).slerp(NO_TURN, 1 - handTrust);
+        fk();
+        position(c.midId, a);
+        position(c.tipId, b);
+        handTarget.copy(forearm.subVectors(b, a).normalize()).applyQuaternion(bend);
+        solveJoints(c.hand.joints, () => handCost(c.hand));
       }
     }
 

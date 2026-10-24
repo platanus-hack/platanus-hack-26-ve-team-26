@@ -324,8 +324,8 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     mimic(pose) {
       if (!pose?.visible) return { tracked: false, residual: 0, airborne: false };
       clip = null;
-      tracker ??= createPoseTracker();
-      retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror });
+      tracker ??= createPoseTracker({ smooth: false }); // data/live already filtered the points
+      retargeter ??= createRetargeter(sim.mujoco, kinematicModel(), { mirror, live: true });
       smoother ??= createRobotPoseFilter(kinematicModel().nq); // the robot's own values, not a place's objects
       rootTracker ??= createRootTracker(sim.mujoco, kinematicModel(), { mirror, legLength: retargeter.legLength });
       leveler ??= createLeveler(sim.mujoco, kinematicModel());

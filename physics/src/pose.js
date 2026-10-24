@@ -13,7 +13,12 @@ const HIDE_BELOW = 0.4;
 // cameras may need a retune.
 const FILTER = { minCutoff: 0.8, beta: 6 };
 
-export function createPoseTracker() {
+/**
+ * @param options.smooth  One Euro on every point (default). The live camera passes false: data/live
+ *   already filters the points before onPose, and filtering them twice added a camera frame of lag
+ *   to every move, the arms' most (docs/investigacion/2026-10-24-manos-y-dedos-en-vivo.md).
+ */
+export function createPoseTracker({ smooth = true } = {}) {
   const points = Array.from({ length: 33 }, () => new THREE.Vector3());
   const visible = new Array(33).fill(false);
   const filters = Array.from({ length: 33 * 3 }, () => new OneEuroFilter(FILTER));
@@ -39,11 +44,14 @@ export function createPoseTracker() {
       // A person facing the camera has the camera in front: robot x = -MediaPipe z. Their left
       // is the image right: robot y = MediaPipe x. Up: robot z = -MediaPipe y.
       const l = world[i];
-      points[i].set(
-        filters[i * 3].filter(-l.z, t),
-        filters[i * 3 + 1].filter(l.x, t),
-        filters[i * 3 + 2].filter(-l.y, t),
-      );
+      if (!smooth) points[i].set(-l.z, l.x, -l.y);
+      else {
+        points[i].set(
+          filters[i * 3].filter(-l.z, t),
+          filters[i * 3 + 1].filter(l.x, t),
+          filters[i * 3 + 2].filter(-l.y, t),
+        );
+      }
     }
     return { points, visible };
   }

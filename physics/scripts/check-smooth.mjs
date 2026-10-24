@@ -213,8 +213,8 @@ console.log('starting a clip over: no jump from its last pose to its first');
 console.log('mimic: the walk fed frame by frame like the live camera');
 {
   const clip = read('../../data/clips/clip_2026-10-23_caminar-perfil_01.json');
-  const tracker = createPoseTracker();
-  const retargeter = createRetargeter(mujoco, kinematic, { mirror: false });
+  const tracker = createPoseTracker({ smooth: false }); // as view.mimic: the clip's points are filtered already
+  const retargeter = createRetargeter(mujoco, kinematic, { mirror: false, live: true });
   const filter = createRobotPoseFilter(sim.model.nq);
   const raw = [];
   const smooth = [];
@@ -241,6 +241,35 @@ console.log('mimic: the walk fed frame by frame like the live camera');
     if (err < best) [best, lag] = [err, shift * dt];
   }
   expect(lag <= MAX_LAG_S, `follows the person ${(1000 * lag).toFixed(0)} ms late, at most ${1000 * MAX_LAG_S}`);
+}
+
+console.log('mimic: the wrists follow the hand facing the camera, and stay quiet in profile');
+{
+  // Live only (retarget.js `live`). Seen from the side the hand's points are a guess: the profile
+  // walk's wrist must stay within 15 degrees of straight. Facing the camera (jumping jacks) it must
+  // move, and without the flips between limits (+-113 degrees) that reading the hand's turn caused:
+  // at most 45 degrees between two frames at p95 (the arms swing up to ~30 there).
+  const wrists = ['left', 'right'].flatMap((side) => ['pitch', 'yaw'].map((j) => kinematic.jnt_qposadr[mujoco.mj_name2id(kinematic, mujoco.mjtObj.mjOBJ_JOINT.value, `${side}_wrist_${j}_joint`)]));
+  const deg = (r) => (r * 180) / Math.PI;
+  const wristRows = (id) => {
+    const clip = read(`../../data/clips/${id}.json`);
+    const tracker = createPoseTracker({ smooth: false });
+    const retargeter = createRetargeter(mujoco, kinematic, { mirror: false, live: true });
+    const rows = clip.frames.map((f) => {
+      const world = f.joints.map(([x, y, z, v]) => ({ x, y: -y, z: -z, visibility: v }));
+      return Array.from(retargeter.solve(tracker.update(world, world, f.t)).qpos);
+    });
+    retargeter.delete();
+    return rows;
+  };
+  const walk = wristRows('clip_2026-10-23_caminar-perfil_01');
+  const bent = p95(walk.flatMap((q) => wrists.map((a) => q[a])));
+  expect(deg(bent) < 15, `profile walk: wrists within ${deg(bent).toFixed(0)} degrees of straight (p95), under 15`);
+  const jacks = wristRows('clip_2026-10-24_jumping-jacks-nasm_01');
+  const range = Math.max(...wrists.map((a) => Math.max(...jacks.map((q) => q[a])) - Math.min(...jacks.map((q) => q[a]))));
+  const step = p95(jacks.slice(1).map((q, i) => Math.max(...wrists.map((a) => Math.abs(q[a] - jacks[i][a])))));
+  expect(deg(range) > 20, `jumping jacks: a wrist moves through ${deg(range).toFixed(0)} degrees, over 20`);
+  expect(deg(step) < 45, `jumping jacks: ${deg(step).toFixed(0)} degrees between frames (p95), under 45`);
 }
 
 data.delete();
