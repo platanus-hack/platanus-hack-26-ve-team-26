@@ -1,7 +1,7 @@
 // Public API of physics/ for the web app: give it a canvas and it loads MuJoCo and the G1,
 // simulates in real time and draws every frame until dispose().
 import { loadG1 } from './load.js';
-import { motionDuration, retargetClipAsync, sampleMotion, smoothForDisplay } from './motion.js';
+import { LOOP_BLEND_S, motionDuration, retargetClipAsync, sampleLoopStart, sampleMotion, smoothForDisplay } from './motion.js';
 import { createPolicy } from './policy.js';
 import { createPoseTracker } from './pose.js';
 import { createRetargeter } from './retarget.js';
@@ -44,6 +44,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
   let clip = null;
   let clipTime = 0;
   const row = new Float64Array(sim.model.nq); // the pose being shown (the robot alone: 36 values)
+  const lastRow = new Float64Array(sim.model.nq); // a clip's last pose, while it starts over
   let frameId = 0;
   let last = performance.now();
   let stats = { wall: 0, sim: 0 };
@@ -63,7 +64,12 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       if (clip) {
         // Same clock as the web's skeleton (wall time x speed), so both stay in step.
         if (playing) clipTime = clip.loop ? (clipTime + wall * speed) % clip.duration : Math.min(clipTime + wall * speed, clip.duration);
-        sim.puppet(sampleMotion(clip.motion, clipTime, row));
+        // Started over (by its own clock or by seek() from the page's): ease in from the last pose
+        // instead of jumping to the first (sampleLoopStart).
+        if (clip.loop && clipTime < clip.shown - clip.duration / 2) clip.wrapped = true;
+        if (clipTime >= LOOP_BLEND_S) clip.wrapped = false;
+        clip.shown = clipTime;
+        sim.puppet(clip.wrapped ? sampleLoopStart(clip.motion, clipTime, row, lastRow) : sampleMotion(clip.motion, clipTime, row));
       } else if (playing) {
         const before = sim.data.time;
         await sim.advance(wall * speed);
@@ -181,7 +187,7 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
       if (motion.robot !== 'unitree_g1' || motion.qpos[0]?.length !== robotValues) {
         throw new Error(`This RobotMotion is not for the ${robotValues}-value G1 (robot: ${motion.robot}).`);
       }
-      clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion), duration: motionDuration(motion), loop };
+      clip = { motion: smoothForDisplay(sim.mujoco, kinematicModel(), motion), duration: motionDuration(motion), loop, shown: 0, wrapped: false };
       clipTime = 0;
     },
     /**

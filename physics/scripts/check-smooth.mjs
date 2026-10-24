@@ -3,9 +3,9 @@
 // the raw RobotMotion and the raw retargeting. The video's frame-to-frame jitter is what made the
 // robot look buggy even when it did not fall.
 // Run: npm run check
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { createRobotPoseFilter } from '../src/filters.js';
-import { sampleMotion, smoothForDisplay } from '../src/motion.js';
+import { LOOP_BLEND_S, sampleLoopStart, sampleMotion, smoothForDisplay } from '../src/motion.js';
 import { createPoseTracker } from '../src/pose.js';
 import { createRetargeter } from '../src/retarget.js';
 import { loadG1Node } from './node-model.mjs';
@@ -64,6 +64,37 @@ console.log('playClip: the walk as the screen shows it, at 60 frames per second'
   expect(knee(smooth) < KNEE_ACCEL, `knee acceleration ${knee(smooth).toFixed(0)} rad/s^2 (p95; raw ${knee(raw).toFixed(0)}), under ${KNEE_ACCEL}`);
   const feet = p95(smooth.map(lowestSole));
   expect(feet < FEET_M, `feet within ${(100 * feet).toFixed(1)} cm of the floor in 95% of frames, under ${100 * FEET_M}`);
+}
+
+console.log('starting a clip over: no jump from its last pose to its first');
+{
+  // Each loop used to jump from the last pose to the first: 67 degrees in a joint in the run, 147 in
+  // the jumping jacks. Across the loop, at 60 frames per second, no joint may move more than in the
+  // clip's own fastest 1% of screen frames (it is a move, not a jump).
+  for (const id of readdirSync(new URL('../motions/', import.meta.url)).filter((f) => f.endsWith('.json'))) {
+    const motion = smoothForDisplay(mujoco, kinematic, read(`../motions/${id}`));
+    const duration = (motion.qpos.length - 1) / motion.fps;
+    const pose = (t, wrapped) => Array.from(wrapped ? sampleLoopStart(motion, t, new Float64Array(sim.model.nq)) : sampleMotion(motion, t, new Float64Array(sim.model.nq)));
+    const steps = [];
+    let previous = pose(0, false);
+    for (let t = SCREEN_DT; t <= duration; t += SCREEN_DT) {
+      const q = pose(t, false);
+      steps.push(Math.max(...q.slice(7).map((v, k) => Math.abs(v - previous[7 + k]))));
+      previous = q;
+    }
+    const usual = [...steps].sort((a, b) => a - b)[Math.floor(0.99 * (steps.length - 1))];
+    const end = pose(duration, false);
+    const jump = Math.max(...pose(0, false).slice(7).map((v, k) => Math.abs(v - end[7 + k])));
+    let worst = 0;
+    previous = end;
+    for (let t = SCREEN_DT; t < LOOP_BLEND_S + SCREEN_DT; t += SCREEN_DT) {
+      const q = pose(t, true);
+      worst = Math.max(worst, ...q.slice(7).map((v, k) => Math.abs(v - previous[7 + k])));
+      previous = q;
+    }
+    const deg = (r) => ((r * 180) / Math.PI).toFixed(0);
+    expect(worst <= usual * 1.05, `${id.replace('.json', '')}: at most ${deg(worst)} degrees per screen frame across the loop (the jump was ${deg(jump)}; the clip's own p99 is ${deg(usual)})`);
+  }
 }
 
 console.log('mimic: the walk fed frame by frame like the live camera');

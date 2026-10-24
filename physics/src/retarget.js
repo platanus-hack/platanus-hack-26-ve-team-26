@@ -30,6 +30,12 @@ const JOINT_PENALTY = 0.0005;
 // 12% of the frames. A person walking twists the hip about 10 degrees. So the hip's twist, and
 // closing the leg inward past the stand pose, cost much more; opening it outward (jumping jacks) does not.
 const HIP_TWIST_PENALTY = 0.02;
+// The same goes for the shoulders' twist and the waist's turn: seen from the side, the shoulder line
+// is depth too, and the arms and the torso spun with it. Measured on the clips of data/clips: the
+// run's shoulder twist went from -43..40 to -3..3 degrees (p5..p95), and the walk's waist turn from
+// -21..12 to -12..7 (a person walking turns it about 10).
+const SHOULDER_TWIST_PENALTY = 0.05;
+const WAIST_TWIST_PENALTY = 0.2;
 const HIP_INWARD_PENALTY = 0.05;
 // The penalties alone do not stop it: the data itself puts the knees and ankles inward, because
 // the left-right position of a leg seen from the side is depth. So each leg segment may point
@@ -88,14 +94,18 @@ const WAIST = { joints: ['waist_yaw_joint', 'waist_roll_joint', 'waist_pitch_joi
 export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const data = new mujoco.MjData(model);
   mujoco.mj_resetDataKeyframe(model, data, idOf(mujoco, model, 'KEY', 'stand'));
+  const standQ = Float64Array.from(data.qpos); // the stand pose, what a hidden arm swings around
 
   const bodyId = (name) => idOf(mujoco, model, 'BODY', name);
   const joint = (name) => {
     const id = idOf(mujoco, model, 'JOINT', name);
     // Inward for a hip roll: negative on the left leg, positive on the right (the G1's ranges).
     const inward = name.endsWith('hip_roll_joint') ? (name.startsWith('left') ? -1 : 1) : 0;
-    return { adr: model.jnt_qposadr[id], limited: model.jnt_limited[id], lo: model.jnt_range[2 * id], hi: model.jnt_range[2 * id + 1],
-      twist: name.endsWith('hip_yaw_joint'), inward };
+    const twist = name.endsWith('hip_yaw_joint') ? HIP_TWIST_PENALTY
+      : name.endsWith('shoulder_yaw_joint') ? SHOULDER_TWIST_PENALTY
+      : name === 'waist_yaw_joint' ? WAIST_TWIST_PENALTY : 0;
+    return { name, adr: model.jnt_qposadr[id], limited: model.jnt_limited[id], lo: model.jnt_range[2 * id], hi: model.jnt_range[2 * id + 1],
+      twist, inward };
   };
 
   // Live views into the scratch MjData, refreshed at the start of every solve.
@@ -161,7 +171,7 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
   const penalty = (joints) => joints.reduce((sum, j) => {
     const v = getJoint(j);
     let cost = JOINT_PENALTY * v * v;
-    if (j.twist) cost += HIP_TWIST_PENALTY * v * v;
+    if (j.twist) cost += j.twist * v * v;
     if (j.inward) cost += HIP_INWARD_PENALTY * Math.max(0, j.inward * v) ** 2;
     return sum + cost;
   }, 0);
@@ -285,6 +295,7 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
     const hHipInverse = new THREE.Quaternion().copy(hHip).invert();
 
     let residual = 0;
+    const solved = new Set();
     for (const c of chains) {
       const h = side[c.side];
       const [i0, i1, i2] = c.human.map((k) => h[k]);
@@ -310,6 +321,7 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
       limitInward(dir.subVectors(S[i2], S[i1]).normalize().applyQuaternion(toRobot)).applyQuaternion(robotFrame);
       c.targetTip.copy(c.targetMid).addScaledVector(dir, c.foreLength);
       solveJoints(c.joints, () => limbCost(c));
+      solved.add(c);
       fk();
       position(c.midId, a);
       position(c.tipId, b);
@@ -319,6 +331,24 @@ export function createRetargeter(mujoco, model, { mirror = true } = {}) {
         target.copy(pelvisQ).multiply(rest[c.name]);
         solveJoints(c.foot.joints, () => orientationCost(c.foot, target));
       }
+    }
+
+    // Seen from the side, the far arm is behind the body: MediaPipe does not see it and it stayed
+    // frozen in the stand pose while the near one swung. A walking person swings the two arms in
+    // opposite phase, so the hidden arm mirrors the seen one: the shoulder goes forward as much as
+    // the seen one goes back (around the stand pose), the side lift and the twist mirror (the G1's
+    // left and right ranges are mirrored), and the elbow bends the same.
+    const arms = chains.filter((c) => !c.foot);
+    const seenArms = arms.filter((c) => solved.has(c));
+    if (seenArms.length === 1) {
+      const [shown] = seenArms;
+      const hidden = arms.find((c) => c !== shown);
+      const [pitch, roll, twist, elbow] = shown.joints;
+      const [hPitch, hRoll, hTwist, hElbow] = hidden.joints;
+      setJoint(hPitch, standQ[hPitch.adr] - (getJoint(pitch) - standQ[pitch.adr]));
+      setJoint(hRoll, -getJoint(roll));
+      setJoint(hTwist, -getJoint(twist));
+      setJoint(hElbow, getJoint(elbow));
     }
 
     // Height: lower the pelvis until the lowest point of either foot touches the floor.

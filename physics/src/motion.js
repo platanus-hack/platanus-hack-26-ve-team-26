@@ -177,6 +177,30 @@ export function smoothForDisplay(mujoco, model, motion) {
   return smoothed;
 }
 
+// A clip that loops jumps from its last pose to its first: in the run (3.8 s) a joint jumped 67
+// degrees every loop, in the jumping jacks 147. For this long after starting over, the robot goes
+// from the last pose to the clip's own instead: long enough to read as a move, short enough to
+// lose little of the clip.
+export const LOOP_BLEND_S = 0.3;
+
+/**
+ * The pose at time `t` (s) of a clip that just started over: sampleMotion(motion, t), eased in from
+ * the clip's last pose over LOOP_BLEND_S. The pelvis position on the floor is not blended (it goes
+ * back to the start of the path; the camera follows it), only its height, its heading and the joints.
+ */
+export function sampleLoopStart(motion, t, out, last = new Float64Array(out.length)) {
+  sampleMotion(motion, t, out);
+  if (t >= LOOP_BLEND_S) return out;
+  sampleMotion(motion, motionDuration(motion), last);
+  const u = Math.max(0, t) / LOOP_BLEND_S;
+  const w = u * u * (3 - 2 * u); // smoothstep: no jolt at either end
+  if (last[3] * out[3] + last[4] * out[4] + last[5] * out[5] + last[6] * out[6] < 0) for (let j = 3; j < 7; j++) last[j] = -last[j]; // same hemisphere
+  for (let j = 2; j < out.length; j++) out[j] = last[j] + (out[j] - last[j]) * w;
+  const norm = Math.hypot(out[3], out[4], out[5], out[6]);
+  for (let j = 3; j < 7; j++) out[j] /= norm;
+  return out;
+}
+
 /** Seconds a RobotMotion lasts: its frames are 1/fps apart, so the last one is at (n - 1) / fps. */
 export const motionDuration = (motion) => (motion.qpos.length - 1) / motion.fps;
 

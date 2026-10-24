@@ -282,6 +282,29 @@ console.log('legs that do not cross, in every clip of data/clips (seen from the 
   data.delete();
 }
 
+console.log("the walk's upper body: the hidden arm swings, the waist does not spin, no joint flips");
+{
+  // Seen from the side the far arm is hidden; it used to stay frozen in the stand pose. A walking
+  // arm swings forward and back by tens of degrees. The waist turns about 10 degrees in a person;
+  // 15 at p95 is the bar. A flip is a joint that jumps and comes back on the next frame.
+  const clip = JSON.parse(readFileSync(new URL('../../data/clips/clip_2026-10-23_caminar-perfil_01.json', import.meta.url)));
+  const rows = retargetClip(mujoco, sim.model, clip).motion.qpos;
+  const deg = (r) => (r * 180) / Math.PI;
+  const swing = (name) => { const v = rows.map((r) => deg(r[j(name)])); return Math.max(...v) - Math.min(...v); };
+  const waist = rows.map((r) => Math.abs(deg(r[j('waist_yaw_joint')]))).sort((a, b) => a - b)[Math.floor(0.95 * (rows.length - 1))];
+  let flips = 0;
+  for (let i = 1; i < rows.length - 1; i++) {
+    for (let k = 7; k < rows[i].length; k++) {
+      const a = rows[i][k] - rows[i - 1][k];
+      const b = rows[i + 1][k] - rows[i][k];
+      if (Math.abs(a) > 0.25 && Math.abs(b) > 0.25 && Math.sign(a) !== Math.sign(b)) flips++;
+    }
+  }
+  expect(Math.min(swing('left_shoulder_pitch_joint'), swing('right_shoulder_pitch_joint')) > 15, `both arms swing: left ${swing('left_shoulder_pitch_joint').toFixed(0)}, right ${swing('right_shoulder_pitch_joint').toFixed(0)} degrees`);
+  expect(waist < 15, `waist turn ${waist.toFixed(0)} degrees at p95 (under 15)`);
+  expect(flips === 0, `no joint flips back and forth between frames (${flips})`);
+}
+
 console.log('the RobotMotions saved in motions/ are up to date with the clips in data/clips');
 {
   const dir = new URL('../motions/', import.meta.url);

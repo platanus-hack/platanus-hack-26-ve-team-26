@@ -218,7 +218,11 @@ De perfil, el costado de cada pierna sale de la profundidad de MediaPipe, que es
 | Carrera | 7 % → 0 % | 48° → 9° | 97 % |
 | Jumping jacks | 0 % → 0 % (abre las piernas 24°, igual que antes) | 39° → 11° | 98 % |
 
-`check-retarget` lo exige para cada clip de `data/clips/`. Vale también para la cámara en vivo (es el mismo retargeting). Los `RobotMotion` de `motions/` se regeneraron: **las políticas de imitación entrenadas antes siguen la referencia vieja** y hay que reentrenarlas.
+`check-retarget` lo exige para cada clip de `data/clips/`. Vale también para la cámara en vivo (es el mismo retargeting).
+
+**Torso y brazos, por la misma razón.** De perfil la línea de los hombros también es profundidad: la cintura giraba ±20° y el giro de los hombros llegaba a ±40° en la carrera. Ahora cuestan más (`SHOULDER_TWIST_PENALTY`, `WAIST_TWIST_PENALTY`): cintura −12° a +7° en la caminata, hombros ±3° en la carrera. **El brazo de atrás**, que la cámara no ve de perfil, quedaba congelado en la pose de pie mientras el otro se movía: ahora se balancea en espejo del visible y a contratiempo, como al caminar (los dos se mueven 42°). Y la caminata no tiene ningún pico (una articulación que salta y vuelve al cuadro siguiente).
+
+**Al repetir un clip.** Volvía de golpe de la última pose a la primera: 72° en una articulación en la carrera (cada 3,8 s), 144° en los jumping jacks. Ahora `sampleLoopStart` (`src/motion.js`) pasa de la última pose a la del clip en 0,3 s: como mucho 9° y 12° por cuadro de pantalla, menos que el 1 % más rápido del propio clip (`check-smooth`). Los `RobotMotion` de `motions/` se regeneraron: **las políticas de imitación entrenadas antes siguen la referencia vieja** y hay que reentrenarlas.
 
 ### Límites del retargeting
 
