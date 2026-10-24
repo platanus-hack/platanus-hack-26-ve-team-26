@@ -35,8 +35,8 @@ def slide(n, kind, body, label=""):
 
 S = []
 
-# El deck ataca la categoría, no a un equipo: "physical AI" contra "agentes", nunca a una persona.
-# Títulos en inglés donde el inglés pega más corto; el cuchillo, en español.
+# Un minuto de pitch (láminas 1-6), 2 min de video (7) y el cierre (8-10).
+# Solo la portada va en inglés; el resto, en español.
 
 SKELETON = """<svg class="flow" viewBox="0 0 760 300" role="img"
    aria-label="Un video se convierte en un esqueleto de 33 puntos, ese movimiento entra al robot, y sin física el robot se cae">
@@ -72,43 +72,63 @@ S.append(slide(1, "dark split cover", """
   <div class="words">
     <p class="kicker">Platanus Hack 26 · Three Dimensions</p>
     <h1>Physical&nbsp;AI<br>is the<br>new sexy</h1>
-    <p class="knife">Los agentes ya saben pensar.<br><em>Ninguno sabe pararse.</em></p>
+    <p class="knife">Pensar ya se resolvió en un servidor.<br><em>Moverse se resuelve en el piso.</em></p>
     <p class="meta"><span>Tridi</span><span>Cesar · Juan · Pastor · Ale</span></p>
   </div>
   <figure class="shot"><img src="img/g1-de-pie.jpg" alt="El Unitree G1 simulado, de pie"></figure>""",
-  "0:00 · 7 s"))
+  "0:00 · 9 s"))
 
 S.append(slide(2, "dark statement", """
   <h2>Un bug<br>se revierte.<br><em>Una caída, no.</em></h2>
-  <p class="en">The real world has no undo.</p>""",
-  "0:07 · 5 s"))
+  <p class="es">La gravedad no acepta otro intento.</p>""",
+  "0:09 · 7 s"))
 
-S.append(slide(3, "paper split-v key", """
+S.append(slide(3, "dark statement", """
+  <h2>Los robots<br>ya tienen cuerpo.<br><em>Les falta experiencia.</em></h2>
+  <p class="es">Hoy se la enseñan con trajes de captura, en un estudio,
+     sobre un piso que en la calle no existe.</p>""",
+  "0:16 · 10 s"))
+
+S.append(slide(4, "paper split-v key", """
   <div class="words">
     <h2>Si copia el video,<br><em>se cae.</em></h2>
     <p class="punch">El video le dice <em>qué</em> hacer.<br>La física le enseña <em>cómo</em>.</p>
   </div>
-  """ + SKELETON, "0:12 · 10 s"))
+  """ + SKELETON, "0:26 · 14 s"))
 
-S.append(slide(4, "dark worlds", """
+S.append(slide(5, "dark worldslide", """
   <p class="kicker">Nuestro motor</p>
-  <h2>Perfect floors<br>don't exist</h2>
+  <h2>Los pisos perfectos<br>no existen</h2>
   <ul class="places">
     <li><b>Acera</b><span>plano, fricción normal</span></li>
     <li><b>Piedras</b><span>el suelo deja de ser plano</span></li>
     <li><b>Recién trapeado</b><span>fricción baja</span></li>
     <li><b>Pradera con viento</b><span>fuerza lateral constante</span></li>
   </ul>
-  <p class="en">Un demo se hace en el vacío. Un robot, con fricción.</p>""",
-  "0:22 · 8 s"))
-
-S.append(slide(5, "dark demo", """
-  <p class="kicker">Demo</p>
-  <h1>2:30</h1>
-  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p>""",
-  "0:30"))
+  <p class="es">Un demo se hace en el vacío. Un robot, con fricción.</p>""",
+  "0:40 · 7 s"))
 
 S.append(slide(6, "paper", """
+  <p class="kicker">Tres piezas</p>
+  <div class="cols">
+    <div class="col"><p class="product">Capture</p>
+      <p>Un video cualquiera se vuelve el esqueleto 3D de una persona, y ese movimiento entra al
+         cuerpo del robot.</p><p class="num">33 puntos · 3,2 cm</p></div>
+    <div class="col"><p class="product">Gym</p>
+      <p>El robot lo practica millones de veces con física real. Si se cae, vuelve a
+         intentarlo.</p><p class="num">40 M pasos · 73 min</p></div>
+    <div class="col"><p class="product">Policy</p>
+      <p>Sale una red pequeña que mueve sus 29 motores, y corre en el navegador de
+         ustedes.</p><p class="num">265 KB · cada 20 ms</p></div>
+  </div>""", "0:47 · 13 s"))
+
+S.append(slide(7, "dark demo", """
+  <p class="kicker">Demo</p>
+  <h1>2:00</h1>
+  <p class="trio"><span>Capture</span><span>Gym</span><span>Policy</span></p>""",
+  "1:00"))
+
+S.append(slide(8, "paper", """
   <p class="kicker">Lo que acaban de ver, medido</p>
   <div class="stat-row four">
     <div class="stat"><b>3,2 cm</b><span>error al pasar el movimiento al robot</span></div>
@@ -119,7 +139,7 @@ S.append(slide(6, "paper", """
   <p class="foot-note">Un solo archivo define cada mundo: fricción, viento, masas y fuerza de los
      motores. El mismo que ve la web es el que entrena al robot.</p>""", "Al terminar la demo"))
 
-S.append(slide(7, "paper", """
+S.append(slide(9, "paper", """
   <p class="kicker">Para equipos de humanoides</p>
   <h2>Dónde estamos</h2>
   <ol class="road big">
@@ -131,11 +151,11 @@ S.append(slide(7, "paper", """
      el LLM decide a dónde ir, nosotros enseñamos a llegar sin caerse.</p>""",
   "Preguntas"))
 
-S.append(slide(8, "dark split end", """
+S.append(slide(10, "dark split end", """
   <div class="words">
     <p class="kicker">Pruébenlo ahora · empújenlo</p>
-    <h2>Physical&nbsp;AI<br>is the<br>new sexy</h2>
-    <p class="meta"><span>tridi-alpha.vercel.app</span><span>Abierto en GitHub</span></p>
+    <h2>tridi-alpha<br>.vercel.app</h2>
+    <p class="meta"><span>Abierto en GitHub</span><span>platanus-hack/…-ve-team-26</span></p>
   </div>
   <figure class="shot"><img src="img/g1-perfil.jpg" alt="El Unitree G1 simulado, de perfil"></figure>""",
   "Cierre"))
@@ -246,15 +266,15 @@ tr.on td{color:var(--signal);font-weight:500}
 
 .knife{margin:0;max-width:26ch;font:500 26px/1.2 var(--display);color:var(--fg)}
 .knife em{font-style:normal;color:var(--signal)}
-.statement .en{margin:0;font:400 22px/1 var(--mono);color:var(--dim);letter-spacing:-.01em}
+.statement .es{margin:0;max-width:52ch;font:400 21px/1.4 var(--display);color:var(--fg-2)}
 .places{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
 .places li{border-top:2px solid var(--fg);padding-top:14px}
 .places b{display:block;font-size:25px;font-weight:600;letter-spacing:-.015em;line-height:1.05}
 .places span{display:block;margin-top:10px;font:400 14px/1.4 var(--mono);color:var(--dim)}
 
-.dark .en{margin:0;font:400 19px/1 var(--mono);color:var(--dim)}
+.dark .es{margin:0;font:400 19px/1.4 var(--display);color:var(--fg-2)}
 .split.cover h1{font-size:82px}
-.split.end h2{font-size:72px;word-break:normal}
+.split.end h2{font-size:58px;word-break:break-word}
 .lede.wide{max-width:62ch;font-size:21px}
 .stat-row.four{gap:40px}
 .stat-row.four .stat b{font-size:52px}

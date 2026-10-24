@@ -1,6 +1,6 @@
 # Guion de 3 minutos: borrador 5, cronometrado
 
-> **⚠️ Superado el 24 de octubre.** El formato cambió a **30 segundos de láminas + 2:30 de video de demo**: [`guion-30-segundos.md`](guion-30-segundos.md). Queda el banco de preguntas del jurado.
+> **⚠️ Superado el 24 de octubre.** El formato cambió a **1 minuto de láminas + 2 minutos de video de demo**: [`guion-1-minuto.md`](guion-1-minuto.md). Queda el banco de preguntas del jurado.
 
 - **Fecha:** 2026-10-24 · **Quién:** Ale · **Estado:** cronometrado sobre el papel, falta leerlo en voz alta con reloj
 - **Borrador 5:** entra el relato de [`relato.md`](relato.md), verificado contra el repo: por qué copiar el video no alcanza, y el LLM dicho en positivo.
