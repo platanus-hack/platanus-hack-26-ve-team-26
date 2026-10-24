@@ -4,7 +4,7 @@
 
 :root {
   --paper: #eeece7;
-  --scene: #e6e3dc; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
+  --scene: #111110; /* the 3D scenes' background (skeleton.js SCENE_THEME), so canvases blend in */
   --ink: #0d0d0b;
   --ink-2: #171715;
   --ink-soft: #3a3935;

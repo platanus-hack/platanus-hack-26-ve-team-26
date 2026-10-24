@@ -21,8 +21,8 @@ const JOINT_RADIUS = 0.03;
 const HUMAN_COLOR = 0xff4f1a; // the brand's signal: the human is orange, the robot keeps its own colors
 const HIDDEN = new THREE.Matrix4().makeScale(0, 0, 0);
 
-/** Warm paper scene colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
-export const SCENE_THEME = { background: 0xe6e3dc, ground: 0xdedad2, gridMajor: 0xb3aea3, gridMinor: 0xcdc8be };
+/** Dark stage colors shared by the skeleton and the robot (createSimView's `theme`); background is --scene in style.css. */
+export const SCENE_THEME = { background: 0x111110, ground: 0x181816, gridMajor: 0x3a3833, gridMinor: 0x242320 };
 
 export class SkeletonView {
   constructor(canvas) {
@@ -37,7 +37,7 @@ export class SkeletonView {
     const scene = (this.scene = new THREE.Scene());
     scene.background = new THREE.Color(SCENE_THEME.background);
     scene.fog = new THREE.Fog(SCENE_THEME.background, 8, 25);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xd6d1c6, 2));
+    scene.add(new THREE.HemisphereLight(0xffffff, 0x2a2824, 2));
     const sun = new THREE.DirectionalLight(0xffffff, 2.2);
     sun.position.set(2, 4, 1.5);
     scene.add(sun);

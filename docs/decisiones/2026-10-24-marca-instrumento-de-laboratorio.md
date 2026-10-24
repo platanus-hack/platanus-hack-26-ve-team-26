@@ -1,6 +1,6 @@
 # Marca y landing: instrumento de laboratorio, con el G1 real en cada imagen
 
-- **Fecha:** 2026-10-24 · **Quién:** Juan · **Estado:** vigente. Reemplaza la presentación de [`2026-10-24-web-intro-dos-slides-estilo-claro.md`](2026-10-24-web-intro-dos-slides-estilo-claro.md) (César) y concreta [`2026-10-24-marca-b2b-robotica.md`](2026-10-24-marca-b2b-robotica.md). Falta conversarlo con César.
+- **Fecha:** 2026-10-24 · **Quién:** Juan · **Estado:** vigente, con la revisión de abajo. Reemplaza la presentación de [`2026-10-24-web-intro-dos-slides-estilo-claro.md`](2026-10-24-web-intro-dos-slides-estilo-claro.md) (César) y concreta [`2026-10-24-marca-b2b-robotica.md`](2026-10-24-marca-b2b-robotica.md). Falta conversarlo con César.
 
 ## Contexto
 
@@ -29,3 +29,12 @@ La web tiene que verse como el producto técnico que es (Physical AI para empres
 
 - Las pantallas de la app (`#/en-vivo`, `#/subir`, `#/simulaciones`) heredan colores y tipografía por los tokens, pero conservan su maquetación y los robots de puntos azules: falta pasarlas al mismo estilo (César).
 - El nombre sigue siendo provisional; la marca no depende de él (el wordmark es texto + el ícono de la figura).
+
+## Revisión (mismo día): cinemático oscuro, 4 bloques
+
+Después de una ronda de preguntas con Juan:
+
+- **Cliente:** equipos que construyen humanoides. **Titular:** "Enséñale a un robot a moverse con un video." Texto simple para cualquiera, con el detalle técnico en letra chica mono. Español.
+- **Estilo (sin fijar todavía):** cinemático y oscuro (`#0a0a09`), el robot iluminado a pantalla completa, naranja señal como único acento. La escena 3D también es oscura (`SCENE_THEME` en `web/src/skeleton.js`). La meta: que se sienta ambicioso.
+- **4 bloques:** el robot que se empuja (hero) · cómo funciona en 3 pasos · la prueba (aprende cayéndose, escalera de checkpoints, curva y lo que viene) · para quién y pruébalo.
+- **La caminata se muestra etiquetada:** hoy el robot la reproduce como títere ("copiando el video · sin física"). Al empujarlo pasa a física real con la política, y si se cae, el contador lo dice.
