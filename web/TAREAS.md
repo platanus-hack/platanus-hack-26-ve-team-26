@@ -64,7 +64,14 @@ Pedido de César: una UI que cualquiera entienda, hasta una persona mayor, con m
 - [x] **W6.1 Etapas.** Subir → buscar personas (`tracking`) → calcular cómo se mueve (`pose3d`) → listo, con su avance y la posición en la cola. Si se sale de la pantalla, el trabajo sigue y al volver se retoma.
 - [x] **W6.2 Resultado.** El clip va primero en la galería ("Tu video") y "Verlo en simulaciones" abre `#/simulaciones/<id del clip>` con ese clip elegido. Se guarda en memoria: al recargar, la galería vuelve a las precargadas.
 
-## M10. Intro de dos slides, estilo claro
+## M12. Lo que sigue (24/10, después de la landing de Juan)
+
+- [ ] **W12.1 Pantallas de la app con el estilo de la landing.** Juan rehízo la landing (`web/src/screens/home.js`, `web/src/landing/`; [decisión](../docs/decisiones/2026-10-24-marca-instrumento-de-laboratorio.md)) y pidió pasar En vivo, Subir y Simulaciones al mismo estilo.
+- [ ] **W12.2 Mandar el clip de la cámara.** El servidor ya tiene `POST /clips` (SRV-1): cerrar WEB-1.
+- [ ] **W12.3 WEB-2, entrenar.** Ya no está bloqueada: cola de entrenamiento (SRV-2), lo entrenado (SRV-3) y políticas de imitación en el navegador (SIM-1) están hechos.
+- [ ] **W12.4 WEB-3, resultado.** El robot con su política, Empujar, selector de mundos y descargas.
+
+## M10. Intro de dos slides, estilo claro (reemplazada por la landing de Juan)
 
 Pedido de César: volver al estilo claro de antes de M9 y abrir con una intro de dos slides ([decisión](../docs/decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)).
 

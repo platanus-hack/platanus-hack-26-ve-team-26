@@ -3,10 +3,10 @@ persona: César
 rama: cesar/web
 sesion: 2128dcdb-7eee-42c2-b4a0-ada7657dbaa2
 inicio: 2026-10-24 03:07
-estado: en curso
+estado: cerrada
 ---
 
-# Vuelta al estilo claro, intro de dos slides con el robot real y textos del pitch
+# Inicio de dos slides, WEB-1 y mundos (SIM-3)
 
 ## Objetivo
 
@@ -27,6 +27,7 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 - `AGENTS.md` (commit aparte, archivo del equipo): describe el producto con el pitch nuevo y pide revisar la tabla de qué es verdad hoy antes de escribir textos.
 - WEB-1 (plan del producto): la cámara de En vivo graba desde que se enciende, con contador hasta 30 s, "Parar y guardar" y guardado al apagarla o salir. El clip va a la galería como "Tu cámara · hh:mm" y se abre en Simulaciones, donde el robot lo repite (movimiento calculado en el navegador). El resultado tiene su propio bloque, porque la línea de estado se reescribe cada segundo. Falta mandarlo al servidor (`POST /clips`, SRV-1).
 - SIM-3 (mundos), en la carpeta de Pastor con commits propios: `physics/worlds/` (plano, piedras, resbaloso, viento) con el formato de "Mundos" del contrato que propuso Pastor (`9d2bab0`); `sim.applyWorld` (fricción en los pares de contacto con el piso, masas e inercias con `mj_setConst`, `kp`/`kv` y topes de torque, viento como fuerza en el torso por arrastre: 10 m/s ≈ 30 N); escena de piedras generada (`npm run make-stones-scene`: mapa de alturas de 161×161 celdas de 5 cm, piedras de hasta 3 cm, semilla fija) que el visor ahora dibuja; `view.setWorld` en `index.js` (con otra escena recarga el modelo y la política); `check-worlds` dentro de `npm run check`. En la web, selector "Mundo" en Simulaciones.
+- Estado al cierre de esta parte (24/10, ~05:30): el lector de mundos en Python para `training/` quedó delegado a Juan (con ENT-3). Juan rehízo la landing en `web/` (cinemática oscura, el G1 real como cámara, GSAP y Lenis; su [decisión de marca](../decisiones/2026-10-24-marca-instrumento-de-laboratorio.md)), así que las dos slides de esta sesión quedaron reemplazadas y su decisión marcada como tal. En el rebase conservó los estilos de grabación de WEB-1 y frases del inicio de César. También entraron SIM-1 y SIM-2 (Pastor) y SRV-1, SRV-2 y SRV-3 (Juan): WEB-2 y WEB-3 ya no están bloqueadas, y el contrato aceptó el formato de mundos de SIM-3.
 
 ## Qué funcionó
 
@@ -64,8 +65,10 @@ Quitar la presentación corporativa (M9), volver al estilo claro anterior y abri
 
 ## Sigue
 
+- César: la landing y las pantallas de la app con el estilo nuevo (M12 en `web/TAREAS.md`), mandar el clip de la cámara (`POST /clips`), WEB-2 y WEB-3.
+
 - Pastor: revisar SIM-3 en `physics/` (es su carpeta).
-- Quien tome ENT-3: el lector de `physics/worlds/` en Python para `training/env.py`, aplicando lo mismo que `sim.applyWorld` (misma fórmula de viento).
+- Juan (ENT-3): el lector de `physics/worlds/` en Python para `training/env.py`, aplicando lo mismo que `sim.applyWorld` (misma fórmula de viento).
 
 - César: probar WEB-1 con una webcam real (guardar un clip y verlo en Simulaciones). Mandar el clip al servidor cuando Juan tenga `POST /clips` (SRV-1).
 

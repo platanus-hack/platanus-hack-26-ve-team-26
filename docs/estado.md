@@ -37,10 +37,10 @@ Cámara en vivo y videos subidos → elegir y seguir al sujeto → `PoseClip` li
 
 App web: captura, subida, galería de precargadas, vista de la simulación y progreso. Nunca una pantalla de carga vacía.
 
-- **Funciona:** web en estilo claro con un inicio de dos slides ([decisión](decisiones/2026-10-24-web-intro-dos-slides-estilo-claro.md)): el pitch de Physical AI junto al G1 real, que pasa solo por los movimientos precargados y se deja empujar, con tres cifras medidas; y elegir cómo empezar. Cámara en vivo (el G1 copia con `mimic`), Subir (subida por partes, etapas, elegir persona) y Simulaciones (clip + política + escalera) funcionan. Un solo G1 para toda la web, listo en 6,6 s ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)).
-- **En curso:** —
-- **Bloqueado por:** nada para WEB-1 del [plan](plan-producto.md). WEB-2 y WEB-3 esperan al servidor de entrenamiento (SRV-2, SRV-3) y a SIM-1 y SIM-3.
-- **Sigue:** WEB-1 grabado y en la galería (falta mandarlo, SRV-1). SIM-3 hecho en `physics/` y en la web (falta el lector en Python, ENT-3). Siguiente: WEB-2 cuando exista la cola de entrenamiento. Pastor pasa la raíz de Vercel a `web/`.
+- **Funciona:** Cámara en vivo (el G1 copia con `mimic`; graba hasta 30 s y guarda el clip en la galería, WEB-1), Subir (subida por partes, etapas, elegir persona) y Simulaciones (clip + política + escalera + selector de mundos). Mundos de SIM-3 en `physics/` (`physics/worlds/`, `view.setWorld`, terreno de piedras, `check-worlds`). Un solo G1 para toda la web, listo en 6,6 s ([decisión](decisiones/2026-10-24-robot-unico-y-carga-al-abrir.md)). La landing la rehízo Juan ([decisión](decisiones/2026-10-24-marca-instrumento-de-laboratorio.md)); las dos slides de César quedaron reemplazadas.
+- **En curso:** la landing y las pantallas de la app con el estilo nuevo (M12 en [`../web/TAREAS.md`](../web/TAREAS.md)).
+- **Bloqueado por:** nada. El lector de mundos en Python lo hace Juan (ENT-3).
+- **Sigue:** pasar En vivo, Subir y Simulaciones al estilo de la landing; mandar el clip de la cámara (`POST /clips`); WEB-2 y WEB-3, ya desbloqueadas.
 
 ---
 

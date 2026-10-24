@@ -1,6 +1,6 @@
 # La web vuelve al estilo claro y abre con una intro de dos slides
 
-- **Fecha:** 2026-10-24 · **Quién:** César · **Estado:** vigente. Cambia la presentación que pedía [`2026-10-24-marca-b2b-robotica.md`](2026-10-24-marca-b2b-robotica.md) (de Juan); pendiente de conversarlo con él.
+- **Fecha:** 2026-10-24 · **Quién:** César · **Estado:** reemplazada por [`2026-10-24-marca-instrumento-de-laboratorio.md`](2026-10-24-marca-instrumento-de-laboratorio.md): Juan rehízo la landing (cinemática, con el G1 real como cámara). Siguen valiendo el robot único y lo que funciona.
 
 ## Contexto
 
