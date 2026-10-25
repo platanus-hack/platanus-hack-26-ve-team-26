@@ -807,6 +807,30 @@ select:disabled {
 }
 
 /* The policy network while it trains, in 3D (netview.js). */
+/* #/red/<train id> (screens/net.js): the same view, full size. */
+.net-screen {
+  display: grid;
+  gap: var(--s-4);
+  justify-items: start;
+  width: min(1400px, 100% - 32px);
+  margin: var(--s-6) auto;
+}
+
+.net-screen .train-box {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.net-screen .train-net {
+  height: min(78vh, 900px);
+}
+
+.net-screen-note {
+  color: var(--muted);
+}
+
 .train-net {
   position: relative;
   width: 100%;

@@ -115,6 +115,7 @@ export const trainBoxHTML = () => `
     <div class="track"><div class="bar train-bar"></div></div>
     <p class="train-line"></p>
     <div class="train-net" hidden></div>
+    <a class="train-net-link" href="#/red" target="_blank" rel="noopener" hidden>Ver la red en pantalla grande ↗</a>
     <p class="train-note">Puedes seguir moviéndote o grabar otro mientras tanto: el entrenamiento sigue mientras esta página esté abierta.</p>
   </div>
   <div data-train="done" hidden>
@@ -185,6 +186,8 @@ export function mountTrainBox(box, api) {
         // Asked from retarget on: the first picture shows up as soon as practice starts. During
         // `data` the last picture stays, the network no longer changes.
         if (netView) netView.follow(api.url, t.train_id, t.stage !== 'data');
+        $('.train-net-link').href = `#/red/${encodeURIComponent(t.train_id)}`;
+        $('.train-net-link').hidden = false;
       } else if (netView) {
         netView.follow(api.url, null, false);
       }
