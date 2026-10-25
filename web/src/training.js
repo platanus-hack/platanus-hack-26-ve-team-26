@@ -55,23 +55,38 @@ export async function startTraining(item, api) {
   const camera = item.data.source === 'camera';
   // A camera clip already sent keeps its server id, so a retry does not send it twice.
   let clipId = active?.clipId ?? (camera ? null : item.data.id);
-  try {
-    if (!clipId) {
-      update(item.clip, { phase: 'sending', clipId: null, train: null, error: null });
-      clipId = await sendClip(api.url, item.data);
+  // The tunnel's URL changes every time data/serve.sh restarts, and a page opened before that
+  // still holds the old one: a network failure looks for the server again (api.recheck, through
+  // the gist) and, if it answers, tries once more there.
+  for (let attempt = 0; ; attempt++) {
+    try {
+      if (!clipId) {
+        update(item.clip, { phase: 'sending', clipId: null, train: null, error: null });
+        clipId = await sendClip(api.url, item.data);
+      }
+      update(item.clip, { phase: 'queuing', clipId, train: null, error: null });
+      const trainId = await trainClip(api.url, clipId);
+      update(item.clip, { phase: 'watching' });
+      const train = await watchTraining(api.url, trainId, { onUpdate: (t) => update(item.clip, { train: t }) });
+      update(item.clip, train.state === 'done' ? { phase: 'done' } : { phase: 'failed', error: train.error ?? 'El entrenamiento falló.' });
+      return;
+    } catch (error) {
+      const lost = !(error instanceof UploadError);
+      if (lost && attempt === 0) {
+        const before = api.url;
+        if ((await api.recheck()) && api.url !== before) {
+          if (camera) clipId = null; // the new server may not have it: send it again
+          continue;
+        }
+      }
+      if (lost) console.error(error);
+      update(item.clip, {
+        phase: 'failed',
+        clipId,
+        error: lost ? 'Se perdió la conexión con el servidor de videos.' : error.message,
+      });
+      return;
     }
-    update(item.clip, { phase: 'queuing', clipId, train: null, error: null });
-    const trainId = await trainClip(api.url, clipId);
-    update(item.clip, { phase: 'watching' });
-    const train = await watchTraining(api.url, trainId, { onUpdate: (t) => update(item.clip, { train: t }) });
-    update(item.clip, train.state === 'done' ? { phase: 'done' } : { phase: 'failed', error: train.error ?? 'El entrenamiento falló.' });
-  } catch (error) {
-    if (!(error instanceof UploadError)) console.error(error);
-    update(item.clip, {
-      phase: 'failed',
-      clipId,
-      error: error instanceof UploadError ? error.message : 'Se perdió la conexión con el servidor de videos.',
-    });
   }
 }
 
