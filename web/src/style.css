@@ -827,8 +827,22 @@ select:disabled {
   height: min(78vh, 900px);
 }
 
+.net-screen-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-3);
+  align-items: center;
+  width: 100%;
+}
+
 .net-screen-note {
-  color: var(--muted);
+  flex: 1 1 320px;
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.net-screen-bar [hidden] {
+  display: none;
 }
 
 .train-net {

@@ -116,6 +116,13 @@ export async function trainClip(baseUrl, clipId, { signal } = {}) {
   return train_id;
 }
 
+/** Stops a training, queued or running (DELETE /train/{id}): it stops using the server's CPU at once. */
+export async function cancelTraining(baseUrl, trainId) {
+  const res = await fetch(`${baseUrl.replace(/\/$/, '')}/train/${trainId}`, { method: 'DELETE' });
+  // 404: it was already gone (cancelled from another tab, or the server forgot it), which is what we wanted.
+  if (!res.ok && res.status !== 404) throw new UploadError(`el servidor respondió ${res.status}`);
+}
+
 /**
  * Follows a training until it is "done" or "failed", calling onUpdate with every state
  * (the JSON of GET /train/{id}). Returns the last state.

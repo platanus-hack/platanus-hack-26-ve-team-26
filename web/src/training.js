@@ -3,7 +3,7 @@
 // ready. Kept outside the screens, so leaving En vivo does not stop following it; like the clips
 // themselves (preloaded.js), it lasts until the page reloads. The box below (trainBoxHTML and
 // mountTrainBox) is the step after recording: train the robot with the clip, then its delivery.
-import { sendClip, trainClip, UploadError, watchTraining } from '../../data/live/src/upload.js';
+import { cancelTraining, sendClip, trainClip, UploadError, watchTraining } from '../../data/live/src/upload.js';
 import { mountNetView } from './netview.js';
 
 // Below this share of frames with the body in view the server refuses to train
@@ -22,11 +22,23 @@ export const MIN_VALID_RATIO = 0.8;
 /** @type {Map<string, Run>} keyed by the gallery item's clip id */
 const runs = new Map();
 const listeners = new Map();
+const watches = new Map(); // the AbortController of each followed training, so Cancelar stops following it
 
 function update(key, patch) {
   const run = { ...runs.get(key), ...patch };
   runs.set(key, run);
   listeners.get(key)?.forEach((listener) => listener(run));
+}
+
+/** Cancels a training of this visit: the server stops it and the box goes back to "Entrenar". */
+export async function stopTraining(item, api) {
+  const run = runFor(item);
+  const trainId = run?.train?.train_id;
+  watches.get(item.clip)?.abort();
+  watches.delete(item.clip);
+  runs.delete(item.clip);
+  listeners.get(item.clip)?.forEach((listener) => listener(null));
+  if (trainId) await cancelTraining(api.url, trainId).catch((error) => console.error(error));
 }
 
 /** The training of a gallery item, if one was started on this visit. */
@@ -56,6 +68,8 @@ export async function startTraining(item, api) {
   const camera = item.data.source === 'camera';
   // A camera clip already sent keeps its server id, so a retry does not send it twice.
   let clipId = active?.clipId ?? (camera ? null : item.data.id);
+  const watch = new AbortController();
+  watches.set(item.clip, watch);
   // The tunnel's URL changes every time data/serve.sh restarts, and a page opened before that
   // still holds the old one: a network failure looks for the server again (api.recheck, through
   // the gist) and, if it answers, tries once more there.
@@ -67,11 +81,14 @@ export async function startTraining(item, api) {
       }
       update(item.clip, { phase: 'queuing', clipId, train: null, error: null });
       const trainId = await trainClip(api.url, clipId);
+      // Cancelled while it was being queued: the server has it now, so stop it there too.
+      if (watch.signal.aborted) return void cancelTraining(api.url, trainId).catch((error) => console.error(error));
       update(item.clip, { phase: 'watching' });
-      const train = await watchTraining(api.url, trainId, { onUpdate: (t) => update(item.clip, { train: t }) });
+      const train = await watchTraining(api.url, trainId, { onUpdate: (t) => update(item.clip, { train: t }), signal: watch.signal });
       update(item.clip, train.state === 'done' ? { phase: 'done' } : { phase: 'failed', error: train.error ?? 'El entrenamiento falló.' });
       return;
     } catch (error) {
+      if (watch.signal.aborted) return; // cancelled: stopTraining already reset the box
       const lost = !(error instanceof UploadError);
       if (lost && attempt === 0) {
         const before = api.url;
@@ -116,7 +133,8 @@ export const trainBoxHTML = () => `
     <p class="train-line"></p>
     <div class="train-net" hidden></div>
     <a class="train-net-link" href="#/red" target="_blank" rel="noopener" hidden>Ver la red en pantalla grande ↗</a>
-    <p class="train-note">Puedes seguir moviéndote o grabar otro mientras tanto: el entrenamiento sigue mientras esta página esté abierta.</p>
+    <p class="train-note">Puedes seguir moviéndote o grabar otro mientras tanto: el entrenamiento sigue en el servidor aunque cierres esta página, hasta que lo canceles.</p>
+    <button class="train-cancel" type="button">Cancelar el entrenamiento</button>
   </div>
   <div data-train="done" hidden>
     <p class="train-text train-result"></p>
@@ -133,7 +151,7 @@ const stepCount = (steps) => (steps < 1e6 ? `${Math.round(steps / 1e3)} k` : `${
 const minutes = (s) => (s < 60 ? 'menos de un minuto' : `unos ${Math.ceil(s / 60)} min`);
 
 /** What a training says while it runs: its place in the queue, its steps and how much it follows. */
-function progressLine(run) {
+export function progressLine(run) {
   const t = run.train;
   if (run.phase === 'sending') return 'Mandando tu clip al servidor…';
   if (!t) return 'Entrando a la cola…';
@@ -218,6 +236,9 @@ export function mountTrainBox(box, api) {
 
   $('.train-start').onclick = () => startTraining(item, api);
   $('.train-retry').onclick = () => startTraining(item, api);
+  $('.train-cancel').onclick = () => {
+    if (confirm('¿Cancelar este entrenamiento? Se detiene en el servidor y se pierde lo que lleva.')) stopTraining(item, api);
+  };
   return {
     show,
     dispose: () => {
