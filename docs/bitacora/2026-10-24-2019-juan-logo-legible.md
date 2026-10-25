@@ -24,6 +24,8 @@ estado: cerrada
 - Selects: chevron propio con aire a la derecha (`appearance: none` + SVG), el nativo quedaba pegado al borde (`style.css`). Commit `dfe7187`.
 - En vivo: el aviso "Tu equipo va algo lento" pasa a toast fijo arriba de la pantalla; estaba en la barra de abajo y no se veía. Va fuera de `.live-bar` porque su `backdrop-filter` atrapa el `position: fixed`. Commit `dfe7187`.
 
+- En vivo más liviano: el modelo de manos corre un cuadro sí y uno no mientras sigue una mano (los intermedios reusan su última respuesta) y `createLiveCapture` expone `timing()` (`data/live/src/index.js`, commit `86d8e44`). La pantalla En vivo dibuja el robot a 1,25x con sombra de 1024 px (antes 2x y 2048) y lo devuelve al salir; `?debug` suma una línea con cuadros/s de cámara y pantalla, ms de pose, manos y robot (`web/src/screens/live.js`, commit `ad4dfbd`).
+
 ## Qué funcionó
 
 - Comparé variantes en vivo en el preview local (24 px y ~110 px). La elegida se lee como "tridi" a ambos tamaños; se comprobó en header y footer.
@@ -40,6 +42,8 @@ estado: cerrada
 
 - Medir la lentitud de En vivo desde el preview: con la ventana en segundo plano el navegador pausa el video y el rAF, así que no hay números confiables. Hay que medirlo en la Mac con la pestaña al frente.
 
+- Medir el antes/después de la optimización en el preview: misma limitación (ventana en segundo plano, 0-1 fps). Build de `web/` OK, sin errores en consola; la ganancia real queda por medir en la Mac.
+
 ## Decisiones
 
 - Se mantiene la idea de marca (i-dots cuadrados en el color señal, como articulaciones), solo se ajustan proporciones.
@@ -52,5 +56,6 @@ estado: cerrada
 
 - Avisar a César: los dos cambios están en `web/`, su carpeta (el logo ya está en `main`, PR #134).
 - Probar el scroll con un trackpad real de Mac (inercia larga) y ajustar `WHEEL_GAP_MS` / `WHEEL_GROW` si se salta paradas o se siente lento.
-- Lentitud en En vivo: por cuadro corren en el hilo principal la pose (~11 ms en un M2), el modelo de manos (~11 ms) y el robot (física + render con sombras a 2x). Con la cámara a 60 fps eso satura el hilo y el robot va a saltos. Opciones: manos un cuadro sí y uno no, cámara a 30 fps, render del robot a 1,5x sin sombras, o MediaPipe en un Web Worker. Medir primero con la pestaña al frente.
+- Medir En vivo en la Mac con `?debug` (pestaña al frente, cámara encendida): si la pantalla sigue bajo 30 fps, lo próximo es bajar la cámara a 30 fps o pasar MediaPipe a un Web Worker.
+- Contexto de la lentitud: por cuadro corren en el hilo principal la pose (~11 ms en un M2), el modelo de manos (~11 ms) y el robot (física + render con sombras a 2x). Con la cámara a 60 fps eso satura el hilo y el robot va a saltos. Opciones: manos un cuadro sí y uno no, cámara a 30 fps, render del robot a 1,5x sin sombras, o MediaPipe en un Web Worker. Medir primero con la pestaña al frente.
 - Shippear cuando Juan lo pida.
