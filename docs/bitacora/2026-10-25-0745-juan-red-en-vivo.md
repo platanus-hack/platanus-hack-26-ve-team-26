@@ -51,3 +51,12 @@ Un entrenamiento tarda ~30 min en la Mac y la caja de Entrenar solo mostraba pas
 - Causa: la web desplegada es `main` y esta rama no estaba shippeada. El servidor de la Mac (reiniciado 08:04 sobre esta rama) ya servía la red: el entrenamiento de las 08:06 escribe `net.json` y `GET /train/{id}/net` responde 200.
 - La caja solo vive en la pestaña que empezó el entrenamiento; recargar la pierde. Nueva ruta `#/red/<train id>` (`web/src/screens/net.js`): la red de cualquier entrenamiento en pantalla grande, enlazada desde la caja ("Ver la red en pantalla grande ↗"). Probada con un servidor local aparte.
 - Sigue corriendo el entrenamiento huérfano de las 23:16 (`clip_2026-10-24_camara_03`): el reinicio del servidor no lo cortó y le quita CPU al de las 08:06.
+
+## Cancelar desde la web y entrenamientos que sobreviven a un reinicio
+
+- Pedido: cancelar un entrenamiento desde la web (que no quede gastando CPU) y que el entrenamiento largo del video de la demo siga pase lo que pase, aunque se reinicie el servidor o se itere el código.
+- `data/server.py`: cada entrenamiento guarda `train/<id>/state.json` (estado, etapa, pid). Al arrancar, el servidor carga esos estados: vuelve a encolar los que esperaban, y al que estaba corriendo lo adopta si su proceso sigue vivo (ppo corre en su propia sesión y sobrevive al servidor): sigue su progreso y arma dataset y entrega al terminar. Si terminó con el servidor apagado, arma la entrega al volver; si murió, queda `failed` y el clip se puede volver a entrenar. `DELETE` también corta un proceso adoptado y borra su estado.
+- Web: botón "Cancelar el entrenamiento" en la caja de Entrenar (vuelve a "Entrenar al robot") y en `#/red/<id>`, que ahora también muestra el progreso, el error o el enlace a la entrega. Ese link sirve aunque se recargue la página o se reinicie el servidor.
+- Probado con un servidor aparte (puerto 8011): entrenar → matar el servidor (ppo sigue) → reiniciar (lo retoma: `running`, pasos subiendo, red 200) → cancelar desde `#/red` (ppo muere, 404). Terminar con el servidor apagado → al volver, `done` con la entrega. Cancelar desde la caja: vuelve a idle y el servidor da 404. `data.check_training`: all good.
+- No se hizo auto-cancelar los entrenamientos que nadie mira: chocaría con el del video de la demo, que tiene que seguir solo.
+- El servidor real (`serve.sh` + túnel) apareció apagado a las ~08:20; no lo paró esta sesión. Hay que levantarlo con este código antes de lanzar el entrenamiento de la demo.
