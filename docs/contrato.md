@@ -191,6 +191,8 @@ La red en vivo la escribe `training/netlive.py` desde `training.ppo`: el actor d
 }
 ```
 
+Un entrenamiento vive en el servidor, no en la página: sigue aunque se cierre la pestaña, hasta que termine o alguien lo cancele (`DELETE`). También sobrevive a un reinicio del servidor *(2026-10-25)*: cada uno guarda su estado en `train/<id>/state.json`, y el servidor nuevo retoma el proceso que sigue corriendo (y arma la entrega si terminó mientras estaba apagado).
+
 La cola entrena **de a uno** y admite **3** en espera: con unos 30 min cada uno, el último espera hora y media, y más que eso ya no es una demo. Cada entrenamiento corre `retarget → training → data`:
 
 ```jsonc
