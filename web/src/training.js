@@ -92,6 +92,7 @@ export const trainBoxHTML = () => `
     <p class="train-text">Aquí el robot solo repite tu movimiento. Al entrenarlo, aprende a hacerlo con física, y te llevas la política y los datos. Tarda unos 30 minutos en el servidor.</p>
     <button class="primary train-start" type="button">Entrenar al robot</button>
     <p class="train-why"></p>
+    <a class="button train-example" href="#/entrega">Ver los datos entrenados →</a>
   </div>
   <div data-train="progress" hidden>
     <ol class="stages compact">${TRAIN_STEPS.map(([id, text]) => `<li data-step="${id}">${text}</li>`).join('')}</ol>
