@@ -260,7 +260,7 @@ export function mount(root) {
       <footer class="footer">
         <p>Física: MuJoCo, el estándar en robótica. Lo nuestro es todo lo que va encima.</p>
         <div class="foot-row">
-          <span class="wordmark big" aria-label="Tridi">${WORDMARK}</span>
+          <span class="wordmark big" aria-label="Tridi">${LOGO}${WORDMARK}</span>
           <dl class="foot-specs">
             <div><dt>Hecho en</dt><dd>Platanus Hack 26, Caracas</dd></div>
             <div><dt>Robot</dt><dd>Unitree G1, MuJoCo Menagerie</dd></div>

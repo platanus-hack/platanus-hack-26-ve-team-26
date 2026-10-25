@@ -317,13 +317,19 @@ html.is-landing.lenis body {
   background: rgb(8 9 11 / 0.82);
 }
 
+/* Mark and word in em, so the footer's big wordmark is the header's exactly, only scaled. */
 .wordmark {
   display: inline-flex;
   align-items: center;
-  gap: var(--s-2);
+  gap: 0.33em;
   font: 700 24px/1 var(--display);
   color: var(--fg);
   text-decoration: none;
+}
+
+.wordmark .logo {
+  width: 1.17em;
+  height: 1.17em;
 }
 
 .topnav {
@@ -1183,9 +1189,7 @@ html.is-landing.lenis body {
 }
 
 .wordmark.big {
-  font-size: clamp(80px, 15vw, 220px);
-  line-height: 0.78;
-  letter-spacing: -0.03em; /* tighter than the header for display size, loose enough to keep "tridi" legible */
+  font-size: clamp(64px, 11vw, 160px);
 }
 
 .foot-specs {
@@ -1249,11 +1253,6 @@ html.is-landing.lenis body {
   .topbar {
     inset: var(--s-2) var(--s-3) auto;
     padding: 6px 6px 6px var(--s-3);
-  }
-
-  .topbar .logo {
-    width: 24px;
-    height: 24px;
   }
 
   .wordmark {
