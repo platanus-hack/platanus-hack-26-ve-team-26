@@ -47,18 +47,26 @@ function remember(url) {
   }
 }
 
-/** The URL data/serve.sh published, or null (no server running, or GitHub unreachable). */
-export async function publishedApiUrl(gist = SERVER_GIST) {
+/**
+ * The URL data/serve.sh published, or null (no server running, or GitHub unreachable).
+ * @param dead  a URL already known not to answer: when a source still gives it (the API's copy can
+ *   lag an edit by a minute), the next source is asked, as the raw file is often already fresh.
+ */
+export async function publishedApiUrl(gist = SERVER_GIST, { dead = null } = {}) {
   const sources = [
     [`https://api.github.com/gists/${gist.id}`, (body) => JSON.parse(body.files[gist.file].content)],
     [`https://gist.githubusercontent.com/${gist.user}/${gist.id}/raw/${gist.file}`, (body) => body],
   ];
   for (const [url, read] of sources) {
     try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(GIST_TIMEOUT_MS) });
+      // no-store: the browser would keep its copy for the API's max-age (60 s) on top of GitHub's
+      // own, and a restarted server stayed "off" for two minutes.
+      const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(GIST_TIMEOUT_MS) });
       if (!res.ok) continue; // the API answers 403 past its hourly limit: try the raw file
       const { url: published } = read(await res.json());
-      return published ? valid(published) : null; // null: serve.sh stopped
+      const found = published ? valid(published) : null; // null: serve.sh stopped
+      if (found && found === dead) continue;
+      return found;
     } catch {
       /* offline or malformed: try the next source */
     }
@@ -85,7 +93,7 @@ export async function findApiUrl({ fallback = null } = {}) {
     /* storage blocked */
   }
   if (stored && (await checkApi(stored))) return stored;
-  const published = await publishedApiUrl();
+  const published = await publishedApiUrl(SERVER_GIST, { dead: stored });
   if (published) {
     remember(published);
     return published;
