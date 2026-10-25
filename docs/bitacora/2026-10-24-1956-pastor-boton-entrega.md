@@ -29,3 +29,8 @@ Que el capítulo "Tridi Policy" de la landing, que habla de la política entrena
 
 - Avisar a César y Juan del botón en la landing.
 - Pendiente de la sesión anterior: el despliegue del servidor en Render (`data/Dockerfile` y `.dockerignore` sin commitear, sin probar).
+
+## Parte 2: el botón también en la caja Entrenar
+
+- Pastor buscaba el botón en Simulaciones, no en la landing (lo vio por captura). `web/src/training.js` (de César): "Ver los datos entrenados →" en la caja "Entrenar al robot con este movimiento", bajo el botón de entrenar, visible aunque el servidor esté apagado. Abre `#/entrega` (la entrega de Caminar). El botón de la landing se queda.
+- Probado en local con un clip de cámara de prueba: aparece en la caja y abre la entrega. `vite build` pasa.
