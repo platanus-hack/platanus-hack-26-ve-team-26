@@ -41,3 +41,9 @@ Un entrenamiento tarda ~30 min en la Mac y la caja de Entrenar solo mostraba pas
 - `data/serve.sh`: publica en el gist solo cuando `/health` local responde (antes la web podía leer un túnel con el servidor aún cargando modelos) y **siempre** copia el link `?api=` al portapapeles: abrirlo encuentra el servidor al instante.
 - `data/live/src/api.js`: `findApiUrl` prueba primero el servidor local de desarrollo (`127.0.0.1:8000`, solo con `npm run dev`) antes del túnel recordado y del gist. Con un túnel muerto guardado, lo encuentra en ~90 ms.
 - Para la demo: levantar `serve.sh` unos minutos antes, abrir el link copiado y no reiniciarlo durante la demo (cada reinicio cambia la URL del túnel).
+
+## La caja no aparecía en tridi-alpha
+
+- Causa: la web desplegada es `main` y esta rama no estaba shippeada. El servidor de la Mac (reiniciado 08:04 sobre esta rama) ya servía la red: el entrenamiento de las 08:06 escribe `net.json` y `GET /train/{id}/net` responde 200.
+- La caja solo vive en la pestaña que empezó el entrenamiento; recargar la pierde. Nueva ruta `#/red/<train id>` (`web/src/screens/net.js`): la red de cualquier entrenamiento en pantalla grande, enlazada desde la caja ("Ver la red en pantalla grande ↗"). Probada con un servidor local aparte.
+- Sigue corriendo el entrenamiento huérfano de las 23:16 (`clip_2026-10-24_camara_03`): el reinicio del servidor no lo cortó y le quita CPU al de las 08:06.
