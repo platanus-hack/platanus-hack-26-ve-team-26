@@ -281,10 +281,10 @@ export function mount(root) {
   };
 
   // ---- Smooth scroll, and GSAP's scroll triggers driven by it ----
-  // gymGate (Gym, below) sees every wheel step first, so a fast scroll stops at each stage.
+  // wheelPage (Gym, below) sees every wheel step first: on desktop it moves the film stop to stop.
   // lerp 0.15 settles a wheel step in about a quarter of a second: 0.09 glided for twice that and
   // the page felt heavy.
-  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.15, virtualScroll: (data) => gymGate(data) });
+  const lenis = reducedMotion ? null : new Lenis({ lerp: 0.15, virtualScroll: (data) => wheelPage(data) });
   const tick = (time) => lenis?.raf(time * 1000);
   if (lenis) {
     lenis.on('scroll', ScrollTrigger.update);
@@ -569,9 +569,9 @@ export function mount(root) {
   // Gym: the three stages are three screens of scroll. The chapter is four screens tall and its
   // panel sticks for three of them (landing.css .gym); the stage is the third of that stretch you
   // are in, so scrolling is what trains the robot. Each stage's middle is a stop: scrolling down,
-  // a wheel or trackpad gesture, however fast, stops there instead of flying past (gymGate), and
-  // keeps the scroll until that checkpoint has shown what it does (gymShown): the untrained robot
-  // falls (~1,1 s), the others take their first push. Up, the top bar's links and the axis move freely.
+  // a wheel or trackpad gesture lands there (wheelPage) and keeps the scroll until that checkpoint
+  // has shown what it does (gymShown): the untrained robot falls (~1,1 s), the others take their
+  // first push. Up, the top bar's links and the axis move freely.
   const gymEl = $('.gym');
   const gymPanel = gymEl.querySelector('.sticky');
   const gym = { since: 0, lastPush: 0, fallen: false, loading: false, shownAt: 0 };
@@ -611,28 +611,68 @@ export function mount(root) {
   cleanups.push(() => layoutObserver.disconnect());
   const gymLevel = () => GYM_STAGES[gymStage()].level;
   const gymShown = (stage) => level === GYM_STAGES[stage].level && gym.shownAt > 0 && performance.now() >= gym.shownAt;
-  const gate = { stop: -1, since: 0 };
-  function gymGate(data) {
-    const { event } = data;
-    // Touch scrolls natively (Lenis has no syncTouch here); before the robot loads there is nothing to wait for.
-    if (!event.type.includes('wheel') || event.ctrlKey || !view) return true;
-    const from = lenis.targetScroll;
-    const stops = gymStops();
-    const holding =
-      gate.stop >= 0 && Math.abs(from - stops[gate.stop]) < STOP_PX && !gymShown(gate.stop) && performance.now() - gate.since < GYM_HOLD_MAX_S * 1000;
-    if (!holding) gate.stop = -1;
-    if (data.deltaY <= 0) return true; // up and sideways are always free
-    if (holding) {
-      if (event.cancelable) event.preventDefault(); // Lenis skips its own preventDefault when this returns false
-      return false;
+  // Wheel and trackpad on desktop move the film stop to stop, the same stops as Enter and space:
+  // the page is about eleven screens tall, and scrolled freely it felt long, with no telling where
+  // one part ended. One gesture is one stop. A trackpad swipe is a burst of wheel events and then
+  // its inertia, so a new gesture is a pause (WHEEL_GAP_MS), a turn, or a delta that grows again
+  // (a fresh flick over the inertia); the rest of the burst is swallowed. A gesture during a glide
+  // chains from where it ends, as Enter does. Below the last stop the footer scrolls as usual.
+  const WHEEL_GAP_MS = 200; // longer than the gap between a burst's events (~16 ms), shorter than two deliberate flicks
+  const WHEEL_GROW = 1.5; // inertia only shrinks: a delta 1.5x the last one is a new flick
+  const WHEEL_GLIDE_S = 0.8; // Enter's 0.35 s is for demos; a wheel reads better with a slower glide
+  const wheel = { at: 0, size: 0, dir: 0 };
+  const gate = { stop: -1, since: 0, queued: 0 }; // the Gym stop holding the scroll, from when, and a gesture waiting on it
+  const gymAt = (y) => gymStops().findIndex((stop) => Math.abs(y - stop) < STOP_PX);
+  const holding = (stop, at) => stop >= 0 && gate.stop === stop && view && !gymShown(stop) && at - gate.since < GYM_HOLD_MAX_S * 1000;
+  // Glides from one stop to the next (dir 1) or the previous (dir -1); false when there is none.
+  function wheelStep(from, dir) {
+    const stops = [0, ...spaceStops()].sort((a, b) => a - b);
+    const target = dir > 0 ? stops.find((stop) => stop > from + STOP_PX) : stops.findLast((stop) => stop < from - STOP_PX);
+    if (target === undefined) return false;
+    const next = gymAt(target);
+    if (dir > 0 && next >= 0 && !held.has(next)) {
+      // The hold counts from the landing, not from the start of the glide.
+      Object.assign(gate, { stop: next, since: performance.now() + WHEEL_GLIDE_S * 1000 });
+      held.add(next);
     }
-    const next = stops.findIndex((stop) => from < stop - STOP_PX && stop <= from + data.deltaY);
-    if (next < 0 || gymShown(next) || held.has(next)) return true;
-    data.deltaY = stops[next] - from; // Lenis reads the delta after this callback: land on the stop
-    Object.assign(gate, { stop: next, since: performance.now() });
-    held.add(next);
+    lenis.scrollTo(target, { duration: WHEEL_GLIDE_S });
     return true;
   }
+  function wheelPage(data) {
+    const { event } = data;
+    // Touch scrolls natively (Lenis has no syncTouch here); phones step with their arrows.
+    if (!event.type.includes('wheel') || event.ctrlKey || narrow() || Math.abs(data.deltaX) > Math.abs(data.deltaY)) return true;
+    const consume = () => {
+      if (event.cancelable) event.preventDefault(); // Lenis skips its own preventDefault when this returns false
+      return false;
+    };
+    const now = performance.now();
+    const dir = Math.sign(data.deltaY);
+    const size = Math.abs(data.deltaY);
+    const fresh = now - wheel.at > WHEEL_GAP_MS || dir !== wheel.dir || size > wheel.size * WHEEL_GROW + 2;
+    Object.assign(wheel, { at: now, size, dir });
+    const from = lenis.animate.isRunning ? lenis.animate.to : lenis.targetScroll;
+    const last = Math.max(...spaceStops());
+    if (from > last + STOP_PX && (dir > 0 || from + data.deltaY > last)) return true;
+    if (!fresh) return consume();
+    const here = gymAt(from);
+    if (dir > 0 && holding(here, now)) {
+      // A gesture during the hold is not lost: the film moves on once the checkpoint has shown
+      // itself, so each stage still takes one swipe.
+      if (!gate.queued) {
+        gate.queued = setInterval(() => {
+          if (holding(here, performance.now())) return;
+          clearInterval(gate.queued);
+          gate.queued = 0;
+          if (gymAt(lenis.targetScroll) === here) wheelStep(lenis.targetScroll, 1);
+        }, 50);
+      }
+      return consume();
+    }
+    // At the last stop going down, the footer below scrolls as usual.
+    return (wheelStep(from, dir) || dir < 0) ? consume() : true;
+  }
+  cleanups.push(() => clearInterval(gate.queued));
   $$('.axis-stop').forEach((stop, i) =>
     on(stop, 'click', () => {
       if (narrow()) return void (phone.stage = i);
@@ -892,7 +932,7 @@ export function mount(root) {
       scrollTrigger: { trigger: '.capture', start: 'top 75%', end: 'top 15%', scrub: true },
     });
 
-    // Gym: its words come in once; the stages then follow the scroll (gymStage) and stop it (gymGate).
+    // Gym: its words come in once; the stages then follow the scroll (gymStage) and stop it (wheelPage).
     gsap.from('.gym-caption > *', { opacity: 0, y: 30, stagger: 0.08, duration: 0.6, scrollTrigger: { trigger: '.gym', start: 'top 60%', toggleActions: 'play none none none' } });
 
     // Policy: the numbers come in one by one.
