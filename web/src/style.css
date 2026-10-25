@@ -347,12 +347,16 @@ select:disabled {
 .sims-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
+  /* A tall side column (the training box with its network) must not stretch the row: the controls
+     stay right under the scene, where they can be changed while watching the robot. */
+  align-items: start;
   gap: 20px;
   margin-top: 20px;
 }
 
 .sims-main {
   display: grid;
+  align-content: start;
   gap: 14px;
 }
 
@@ -807,6 +811,16 @@ select:disabled {
 }
 
 /* The policy network while it trains, in 3D (netview.js). */
+/* In Simulaciones' 320 px side column the network is a preview: "Ver la red en pantalla grande" opens it full size. */
+.sims-list .train-net {
+  height: 260px;
+}
+
+.sims-list .net-change,
+.sims-list .net-curves {
+  display: none;
+}
+
 /* #/red/<train id> (screens/net.js): the same view, full size. */
 .net-screen {
   display: grid;
