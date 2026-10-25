@@ -806,6 +806,136 @@ select:disabled {
   color: var(--muted);
 }
 
+/* The policy network while it trains, in 3D (netview.js). */
+.train-net {
+  position: relative;
+  width: 100%;
+  height: 440px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: var(--r-2);
+  background: var(--scene);
+  font-family: var(--mono);
+}
+
+.train-box [data-train] > .train-net {
+  justify-self: stretch;
+}
+
+.train-net[hidden] {
+  display: none;
+}
+
+.train-net:fullscreen {
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+}
+
+.net-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.net-labels span {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  justify-items: center;
+  color: var(--ink-soft);
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.net-labels b {
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.net-hud {
+  position: absolute;
+  top: var(--s-3);
+  left: var(--s-3);
+  right: 48px;
+  display: grid;
+  gap: var(--s-2);
+  pointer-events: none;
+}
+
+.train-box .net-hud p,
+.train-box .net-wait {
+  font-size: 12px;
+}
+
+.net-title {
+  color: var(--ink);
+}
+
+.net-step {
+  color: var(--signal);
+}
+
+.net-curves {
+  display: flex;
+  gap: var(--s-4);
+}
+
+.net-curves figure {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.net-curves canvas {
+  width: 120px;
+  height: 28px;
+}
+
+.net-change {
+  max-width: 60ch;
+  color: var(--muted);
+}
+
+.train-box .net-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--s-4);
+  color: var(--ink-soft);
+  text-align: center;
+}
+
+.net-wait[hidden] {
+  display: none;
+}
+
+.net-full {
+  position: absolute;
+  top: var(--s-2);
+  right: var(--s-2);
+  min-height: 0;
+  padding: 4px 10px;
+  font-size: 16px;
+}
+
+@media (max-width: 560px) {
+  .train-net {
+    height: 300px;
+  }
+
+  .net-change {
+    display: none;
+  }
+}
+
 .stages.compact {
   gap: 8px;
   margin: 0;

@@ -4,6 +4,7 @@
 // themselves (preloaded.js), it lasts until the page reloads. The box below (trainBoxHTML and
 // mountTrainBox) is the step after recording: train the robot with the clip, then its delivery.
 import { sendClip, trainClip, UploadError, watchTraining } from '../../data/live/src/upload.js';
+import { mountNetView } from './netview.js';
 
 // Below this share of frames with the body in view the server refuses to train
 // (MIN_VALID_RATIO in data/server.py, from docs/contrato.md): the robot would imitate the gaps.
@@ -113,6 +114,7 @@ export const trainBoxHTML = () => `
     <ol class="stages compact">${TRAIN_STEPS.map(([id, text]) => `<li data-step="${id}">${text}</li>`).join('')}</ol>
     <div class="track"><div class="bar train-bar"></div></div>
     <p class="train-line"></p>
+    <div class="train-net" hidden></div>
     <p class="train-note">Puedes seguir moviéndote o grabar otro mientras tanto: el entrenamiento sigue mientras esta página esté abierta.</p>
   </div>
   <div data-train="done" hidden>
@@ -153,6 +155,7 @@ export function mountTrainBox(box, api) {
   const $ = (selector) => box.querySelector(selector);
   let item = null;
   let unsubscribe = null;
+  let netView = null; // the network in 3D (netview.js), made the first time a training runs here; false without WebGL
 
   function render(run) {
     const phase = run ? (run.phase === 'done' || run.phase === 'failed' ? run.phase : 'progress') : 'idle';
@@ -172,6 +175,19 @@ export function mountTrainBox(box, api) {
       const fraction = !t || t.state === 'queued' ? 0 : t.stage === 'data' ? 1 : t.steps / Math.max(t.total_steps, 1);
       $('.train-bar').style.width = `${Math.round(100 * fraction)}%`;
       $('.train-line').textContent = progressLine(run);
+      if (t?.train_id && t.state === 'running' && netView !== false) {
+        try {
+          netView ??= mountNetView($('.train-net'));
+        } catch (error) {
+          console.error(error); // no WebGL: the box keeps its steps and bar, as before
+          netView = false;
+        }
+        // Asked from retarget on: the first picture shows up as soon as practice starts. During
+        // `data` the last picture stays, the network no longer changes.
+        if (netView) netView.follow(api.url, t.train_id, t.stage !== 'data');
+      } else if (netView) {
+        netView.follow(api.url, null, false);
+      }
     } else if (phase === 'done') {
       const t = run.train;
       // "done" with an error: the policy and the dataset are there, but the delivery was not built.
@@ -199,5 +215,11 @@ export function mountTrainBox(box, api) {
 
   $('.train-start').onclick = () => startTraining(item, api);
   $('.train-retry').onclick = () => startTraining(item, api);
-  return { show, dispose: () => unsubscribe?.() };
+  return {
+    show,
+    dispose: () => {
+      unsubscribe?.();
+      if (netView) netView.dispose();
+    },
+  };
 }
