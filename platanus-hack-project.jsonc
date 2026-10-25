@@ -3,7 +3,7 @@
   "project-name": "Tridi",
 
   // Short one-line summary of your project (in Spanish).
-  "project-oneliner-spanish": "Robots que aprenden de un video: convertimos video de personas en práctica con física para robots humanoides.",
+  "project-oneliner-spanish": "Convertimos un video común en data para robots humanoides.",
 
   // Brief description of your project (in Spanish).
   "project-description-spanish": "Tridi toma un video de celular o la cámara en vivo, encuentra a una persona aunque haya más gente y saca su esqueleto 3D. Ese movimiento pasa a un robot humanoide (Unitree G1) dentro de MuJoCo, un motor de física, donde el robot practica por imitación y refuerzo. Entrega dos cosas: una red neuronal pequeña (la política, en ONNX) que mueve al robot, y los datos del movimiento corregidos por la física, probados en cuatro mundos: piso plano, piedras, piso resbaloso y viento. La simulación corre en el navegador: puedes empujar al robot, cambiar de mundo y descargar la política y los datos.",

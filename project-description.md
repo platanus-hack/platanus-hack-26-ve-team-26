@@ -1,27 +1,51 @@
 # Tridi
 
-**Robots que aprenden de un video.**
+**Convertimos un video común en data para robots humanoides.**
 
-Los robots humanoides ya tienen cuerpo; lo que les falta es experiencia. Enseñarles a moverse exige miles de ejemplos de movimiento humano, y grabarlos con trajes de captura es caro y lento. Tridi usa lo que ya existe en todas partes: video de personas.
+Grabas a una persona moviéndose con el celular. Un humanoide aprende a hacerlo igual, practicando en física real hasta no caerse.
 
-## Cómo funciona
+👉 Pruébalo en vivo: [tridi-alpha.vercel.app](https://tridi-alpha.vercel.app)
 
-1. **Captura.** Un video de celular o la cámara en vivo. Si hay varias personas, Tridi elige a una y la sigue en todo el video.
-2. **Esqueleto 3D.** Cada cuadro se convierte en los 33 puntos 3D del cuerpo de esa persona, suavizados en el tiempo.
-3. **Al cuerpo del robot.** El movimiento pasa a las 29 articulaciones de un Unitree G1 dentro de MuJoCo, un motor de física.
-4. **Práctica con física.** Una política (una red neuronal pequeña) aprende el movimiento por imitación y refuerzo; la de estar de pie aprende además a aguantar empujones.
-5. **Entrega.** La política en ONNX, lista para correr, y los datos del movimiento corregidos por la física, probados en cuatro mundos: piso plano, piedras, piso resbaloso y viento.
+## El problema
 
-## Qué puedes probar en la web
+Hace un año la pregunta era cómo pasar de un chatbot a un agente. Hoy eso está resuelto. La pregunta ahora es otra: cómo hacer que una red neuronal mueva un robot.
 
-- **El robot con física real, en tu navegador:** MuJoCo simula 250 veces por segundo y la política decide 50 veces por segundo. Empújalo y mira cómo se recupera.
-- **En vivo:** muévete frente a la cámara del computador y el robot te copia. La cámara del teléfono y el entrenamiento de tus clips pasan por nuestro servidor de videos, cuando está encendido.
-- **La entrega:** la política y los datos de la caminata, con la repetición de cada episodio en los cuatro mundos, la telemetría y las descargas.
+ChatGPT se entrenó con todo internet y todos los libros del mundo. Los robots no tienen nada parecido: no existe un internet de datos de movimiento. Hoy, enseñarle un movimiento nuevo a un humanoide exige trajes de captura, un estudio y mucho tiempo, sobre pisos perfectos que en la calle no existen.
+
+## Qué hace Tridi
+
+- **Tridi Capture:** de un video de celular sacamos el esqueleto 3D de la persona (33 puntos, 30 veces por segundo) y lo pasamos a las 29 articulaciones del robot, con 3,2 cm de error.
+- **Tridi Gym:** si el robot solo copia el video, se cae. El video le dice qué hacer; la física le enseña cómo. Por eso una red neuronal practica el movimiento millones de veces con física real, y la probamos en cuatro ambientes imperfectos: acera, piedras, piso resbaloso y viento.
+- **Tridi Policy:** lo que te llevas es la data y el cerebro entrenado del robot, en ONNX, el formato que corre un robot. Probarlo en un G1 real es lo que sigue.
+
+## Cómo lo construimos
+
+- **Física:** MuJoCo, el estándar en robótica, en Python para entrenar y compilado a WebAssembly para correr en el navegador (física a 250 Hz, política a 50 Hz).
+- **Robot:** Unitree G1, modelo de MuJoCo Menagerie.
+- **Entrenamiento:** 60 millones de pasos de práctica para que se mantenga de pie de forma estable.
+- **La política:** una red de 265 KB que controla 29 motores a la vez, decide cada 20 ms y tarda menos de 1 ms en decidir. Corre directo en tu navegador.
+
+No es un LLM: es una red pequeña que aprendió a no caerse. El LLM decide a dónde ir; nosotros le enseñamos al robot a llegar sin caerse.
 
 ## Dónde estamos
 
-- **De pie:** la política se sostiene sola 20 s sin girar y aguanta la mayoría de los empujones de 250 N (60 M pasos de práctica).
-- **Caminar como la persona del video:** la política de imitación sigue 3,5 s de los 11,8 s de la caminata; sigue entrenando.
-- **Lo que viene:** que cualquier movimiento se aprenda entero en cualquier terreno, esquivar obstáculos y probar la política en un robot real.
+| Estado | Qué hace |
+| --- | --- |
+| **Hoy** | Se para y aguanta la mayoría de los empujones de 250 N |
+| **Entrenando** | Caminar como la persona del video (20 M de pasos; todavía no camina solo) |
+| **Lo que viene** | Cualquier movimiento, en cualquier terreno |
 
-Equipo 26 · Platanus Hack 26 Caracas · Track 🧊 Three-Dimensional.
+## Pruébalo
+
+En [tridi-alpha.vercel.app](https://tridi-alpha.vercel.app) puedes:
+
+- Empujar al robot (barra espaciadora) y ver cómo se recupera.
+- Moverte frente a la cámara y que el robot te copie en vivo.
+- Subir un video de una persona (hasta 30 s; solo guardamos el movimiento).
+- Ver la entrega: la política y los datos que se llevan, con cada prueba en los cuatro mundos.
+
+## Equipo
+
+César · Juan · Pastor · Ale
+
+Hecho en Platanus Hack 26, Caracas. Código abierto en GitHub: [platanus-hack/platanus-hack-26-ve-team-26](https://github.com/platanus-hack/platanus-hack-26-ve-team-26)
