@@ -48,3 +48,9 @@ Que el capítulo "Tridi Policy" de la landing, que habla de la política entrena
 ### Sigue
 
 - Avisar a Juan y César (landing y `video-overlay.js` son suyos).
+
+## Parte 4: los archivos de entrega al día
+
+- `platanus-hack-project.jsonc` y `project-description.md` (pedido de Pastor) estaban llenos desde el viernes 22:52 (la validación pasaba), pero con la idea del primer día ("un robot simulado que aprende a moverse solo"). Ahora cuentan el producto actual con las palabras de la landing ("Robots que aprenden de un video"): captura → esqueleto 3D → G1 en MuJoCo → práctica con física → la política (ONNX) y los datos probados en 4 mundos; qué se puede probar en la web; y dónde estamos, con cifras medidas (de pie 20 s y 3,6 de 4 empujones de 250 N con 60 M pasos; la caminata sigue 3,5 s de 11,8 s) y lo que viene como plan.
+- Revisado contra lo que es verdad hoy: la imitación entrenó sin empujones, y la cámara del teléfono y el entrenamiento pasan por el servidor de videos; las frases lo dicen así. `scripts/check-submission.sh` pasa y el `.jsonc` es JSON válido sin comentarios.
+- Ojo: la tabla "Qué es verdad hoy y qué es plan" de `docs/pitch/pitch-producto.md` está atrasada (dice que la imitación no aprende y que la web no usa la cola); es de Ale.
