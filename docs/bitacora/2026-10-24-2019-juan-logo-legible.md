@@ -52,6 +52,8 @@ estado: cerrada
 
 - "Subir videos no está disponible" con el servidor arriba: `data/serve.sh` corrió desde una copia vieja del repo (`~/Code/platanus-hack-26-ve-team-26`, en `114b22e`), cuyo `serve.sh` no publica en el gist; la web seguía leyendo el túnel anterior. Se publicó la URL nueva a mano con `gh gist edit` y la web la encontró. Además, la lectura del gist ahora usa `cache: 'no-store'` y salta una URL que ya se sabe muerta (`data/live/src/api.js`): antes el navegador podía quedarse hasta ~2 min con la vieja.
 
+- "Error" al entrenar en Simulaciones con el servidor arriba: no llegaba ningún `POST /train` al servidor. La página se abrió antes de reiniciar `serve.sh` y seguía con la URL vieja del túnel. Ahora, ante un error de red, el entrenamiento vuelve a buscar el servidor (gist) y reintenta una vez (`web/src/training.js`); probado en local con `fetch` simulado (URL muerta → gist → servidor vivo). El servidor en sí entrena bien: una prueba con `curl` encoló sin querer un entrenamiento de `clip_2026-10-24_prueba1_01`, que se canceló con `DELETE /train/…` tras el retargeting.
+
 ## Decisiones
 
 - Se mantiene la idea de marca (i-dots cuadrados en el color señal, como articulaciones), solo se ajustan proporciones.
