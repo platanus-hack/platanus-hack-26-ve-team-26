@@ -984,7 +984,8 @@ select:disabled {
 
 .live-debug {
   margin: 0;
-  font: 12px var(--mono);
+  font: 12px/1.6 var(--mono);
+  white-space: pre-line; /* the body's line, then the timing's */
   color: var(--muted);
 }
 /* A toast at the top of the screen: in the bar under the panes it fell below the fold and went unseen. */

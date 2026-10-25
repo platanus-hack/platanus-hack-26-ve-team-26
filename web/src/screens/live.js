@@ -40,9 +40,18 @@ const LOCAL_API = /^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/;
 // hero uses the same 0.5 s.
 const FOLLOW_S = 0.5;
 
+// The robot's scene draws lighter here than on the landing: the camera's models share the main
+// thread with it, and at 2x on a Retina screen with a 2048 px shadow the scene alone took a good
+// part of each frame. 1.25x still looks sharp at the pane's size, and a 1024 px shadow is enough
+// for the feet's on the floor. Put back when the screen closes (the landing uses the same robot).
+const LIVE_PIXEL_RATIO = 1.25;
+const LIVE_SHADOW_PX = 1024;
+
 // "?debug" in the address (tridi-alpha.vercel.app/?debug#/en-vivo) shows, once a second, how far the robot is from the person and
 // what it added that the person did not do (physics/ mimic's `fixes`): to tell a misread from a
 // fix while testing arms in front of a real camera (docs/investigacion/2026-10-24-brazos-humanos-en-vivo.md).
+// It also shows where each frame's time goes (camera models, the robot copying, the screen's
+// frame rate), to tell which part to lighten on a slow machine.
 const DEBUG = new URLSearchParams(location.search).has('debug');
 // The fixes in Spanish, as the readout says them.
 const FIX_NAMES = {
@@ -133,7 +142,38 @@ export function mount(root, { api }) {
   let returnToWebcam = false; // the webcam was on when the phone took over
   // Pushing needs the physics back: the camera stops first, as on the physics/ page.
   const robot = mountRobotPane($('.robot-pane'));
-  robot.ready.then((view) => view && !disposed && (view.viewer.followTau = FOLLOW_S));
+  let restoreRender = () => {};
+  robot.ready.then((view) => {
+    if (!view || disposed) return;
+    view.viewer.followTau = FOLLOW_S;
+    restoreRender = lightenRender(view.viewer);
+  });
+  // Lowers the shared renderer's pixel ratio and shadow size; returns what puts them back.
+  function lightenRender(viewer) {
+    const { renderer, sun } = viewer;
+    const ratio = renderer.getPixelRatio();
+    const shadow = sun.shadow.mapSize.x;
+    const setShadow = (px) => {
+      sun.shadow.mapSize.set(px, px);
+      sun.shadow.map?.dispose(); // three.js makes a new one at the new size on the next draw
+      sun.shadow.map = null;
+    };
+    renderer.setPixelRatio(Math.min(devicePixelRatio, LIVE_PIXEL_RATIO));
+    setShadow(Math.min(shadow, LIVE_SHADOW_PX));
+    return () => {
+      renderer.setPixelRatio(ratio);
+      setShadow(shadow);
+    };
+  }
+  // ?debug: the screen's frames per second and the robot's copying cost (ms, running average).
+  const perf = { frames: [], mimic: 0, mimicSamples: 0, raf: 0 };
+  if (DEBUG) {
+    perf.raf = requestAnimationFrame(function count(t) {
+      perf.frames.push(t);
+      while (perf.frames[0] < t - 1000) perf.frames.shift();
+      perf.raf = requestAnimationFrame(count);
+    });
+  }
 
   // Recording: starts with the camera, stops by hand, at 30 s, or when the camera goes off.
   let recordTimer = 0;
@@ -203,16 +243,20 @@ export function mount(root, { api }) {
     const { width, height } = isPhone() ? live.size() : { width: video.videoWidth, height: video.videoHeight };
     if (overlay.width !== width || overlay.height !== height) [overlay.width, overlay.height] = [width, height];
     drawSkeleton(ctx, pose?.landmarks, pose?.visible);
+    const mimicStart = performance.now();
     const copied = robot.view?.mimic(pose);
+    perf.mimic += (performance.now() - mimicStart - perf.mimic) / Math.min(30, ++perf.mimicSamples); // ~1 s at 30 fps
 
     const now = performance.now();
     if (now - lastReport < 1000) return; // words change once a second, not every frame
     lastReport = now;
-    if (DEBUG && copied) {
-      const fixes = (copied.fixes ?? []).map((f) => FIX_NAMES[f] ?? f).join(', ') || 'ninguno';
-      $('.live-debug').textContent = copied.tracked
-        ? `Distancia al cuerpo: ${(100 * copied.residual).toFixed(1)} cm · arreglos: ${fixes}`
-        : 'Sin seguimiento';
+    if (DEBUG) {
+      const fixes = (copied?.fixes ?? []).map((f) => FIX_NAMES[f] ?? f).join(', ') || 'ninguno';
+      const body = copied?.tracked ? `Distancia al cuerpo: ${(100 * copied.residual).toFixed(1)} cm · arreglos: ${fixes}` : 'Sin seguimiento';
+      const ms = (value) => `${value.toFixed(1)} ms`;
+      const t = live?.timing?.(); // the phone's capture runs its models on the phone
+      const models = t ? `pose ${ms(t.pose)} · manos ${ms(t.hands)} en ${Math.round(100 * t.handShare)} % de los cuadros · ` : '';
+      $('.live-debug').textContent = `${body}\n${live?.fps() ?? 0} cuadros/s de cámara · ${perf.frames.length} fps de pantalla · ${models}robot ${ms(perf.mimic)}`;
     }
     const phone = isPhone();
     if (!robot.view) say('El robot todavía está cargando; ya te va a copiar.');
@@ -349,6 +393,8 @@ export function mount(root, { api }) {
     clearInterval(recordTimer);
     stop(); // a recording in progress is kept: it is in the simulations when the user comes back
     if (robot.view) robot.view.viewer.followTau = 0; // the other screens follow the robot rigidly
+    restoreRender();
+    cancelAnimationFrame(perf.raf);
     robot.dispose();
   };
 }
