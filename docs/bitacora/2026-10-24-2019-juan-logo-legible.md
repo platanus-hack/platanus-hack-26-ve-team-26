@@ -60,6 +60,8 @@ estado: cerrada
 - El robot del hero se caía mucho más que el del Gym con la misma política (`g1-stand`) y la misma fuerza (250 N). Medido en la simulación de la página (Node, `physics/`), empujones a los 2, 4 y 6 s en direcciones al azar, 30 pruebas: con 250 N aguanta el primero el 43 % y los tres el 10 %; con 150 N, 93 % y 90 %. En `training/env.py` (40 pruebas): 250 N 65 % / 32 %, 150 N 100 % / 98 %. Además, el hero dejaba empujar apenas se paraba y sin pausa entre empujones (con 0,3 s entre dos, 21 %). Ahora el hero empuja con 150 N, espera 2 s de pie y 2 s entre empujones (un empujón temprano queda en cola), commit `4f7a4eb`; `view.push(angle, newtons)` en `physics/` (commit `6f97dcd`, avisar a Pastor). El Gym sigue en 250 N.
 - Ojo para el pitch: `check-policy` pasa con 250 N desde adelante, atrás y los costados a los 4 s, pero en direcciones al azar (diagonales) la política aguanta bastante menos.
 
+- Simulaciones: "Empujar" paraba el clip, ponía al robot de pie y lo empujaba con 250 N en el mismo instante (reloj en 0), el peor caso para la política: se caía donde el del hero aguanta. La regla del hero pasa a `web/src/push.js` (150 N, 2 s de pie, 2 s entre empujones, un empujón temprano queda en cola) y la usa también `robot-pane.js`. Probado con un reloj simulado en Node; build OK; no probado en el navegador.
+
 ## Decisiones
 
 - Fuerza del hero: 150 N (decidido por Juan entre 150, 175, 200 y 250 N con los números de arriba). La página dice "Empujón de 150 N" en el hero y 250 N en el Gym.
