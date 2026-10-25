@@ -552,7 +552,9 @@ class Train:
     error: str | None = None
     cancelled: bool = False
     proc: subprocess.Popen | None = None
+    pid: int | None = None  # the running stage's process group, also when adopted after a restart
     started_at: str = ""  # UTC ISO, like policy.json created_at: older exports are not this training's
+    queued_at: float = field(default_factory=time.time)
 
     @property
     def dir(self) -> Path:
@@ -564,6 +566,15 @@ class Train:
             return 0.0
         left = (self.total_steps - self.steps) / max(self.steps_per_s, 1.0)
         return left + (DATA_STAGE_S if self.stage != "data" else DATA_STAGE_S / 2)
+
+    def save(self) -> None:
+        """train/<id>/state.json: what a restarted server needs to pick this training up again."""
+        self.dir.mkdir(parents=True, exist_ok=True)
+        keep = ("id", "clip_id", "duration_s", "total_steps", "state", "stage", "steps", "followed_s", "error",
+                "pid", "started_at", "queued_at")
+        tmp = self.dir / "state.json.tmp"
+        tmp.write_text(json.dumps({k: getattr(self, k) for k in keep}))
+        os.replace(tmp, self.dir / "state.json")
 
     def public(self, position: int, eta_s: float) -> dict:
         return {
@@ -600,11 +611,13 @@ def _run_stage(t: Train, stage: str, cmd: list[str], watch=None, log_name: str |
     log_path = t.dir / f"{log_name or stage}.log"
     with open(log_path, "w") as log:
         t.proc = subprocess.Popen(cmd, cwd=ROOT, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+        t.pid = t.proc.pid
+        t.save()
         while t.proc.poll() is None:
             time.sleep(TRAIN_POLL_S)
             if watch:
                 watch()
-    code, t.proc = t.proc.returncode, None
+    code, t.proc, t.pid = t.proc.returncode, None, None
     if watch:
         watch()
     if t.cancelled:
@@ -653,6 +666,14 @@ def _train(t: Train) -> None:
         "--motion", str(motion), "--run", t.id, "--steps", str(t.total_steps), "--every", str(TRAIN_EVERY),
         "--export-dir", str(policies), "--policy-prefix", t.clip_id,
     ], lambda: _read_progress(t))
+    _finish(t)
+
+
+def _finish(t: Train) -> None:
+    """After training: the dataset, then the delivery. Also where an adopted training continues."""
+    clip = DATA_DIR / "clips" / f"{t.clip_id}.json"
+    motion = DATA_DIR / "motions" / f"{t.clip_id}.json"
+    policies = DATA_DIR / "policies"
     if not t.checkpoints:
         raise StageFailed("el entrenamiento terminó sin exportar ninguna política")
     t.steps = t.total_steps
@@ -678,7 +699,30 @@ def _train(t: Train) -> None:
         t.error = f"La política y el dataset están listos; la entrega no se armó: {e}"
 
 
+def _run_train(t: Train, body) -> None:
+    try:
+        body(t)
+        t.state = "done"
+    except Exception as e:  # one broken clip must not stop the queue
+        t.state = "failed"
+        t.error = str(e) if isinstance(e, RuntimeError) else f"error inesperado: {e}"
+        with lock:
+            if train_by_clip.get(t.clip_id) == t.id:
+                del train_by_clip[t.clip_id]  # a failed clip can be trained again
+    finally:
+        t.pid = None
+        with lock:
+            running_train.clear()
+        if not t.cancelled:  # a cancelled one already left the disk
+            t.save()
+
+
 def _train_worker() -> None:
+    adopted = _restore_trains()
+    if adopted:
+        with lock:
+            running_train.append(adopted.id)
+        _run_train(adopted, _resume)
     while True:
         train_id = train_work.get()
         with lock:
@@ -690,18 +734,82 @@ def _train_worker() -> None:
             t.state = "running"
             running_train.append(t.id)
         t.started_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+        t.save()
+        _run_train(t, _train)
+
+
+# --- Surviving a restart ------------------------------------------------------------------------
+# serve.sh restarts the server while a demo training runs for an hour. Each stage runs in its own
+# process session, so ppo outlives the server; state.json lets the new server find it again, follow
+# its progress and finish its data stage, instead of leaving it training unseen.
+
+
+def _alive(pid: int | None, clip_id: str) -> bool:
+    """Whether pid still runs a stage of this clip (every stage's command names the clip's files;
+    the check matters because a pid can be reused by another process)."""
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+        cmd = subprocess.run(["ps", "-o", "command=", "-p", str(pid)], capture_output=True, text=True).stdout
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return clip_id in cmd
+
+
+def _resume(t: Train) -> None:
+    """Follows an adopted training process until it exits, then runs what is left of the chain."""
+    while _alive(t.pid, t.clip_id):
+        time.sleep(TRAIN_POLL_S)
+        _read_progress(t)
+    _read_progress(t)
+    t.pid = None
+    if t.cancelled:
+        raise StageFailed("cancelado")
+    if t.stage in (None, "retarget"):
+        _train(t)  # seconds of work: start the chain over
+    elif t.stage == "training":
+        # Not our child: no exit code. A finished run exported its last checkpoint at >= total steps.
+        if not t.checkpoints or t.checkpoints[-1]["steps"] < t.total_steps:
+            raise StageFailed("el entrenamiento se cortó mientras el servidor se reiniciaba")
+        _finish(t)
+    elif t.stage == "data":
+        _finish(t)  # the dataset and the delivery take seconds: simply make them again
+
+
+def _restore_trains() -> Train | None:
+    """Loads train/*/state.json. Returns the one still running, if its process is alive."""
+    adopted = None
+    queued = []
+    for path in sorted((DATA_DIR / "train").glob("*/state.json")):
         try:
-            _train(t)
-            t.state = "done"
-        except Exception as e:  # one broken clip must not stop the queue
-            t.state = "failed"
-            t.error = str(e) if isinstance(e, RuntimeError) else f"error inesperado: {e}"
-            with lock:
-                if train_by_clip.get(t.clip_id) == t.id:
-                    del train_by_clip[t.clip_id]  # a failed clip can be trained again
-        finally:
-            with lock:
-                running_train.clear()
+            d = json.loads(path.read_text())
+            t = Train(d["id"], d["clip_id"], d["duration_s"], d["total_steps"])
+        except (OSError, ValueError, KeyError):
+            continue
+        for k in ("state", "stage", "steps", "followed_s", "error", "pid", "started_at", "queued_at"):
+            setattr(t, k, d.get(k, getattr(t, k)))
+        if t.state == "running":
+            # One runs at a time, so at most one is found running; _resume decides whether its
+            # process finished, is still going, or died with the old server.
+            if adopted is None:
+                adopted = t
+            else:
+                t.state = "failed"
+                t.error = "el servidor se reinició y este entrenamiento ya no estaba corriendo"
+                t.pid = None
+                t.save()
+        if t.state == "queued":
+            queued.append(t)
+        trains[t.id] = t
+        if t.state != "failed":
+            train_by_clip[t.clip_id] = t.id
+    for t in sorted(queued, key=lambda q: q.queued_at):
+        train_pending.append(t.id)
+        train_work.put(t.id)
+    if adopted:
+        _read_progress(adopted)
+    return adopted
 
 
 def _position_eta(t: Train) -> tuple[int, float]:
@@ -732,6 +840,7 @@ def train_clip(clip_id: str) -> dict:
         trains[t.id] = t
         train_by_clip[clip_id] = t.id
         train_pending.append(t.id)
+    t.save()
     train_work.put(t.id)
     return {"train_id": t.id}
 
@@ -752,9 +861,12 @@ def cancel_train(train_id: str) -> Response:
         if train_by_clip.get(t.clip_id) == t.id:
             del train_by_clip[t.clip_id]
         del trains[train_id]
-    proc = t.proc
-    if proc and proc.poll() is None:
-        os.killpg(proc.pid, signal.SIGTERM)  # the worker sees `cancelled` and moves on
+    (t.dir / "state.json").unlink(missing_ok=True)  # a restart must not bring it back
+    if t.pid and _alive(t.pid, t.clip_id) or t.proc and t.proc.poll() is None:
+        try:
+            os.killpg(t.pid, signal.SIGTERM)  # the worker sees `cancelled` and moves on
+        except (OSError, TypeError):
+            pass
     return Response(status_code=204)
 
 
