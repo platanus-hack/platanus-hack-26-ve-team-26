@@ -627,6 +627,15 @@ html.is-landing.lenis body {
   object-fit: cover;
 }
 
+/* The skeleton over the person in the video (home.js, video-overlay.js), under the caption. */
+.walk-overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
 /* The skeleton sits over the video's corner, picture in picture. */
 .frame-skeleton {
   position: absolute;

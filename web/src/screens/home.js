@@ -22,6 +22,7 @@ import { createPushArrow } from '../push-arrow.js';
 import { attachRobot, onRobotProgress, robotView } from '../robot-host.js';
 import { prefetch } from '../router.js';
 import { SkeletonView } from '../skeleton.js';
+import { createPoseDrawing, VIDEOS } from '../video-overlay.js';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -150,6 +151,7 @@ export function mount(root) {
         <div class="capture-media">
           <figure class="frame frame-video">
             <video class="walk-video" src="${WALK_VIDEO}" muted playsinline loop preload="auto"></video>
+            <canvas class="walk-overlay" aria-hidden="true"></canvas>
             <figcaption><span class="only-wide">Video de celular · Mixkit</span><span class="only-narrow">Video</span></figcaption>
           </figure>
           <figure class="frame frame-skeleton">
@@ -788,6 +790,10 @@ export function mount(root) {
   // ---- Capture: the video, the skeleton and the robot on one clock (the video's) ----
   const video = $('.walk-video');
   let skeleton = null;
+  // The 2D points MediaPipe found in this same video, drawn over the person (video-overlay.js, as in
+  // Simulaciones), on the walk's clock: forward and backward with the scroll.
+  const walkPose = createPoseDrawing(video, $('.walk-overlay'), { fit: 'cover' });
+  walkPose.load(`${import.meta.env.BASE_URL}${VIDEOS['clip_2026-10-23_caminar-perfil_01'].pose}`).catch((error) => console.error(error));
   const captureEl = $('.capture');
   // The walk follows the scroll's direction: scrolling down it plays forward on the video's own
   // clock; scrolling up, the video, the skeleton and the robot run backward together, so going
@@ -819,6 +825,7 @@ export function mount(root) {
       skeleton.time = walk.t;
       skeleton.render();
     }
+    walkPose.draw(walk.t);
     view.seek(walk.t);
   }
   function updateScrollDir() {
