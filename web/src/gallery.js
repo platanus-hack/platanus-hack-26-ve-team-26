@@ -9,10 +9,12 @@ function describe(clip) {
 /**
  * @param initialClip  id of the clip to show first (from #/simulaciones/<id>), else the first
  * @param onSelect     called with the gallery item on every pick (the Entrenar box follows it)
+ * @param options.hide ids of preloaded clips to leave out of this gallery; the clips stay
+ *                     available everywhere else (preloaded.js still lists them)
  */
-export function mountGallery(root, stage, initialClip, onSelect) {
+export function mountGallery(root, stage, initialClip, onSelect, { hide = [] } = {}) {
   const list = root.querySelector('#gallery');
-  const items = [...userClips, ...preloaded];
+  const items = [...userClips, ...preloaded.filter((item) => !hide.includes(item.clip))];
   const cards = items.map((item) => {
     const li = document.createElement('li');
     const button = document.createElement('button');

@@ -8,6 +8,13 @@ import { mountTrainBox, trainBoxHTML } from '../training.js';
 
 export const title = 'Simulaciones';
 
+// Clips left out of this gallery. The robot's rendition of these two reads as unnatural next to
+// the person — running has the shortest contact with the floor of everything we have, and the
+// synthetic march was written as a test fixture, not as something to watch — so they stay in
+// preloaded.json (the pipeline and the other screens still use them) and only this gallery, the
+// one the public tries, skips them.
+const HIDDEN_CLIPS = ['clip_2026-10-23_correr-perfil_01', 'clip_synthetic_march_01'];
+
 // The conditions you can set by hand (view.setConditions in physics/). Ranges cover every world in
 // physics/worlds and a bit beyond: grip from wet tile (0.2) to rough concrete (1.2); wind up to
 // 20 m/s, a gale of about 60 N on the torso; mass and motors ±20 % (below 0.7 the motors cannot
@@ -101,7 +108,7 @@ export function mount(root, { api }, [clipId] = []) {
   root.querySelector('.tune').open = !matchMedia('(max-width: 720px)').matches;
   const stage = mountStage(root);
   const trainBox = mountTrainBox(root.querySelector('.train-box'), api);
-  mountGallery(root, stage, clipId, trainBox.show);
+  mountGallery(root, stage, clipId, trainBox.show, { hide: HIDDEN_CLIPS });
   return () => {
     trainBox.dispose();
     stage.dispose();
