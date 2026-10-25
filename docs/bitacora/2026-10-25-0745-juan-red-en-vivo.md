@@ -60,3 +60,8 @@ Un entrenamiento tarda ~30 min en la Mac y la caja de Entrenar solo mostraba pas
 - Probado con un servidor aparte (puerto 8011): entrenar → matar el servidor (ppo sigue) → reiniciar (lo retoma: `running`, pasos subiendo, red 200) → cancelar desde `#/red` (ppo muere, 404). Terminar con el servidor apagado → al volver, `done` con la entrega. Cancelar desde la caja: vuelve a idle y el servidor da 404. `data.check_training`: all good.
 - No se hizo auto-cancelar los entrenamientos que nadie mira: chocaría con el del video de la demo, que tiene que seguir solo.
 - El servidor real (`serve.sh` + túnel) apareció apagado a las ~08:20; no lo paró esta sesión. Hay que levantarlo con este código antes de lanzar el entrenamiento de la demo.
+
+## Los controles de Simulaciones vuelven a su altura
+
+- La caja de Entrenar con la red (440 px) alargaba la columna derecha; la fila del grid se estiraba y `.sims-main` repartía ese alto entre la escena y los controles: Reproducción y Condiciones bajaban ~320 px y había que hacer scroll.
+- `align-items: start` en `.sims-grid` y `align-content: start` en `.sims-main`: los controles quedan a 14 px de la escena, como antes (medido con una columna de 1600 px: 323 px sin el arreglo, 14 con él). En esa columna la red mide 260 px y sin las curvas; "Ver la red en pantalla grande" abre la vista completa.
