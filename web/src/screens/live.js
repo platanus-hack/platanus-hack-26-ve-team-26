@@ -101,10 +101,11 @@ export function mount(root, { api }) {
           </div>
         </div>
         <p class="live-status" aria-live="polite"></p>
-        <p class="live-warning" hidden></p>
         <p class="phone-note" hidden></p>
         <p class="live-debug" ${DEBUG ? '' : 'hidden'}></p>
       </div>
+      <!-- Outside .live-bar: its backdrop blur would pin this toast to the bar instead of the screen. -->
+      <p class="live-warning" role="status" hidden></p>
     </section>`;
 
   const $ = (selector) => root.querySelector(selector);
