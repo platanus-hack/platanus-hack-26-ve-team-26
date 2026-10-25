@@ -50,6 +50,8 @@ estado: cerrada
 
 - Scroll por paradas con la rueda: a Juan le pareció demasiado rápido (cada gesto saltaba una sección entera). Revertido al scroll libre original con la retención del Gym (`gymGate`); también sale el arreglo del scrollbar, que solo hacía falta por esos deslizamientos largos. Enter y espacio siguen yendo parada a parada.
 
+- "Subir videos no está disponible" con el servidor arriba: `data/serve.sh` corrió desde una copia vieja del repo (`~/Code/platanus-hack-26-ve-team-26`, en `114b22e`), cuyo `serve.sh` no publica en el gist; la web seguía leyendo el túnel anterior. Se publicó la URL nueva a mano con `gh gist edit` y la web la encontró. Además, la lectura del gist ahora usa `cache: 'no-store'` y salta una URL que ya se sabe muerta (`data/live/src/api.js`): antes el navegador podía quedarse hasta ~2 min con la vieja.
+
 ## Decisiones
 
 - Se mantiene la idea de marca (i-dots cuadrados en el color señal, como articulaciones), solo se ajustan proporciones.
@@ -59,6 +61,8 @@ estado: cerrada
 - Cinco dedos: el seguimiento ya lee los 21 puntos de cada mano (MediaPipe); el límite es la mano del robot, la Dex3 de Unitree, que tiene tres dedos (pulgar, índice y medio; el medio sigue a medio, anular y meñique juntos, `physics/src/fingers.js`). Cinco dedos pide otra mano en el modelo (p. ej. la Inspire RH56 de cinco dedos que Unitree ofrece para el G1): es trabajo de `physics/` (Pastor).
 
 ## Sigue
+
+- Correr `data/serve.sh` desde `~/Code/platanus-hack/platanus-hack-26-ve-team-26` (o actualizar la copia vieja), o el gist no se actualiza.
 
 - Avisar a César: los dos cambios están en `web/`, su carpeta (el logo ya está en `main`, PR #134).
 - Probar el scroll con un trackpad real de Mac (inercia larga) y ajustar `WHEEL_GAP_MS` / `WHEEL_GROW` si se salta paradas o se siente lento.
