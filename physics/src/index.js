@@ -233,10 +233,10 @@ export async function createSimView(canvas, { onProgress, onStats, mirror = true
     setSpeed: (value) => (speed = value),
     reset,
     // The shove is for the physical robot: if it was copying a clip or a person, it first goes
-    // back to standing.
-    push() {
+    // back to standing. angle and newtons as sim.push (a random direction and 250 N by default).
+    push(angle, newtons) {
       if (clip || sim.puppeted) stop();
-      sim.push();
+      sim.push(angle, newtons);
     },
     /**
      * Plays a RobotMotion (physics/motions/, or any with the G1's 36 values per frame) on the
