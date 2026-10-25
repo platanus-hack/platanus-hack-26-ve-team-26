@@ -26,6 +26,8 @@ estado: cerrada
 
 - En vivo más liviano: el modelo de manos corre un cuadro sí y uno no mientras sigue una mano (los intermedios reusan su última respuesta) y `createLiveCapture` expone `timing()` (`data/live/src/index.js`, commit `86d8e44`). La pantalla En vivo dibuja el robot a 1,25x con sombra de 1024 px (antes 2x y 2048) y lo devuelve al salir; `?debug` suma una línea con cuadros/s de cámara y pantalla, ms de pose, manos y robot (`web/src/screens/live.js`, commit `ad4dfbd`).
 
+- Scrollbar roto tras el scroll por paradas (reportado por Juan ya en `main`): Lenis ignora el scroll nativo mientras desliza, y con deslizamientos de 0,8 s arrastrar el scrollbar no hacía nada. Ahora, si durante un deslizamiento la página no está donde Lenis la puso, se cancela el deslizamiento y manda el scrollbar (`web/src/screens/home.js`).
+
 ## Qué funcionó
 
 - Comparé variantes en vivo en el preview local (24 px y ~110 px). La elegida se lee como "tridi" a ambos tamaños; se comprobó en header y footer.
@@ -33,6 +35,8 @@ estado: cerrada
 - Scroll probado en el preview (1024x768) con rueda real: 0 → 768 (Capture) → 2688 (Gym 1) → … → 6605 (Policy) → 8259 (Probar) → footer libre hasta 8715; hacia arriba, una parada por gesto.
 
 - Footer, selects de Simulaciones y toast comprobados en el preview.
+
+- Scrollbar: probado a 1280x800 con scroll nativo durante un deslizamiento de rueda y de Enter: llega adonde se arrastra; la rueda sigue yendo parada a parada después.
 
 ## Qué no funcionó
 
