@@ -684,6 +684,11 @@ html.is-landing.lenis body {
 }
 
 
+/* Space pushes here too (home.js pushGym): the button says so, as the hero's does. */
+.gym-push {
+  margin-top: var(--s-3);
+}
+
 .gym-hint {
   margin-top: var(--s-2) !important;
   font: 500 10px/1.4 var(--mono);

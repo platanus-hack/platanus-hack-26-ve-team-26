@@ -181,6 +181,7 @@ export function mount(root) {
             </div>
           </div>
           <p class="gym-status"><i class="live-dot"></i><span><span data-gym="up">—</span> de pie · <span data-gym="status">en vivo</span></span></p>
+          <button class="btn btn-signal btn-small gym-push" type="button" disabled>Empújalo <kbd>espacio</kbd></button>
           <p class="gym-hint"><kbd>enter</kbd> o baja para entrenarlo más</p>
         </div>
       </div>
@@ -532,9 +533,11 @@ export function mount(root) {
     }
   }
   $$('.hero-push').forEach((button) => on(button, 'click', pushHero));
-  // Space moves the film forward: in the hero it pushes the robot; past it, it goes to the next
-  // stop (each of the Gym's checkpoints, then each chapter), and after the last one the browser
-  // scrolls as usual. From where the glide under way ends, not scrollY, so presses during a glide
+  // Space pushes the robot, as the hero's button says, wherever it stands on its own (the hero,
+  // the Gym and Policy); during the walk, a puppet, it does nothing, and the closing scrolls. Enter moves the
+  // film forward: it goes to the next stop (each of the Gym's checkpoints, then each chapter), and
+  // after the last one the browser scrolls as usual. Space used to move the film past the hero
+  // too, which read oddly next to a hero where it pushes. From where the glide under way ends, not scrollY, so presses during a glide
   // chain: Lenis 1.3 moves targetScroll along with a programmatic glide (it is the current
   // position, not the stop), so reading it mid-glide sent each press back to the same stop.
   // Enter always goes to the next stop, the hero included, so a demo can move through the film
@@ -544,25 +547,27 @@ export function mount(root) {
   const ENTER_GLIDE_S = 0.35; // still reads as a move to the next stop, but 1 s felt stuck
   on(window, 'keydown', (event) => {
     const enter = event.key === 'Enter';
-    const own = enter ? 'input, textarea, select, button:not(.hero-push), a' : 'input, textarea, select, button, a';
-    // Held down, Enter repeats and runs down the stops; space keeps one stop per press.
+    const own = enter ? 'input, textarea, select, button:not(.hero-push, .gym-push), a' : 'input, textarea, select, button, a';
+    // Held down, Enter repeats and runs down the stops; space keeps one push per press.
     if ((event.code !== 'Space' && !enter) || (event.repeat && !enter) || event.target.closest?.(own)) return;
-    if (enter && narrow()) {
+    if (!enter) {
+      if (chapterAt(scrollY + innerHeight * 0.5) === chapters.at(-1)) return; // the closing scrolls as usual
+      event.preventDefault();
+      if (mode === 'gym') pushGym();
+      else pushHero();
+      return;
+    }
+    if (narrow()) {
       event.preventDefault();
       if (!event.repeat) step(1); // step reads the chapter from scrollY, which lags a held key
       return;
     }
-    if (!enter && scrollY < innerHeight * 0.6) {
-      event.preventDefault();
-      pushHero();
-      return;
-    }
     const from = lenis ? (lenis.animate.isRunning ? lenis.animate.to : lenis.targetScroll) : scrollY;
-    const next = spaceStops().find((stop) => stop > from + STOP_PX);
+    const next = enterStops().find((stop) => stop > from + STOP_PX);
     if (next === undefined) return;
     event.preventDefault();
-    // Enter is for moving through a demo fast: a short glide (ENTER_GLIDE_S), not space's slow one.
-    if (lenis) lenis.scrollTo(next, { duration: enter ? ENTER_GLIDE_S : 1 });
+    // Enter is for moving through a demo fast: a short glide (ENTER_GLIDE_S).
+    if (lenis) lenis.scrollTo(next, { duration: ENTER_GLIDE_S });
     else window.scrollTo({ top: next });
   });
 
@@ -575,6 +580,17 @@ export function mount(root) {
   const gymEl = $('.gym');
   const gymPanel = gymEl.querySelector('.sticky');
   const gym = { since: 0, lastPush: 0, fallen: false, loading: false, shownAt: 0 };
+  // A push by hand (space or the panel's button) on the checkpoint on screen. The Gym's own pushes
+  // count from it, so two never land on top of each other.
+  function pushGym() {
+    if (!view || mode !== 'gym' || !gym.since || gym.fallen || gym.loading) return;
+    gym.lastPush = view.sim.data.time;
+    gym.shownAt ||= performance.now() + GYM_SHOWN_PUSH_S * 1000;
+    view.push();
+    drawPush();
+    $('[data-gym="status"]').textContent = `empujón de ${PUSH_N} N`;
+  }
+  $$('.gym-push').forEach((button) => on(button, 'click', pushGym));
   const GYM_SHOWN_FALL_S = 0.4; // after a fall, a moment on the floor before the scroll is let go
   const GYM_SHOWN_PUSH_S = 0.8; // after a push, time to see it stagger and catch itself (or not)
   // A stop never keeps the scroll longer, even if a checkpoint is slow to load: longer reads as
@@ -591,10 +607,10 @@ export function mount(root) {
     narrow() || !layout.gymStep
       ? phone.stage
       : Math.min(GYM_STAGES.length - 1, Math.max(0, Math.floor((scrollY - layout.gymTop) / layout.gymStep)));
-  // Where space stops after the hero: each chapter's top plus data-rest (a share of the screen,
+  // Where Enter stops after the hero: each chapter's top plus data-rest (a share of the screen,
   // where its words are all in), the Gym's checkpoints instead of the Gym, and the ways to try it
   // instead of the closing (where the top bar's "Probar" lands too).
-  const spaceStops = () =>
+  const enterStops = () =>
     chapters.slice(1).flatMap((chapter, i) => {
       if (chapter === gymEl) return gymStops();
       if (chapter.contains(probar)) return [anchorTop(probar)];
@@ -863,7 +879,7 @@ export function mount(root) {
       telemetry = dressTelemetry(view);
       $('[data-sim="rates"]').textContent = `MuJoCo · física ${Math.round(1 / view.sim.model.opt.timestep)} Hz · política ${DECISIONS_PER_S} Hz`;
       film.classList.add('ready');
-      $$('.hero-push').forEach((button) => (button.disabled = false));
+      $$('.hero-push, .gym-push').forEach((button) => (button.disabled = false));
     },
     (error) => {
       $('.boot-line').textContent = 'No se pudo cargar el robot. Recarga la página.';
