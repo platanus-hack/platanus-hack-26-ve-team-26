@@ -48,6 +48,8 @@ estado: cerrada
 
 - Medir el antes/después de la optimización en el preview: misma limitación (ventana en segundo plano, 0-1 fps). Build de `web/` OK, sin errores en consola; la ganancia real queda por medir en la Mac.
 
+- Scroll por paradas con la rueda: a Juan le pareció demasiado rápido (cada gesto saltaba una sección entera). Revertido al scroll libre original con la retención del Gym (`gymGate`); también sale el arreglo del scrollbar, que solo hacía falta por esos deslizamientos largos. Enter y espacio siguen yendo parada a parada.
+
 ## Decisiones
 
 - Se mantiene la idea de marca (i-dots cuadrados en el color señal, como articulaciones), solo se ajustan proporciones.
