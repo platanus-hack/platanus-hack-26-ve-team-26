@@ -54,6 +54,9 @@ estado: cerrada
 
 - "Error" al entrenar en Simulaciones con el servidor arriba: no llegaba ningún `POST /train` al servidor. La página se abrió antes de reiniciar `serve.sh` y seguía con la URL vieja del túnel. Ahora, ante un error de red, el entrenamiento vuelve a buscar el servidor (gist) y reintenta una vez (`web/src/training.js`); probado en local con `fetch` simulado (URL muerta → gist → servidor vivo). El servidor en sí entrena bien: una prueba con `curl` encoló sin querer un entrenamiento de `clip_2026-10-24_prueba1_01`, que se canceló con `DELETE /train/…` tras el retargeting.
 
+- El robot del hero usa la política final, `g1-stand` (60 M pasos): `data-mode="stand"` carga `FINAL_LEVEL`, y vuelve a ella al regresar del Gym.
+- Teclas de la landing: espacio empuja al robot donde está de pie solo (hero, Gym, Policy); el Gym tiene ahora su botón "Empújalo [espacio]" y sus empujones automáticos cuentan desde uno manual. Enter es el único que cambia de sección. Build OK y sin errores en consola; las teclas no se pudieron probar en el preview (ventana cerrada, sin animación).
+
 ## Decisiones
 
 - Se mantiene la idea de marca (i-dots cuadrados en el color señal, como articulaciones), solo se ajustan proporciones.
