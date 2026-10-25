@@ -37,10 +37,14 @@ Un entrenamiento tarda ~30 min en la Mac y la caja de Entrenar solo mostraba pas
 
 ## Reinicio del servidor sin esperar al gist
 
-- Al reiniciar `data/serve.sh`, la web tardaba ~60 s en ver el servidor (ni un hard refresh ayudaba): la API de GitHub sirve el gist con `cache-control: max-age=60`, y el raw hasta 5 min. La caché está en GitHub, no en el navegador.
-- `data/serve.sh`: publica en el gist solo cuando `/health` local responde (antes la web podía leer un túnel con el servidor aún cargando modelos) y **siempre** copia el link `?api=` al portapapeles: abrirlo encuentra el servidor al instante.
-- `data/live/src/api.js`: `findApiUrl` prueba primero el servidor local de desarrollo (`127.0.0.1:8000`, solo con `npm run dev`) antes del túnel recordado y del gist. Con un túnel muerto guardado, lo encuentra en ~90 ms.
-- Para la demo: levantar `serve.sh` unos minutos antes, abrir el link copiado y no reiniciarlo durante la demo (cada reinicio cambia la URL del túnel).
+- Al reiniciar `data/serve.sh`, la web tardaba ~60 s en ver el servidor (ni un hard refresh ayudaba): cada reinicio creaba un túnel con URL nueva, y la API de GitHub sirve el gist con `cache-control: max-age=60` (el raw hasta 5 min). La caché está en GitHub, no en el navegador.
+- Primer intento: copiar siempre el link `?api=`. Descartado: la demo tiene que andar con la URL normal.
+- `data/serve.sh`: el túnel sobrevive al script (su propio grupo de procesos + `nohup`, pid y URL en `data/server_data/tunnel-<puerto>.*`). Ctrl+C para solo el servidor; la siguiente corrida reusa el mismo túnel, así que la URL no cambia y el gist ya es correcto. `data/serve.sh stop` apaga el túnel y escribe `null`. Además publica solo cuando `/health` local responde.
+- `data/live/src/api.js`: `findApiUrl` prueba primero el servidor local de desarrollo (`127.0.0.1:8000`, solo con `npm run dev`).
+- Probado en el puerto 8011 sin gist: arranca, Ctrl+C, rearranca en 3 s con la misma URL y `/health` público responde; `stop` apaga el túnel.
+- Se mataron los dos entrenamientos que corrían (`clip_2026-10-24_camara_03` y `clip_2026-10-25_camara_01`), a pedido de Juan.
+- Otra sesión shippeó la rama mientras tanto y el `serve.sh` nuevo y el README quedaron fuera del squash: van en este commit.
+- Para la demo: el `serve.sh` que estaba corriendo es el viejo; reiniciarlo una vez con el nuevo (ese reinicio sí cambia la URL: esperar ~1 min), y desde ahí los reinicios son instantáneos.
 
 ## La caja no aparecía en tridi-alpha
 
