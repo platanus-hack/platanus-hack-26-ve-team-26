@@ -673,6 +673,22 @@ export function mount(root) {
     return (wheelStep(from, dir) || dir < 0) ? consume() : true;
   }
   cleanups.push(() => clearInterval(gate.queued));
+  // The scrollbar (or a keyboard scroll) wins over a glide. Lenis ignores native scroll events
+  // while it glides, so grabbing the scrollbar during a wheel's 0.8 s glide did nothing and the
+  // page kept going to the stop. During a glide the page sits where Lenis put it; anywhere else
+  // means someone else moved it: let go of the glide and follow them.
+  const GLIDE_SLACK_PX = 2; // Lenis sets fractional positions the browser rounds
+  on(
+    window,
+    'scroll',
+    () => {
+      if (!lenis?.animate.isRunning || Math.abs(scrollY - lenis.animatedScroll) <= GLIDE_SLACK_PX) return;
+      lenis.reset();
+      clearInterval(gate.queued);
+      gate.queued = 0;
+    },
+    { passive: true },
+  );
   $$('.axis-stop').forEach((stop, i) =>
     on(stop, 'click', () => {
       if (narrow()) return void (phone.stage = i);
