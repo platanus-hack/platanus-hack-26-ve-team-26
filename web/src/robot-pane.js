@@ -6,6 +6,7 @@
 // frame and does not answer to physics, so a shove there does nothing and reads as a broken button.
 import { loader } from './loader.js';
 import { createPushArrow } from './push-arrow.js';
+import { pushWhenReady } from './push.js';
 import { attachRobot, onRobotProgress, robotView } from './robot-host.js';
 
 /**
@@ -36,6 +37,8 @@ export function mountRobotPane(pane, { beforePush } = {}) {
   const robot = attachRobot(pane);
   let arrow = null;
   let frameId = 0;
+  let disposed = false;
+  const pushed = { lastT: -Infinity, queued: 0 };
   const handle = { view: null, ready: robot.ready, dispose };
 
   const stopProgress = onRobotProgress(({ done, total, compiling, policy }) => {
@@ -59,10 +62,12 @@ export function mountRobotPane(pane, { beforePush } = {}) {
       const push = $('.push');
       if (push) {
         push.disabled = false;
+        // The push the trained robot holds, once it has stood a moment (push.js). A robot playing
+        // a clip is stood up first: pushed the instant it was stood up, it fell most of the time.
         push.onclick = () => {
           beforePush?.();
-          view.push();
-          arrow.point(view);
+          if (view.sim.puppeted) view.stop();
+          pushWhenReady(pushed, view, () => arrow?.point(view), () => !disposed);
         };
       }
     })
@@ -72,6 +77,8 @@ export function mountRobotPane(pane, { beforePush } = {}) {
     });
 
   function dispose() {
+    disposed = true;
+    clearTimeout(pushed.queued);
     stopProgress();
     robot.detach();
     cancelAnimationFrame(frameId);

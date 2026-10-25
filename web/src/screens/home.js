@@ -13,6 +13,7 @@ import { dressCity } from '../landing/city.js';
 import { dressTelemetry } from '../landing/telemetry.js';
 import { savedMotion } from '../motions.js';
 import { FINAL_LEVEL, policyUrls } from '../policies.js';
+import { PUSH_N as STANDING_PUSH_N, pushWhenReady } from '../push.js';
 // The walk being trained (training/): its step count feeds the roadmap, so the page follows the
 // training without anyone editing it. Optional: the build works without the file.
 const walkPolicy = Object.values(import.meta.glob('../../../training/policies/g1-walk.json', { eager: true, import: 'default' }))[0] ?? null;
@@ -42,17 +43,6 @@ const GYM_PUSH_EVERY_S = 2.5; // the Gym pushes the standing robot this often, s
 const GYM_FIRST_PUSH_S = 2.0;
 const GYM_RESTART_S = 1.6; // a fallen robot lies this long before it is stood up again
 const AFTER_PUSH_S = 5; // after a push in the hero, the robot stands this long before it is reset
-// The hero shows the trained robot standing its ground, so its push is one the policy holds: with
-// g1-stand in the page's own simulation (physics/, Node), pushes at 2, 4 and 6 s after standing
-// up in random directions (30 trials), 150 N held 93 % of first pushes and 90 % of all three;
-// 250 N held 43 % and 10 %, so pressing space a few times laid it on the floor (training/env.py
-// agrees: 100 % and 98 % against 65 % and 32 %). The Gym keeps PUSH_N, the force of its ladder.
-const HERO_PUSH_N = 150;
-// Pushes in the hero wait until the robot has stood this long, and this long after the last push:
-// sooner is outside what it trained on (training/env.py pushes from 2 s, every 2-4 s). A press
-// that comes early is kept and lands when it may.
-const HERO_SETTLE_S = 2.0;
-const HERO_PUSH_GAP_S = 2.0;
 // The Gym in four stops of the real training, each a saved checkpoint of its iterations, with what
 // training/README.md measured for it: seconds standing (of 20) and 250 N pushes held (of 4). The
 // third is v2, the first that held every push; the last is the one the page uses (stand-v7d),
@@ -495,39 +485,27 @@ export function mount(root) {
 
   // Hero: the robot stands on its own with the trained policy; a push shows it catching itself.
   // fallenAt: when the robot was first seen on the floor (0 while standing), to stand it up again.
-  const hero = { pushes: 0, falls: 0, pushedAt: 0, fallen: false, fallenAt: 0, queued: 0 };
+  const hero = { pushes: 0, falls: 0, pushedAt: 0, fallen: false, fallenAt: 0 };
   const stateEl = $('.hud .state');
   const say = (state, text) => {
     stateEl.dataset.state = state;
     stateEl.querySelector('span').textContent = text;
   };
   let heroTimer = 0;
-  let lastPushT = -Infinity; // the simulation's time at the last push, the Gym's included
-  // Seconds before a push may land in the hero (0: now). The clock restarts at 0 when the robot
-  // is stood up again, which also ends the wait after the last push.
-  function pushWait() {
-    const t = view.sim.data.time;
-    const sinceLast = lastPushT > t ? Infinity : t - lastPushT;
-    return Math.max(0, HERO_SETTLE_S - t, HERO_PUSH_GAP_S - sinceLast);
-  }
+  // The hero's push is the one the trained robot holds, spaced as in training (push.js); the
+  // Gym's own pushes count in its spacing too (pushed.lastT).
+  const pushed = { lastT: -Infinity, queued: 0 };
   function pushHero() {
     if (!view || mode !== 'stand') return;
-    const wait = pushWait();
-    if (wait > 0) {
-      hero.queued ||= setTimeout(() => {
-        hero.queued = 0;
-        pushHero();
-      }, wait * 1000);
-      return;
-    }
-    lastPushT = view.sim.data.time;
-    view.push(undefined, HERO_PUSH_N);
+    pushWhenReady(pushed, view, landHeroPush, () => !gone && mode === 'stand');
+  }
+  function landHeroPush() {
     drawPush();
     hero.pushes += 1;
     hero.pushedAt = performance.now();
     hero.fallen = false;
     $('[data-hud="pushes"]').textContent = hero.pushes;
-    say('push', `Empujón de ${HERO_PUSH_N} N · la política lo atrapa`);
+    say('push', `Empujón de ${STANDING_PUSH_N} N · la política lo atrapa`);
     for (const button of $$('.hero-push')) {
       button.classList.remove('kick');
       void button.offsetWidth; // restart the animation
@@ -614,7 +592,7 @@ export function mount(root) {
   // count from it, so two never land on top of each other.
   function pushGym() {
     if (!view || mode !== 'gym' || !gym.since || gym.fallen || gym.loading) return;
-    gym.lastPush = lastPushT = view.sim.data.time;
+    gym.lastPush = pushed.lastT = view.sim.data.time;
     gym.shownAt ||= performance.now() + GYM_SHOWN_PUSH_S * 1000;
     view.push();
     drawPush();
@@ -779,7 +757,7 @@ export function mount(root) {
       return;
     }
     if (now - gym.lastPush > GYM_PUSH_EVERY_S) {
-      gym.lastPush = lastPushT = now;
+      gym.lastPush = pushed.lastT = now;
       gym.shownAt ||= performance.now() + GYM_SHOWN_PUSH_S * 1000;
       view.push();
       drawPush();
@@ -990,7 +968,7 @@ export function mount(root) {
     document.documentElement.classList.remove('is-landing');
     cancelAnimationFrame(frameId);
     clearTimeout(heroTimer);
-    clearTimeout(hero.queued);
+    clearTimeout(pushed.queued);
     ctx.revert();
     ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
     if (lenis) {
