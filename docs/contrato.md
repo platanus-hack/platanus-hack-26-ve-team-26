@@ -174,6 +174,22 @@ Las etapas de la web (W6.1) se mapean así: subiendo (la web) → detectando per
 | `POST /clips/{clip_id}/train` | | `202 { "train_id" }`. Si ese clip ya está en la cola o entrenado, devuelve el mismo `train_id` (no se entrena dos veces). `404` si el clip no existe, `409` si la cola está llena |
 | `GET /train/{train_id}` | | el progreso (abajo). La web lo consulta cada ~2 s: un checkpoint tarda minutos |
 | `DELETE /train/{train_id}` | | `204`: lo saca de la cola o lo corta. Los checkpoints ya exportados se quedan |
+| `GET /train/{train_id}/net` *(2026-10-25)* | | la red de la política tal como está ahora (abajo), para dibujarla mientras entrena. `404` hasta que empieza la etapa `training`. Se renueva cada ~2 s; va comprimida con gzip (~25 KB) |
+
+La red en vivo la escribe `training/netlive.py` desde `training.ppo`: el actor de ese momento corre sobre las últimas 16 observaciones de uno de los robots que practican.
+
+```jsonc
+{
+  "step": 3000000, "total_steps": 20000000, "task": "mimic",
+  "created_at": 1761390000.1,             // segundos Unix: cambia con cada foto nueva
+  "sizes": [190, 256, 128, 64, 29],       // entrada normalizada, 3 capas ocultas (ELU), 29 motores
+  "activations": [[[…190], …16 cuadros], …],  // por capa, 16 cuadros x neuronas
+  "edges": [{ "from": [i…], "to": [j…], "w": [w…] }, …],  // las 500 conexiones más fuertes de cada capa
+  "change": [0.012, 0.009, 0.007, 0.05],  // cuánto cambió cada capa desde la foto anterior (relativo); null en la primera
+  "std": 0.42,                            // exploración: desvío medio de la acción
+  "history": { "step": […], "reward": […], "episode_s": […] }  // hasta 200 puntos de progress.csv
+}
+```
 
 La cola entrena **de a uno** y admite **3** en espera: con unos 30 min cada uno, el último espera hora y media, y más que eso ya no es una demo. Cada entrenamiento corre `retarget → training → data`:
 
