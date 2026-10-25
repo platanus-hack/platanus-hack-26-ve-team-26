@@ -32,6 +32,13 @@ const HAND_TO_WRIST = 0.08;
 // 30 fps and one standing far pays a sixth of it.
 const HAND_RECENT_S = 1;
 const HAND_PROBE_EVERY = 6;
+// While it sees a hand it runs every HAND_TRACK_EVERY frames, and the frames between reuse its
+// last hands: at 30-60 fps a hand moves little in one frame, and the robot's fingers are filtered
+// anyway (physics/ fingers), while the ~11 ms saved every other frame is what kept slower laptops
+// under 20 fps with the robot moving in jumps.
+const HAND_TRACK_EVERY = 2;
+// Per-frame costs for timing() are averaged with this weight per frame (~1 s at 30 fps).
+const TIMING_WEIGHT = 1 / 30;
 
 // "full" keeps 30 fps on a laptop GPU and is clearly steadier than "lite" on legs; phones should
 // pass "lite" (half the work). "heavy" is for offline video only (data/lift.py).
@@ -66,7 +73,7 @@ export class CameraError extends Error {}
  *   the hips are from the camera ([x, y, z] m, MediaPipe camera axes; cameraTranslation) or null;
  *   `hands` ({ left, right }: the person's hands, 21 world points each in meters around the hand's
  *   center, MediaPipe axes, or null) only with options.hands; null if no body.
- * @returns { startRecording, stopRecording, isRecording, fps, stop }
+ * @returns { startRecording, stopRecording, isRecording, fps, timing, stop }
  */
 export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMode = 'user', stream, smooth = true, hands = false, onProgress, onPose } = {}) {
   onProgress?.({ stage: 'model', done: false });
@@ -118,6 +125,11 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
   let running = true;
   let handSeenAt = -Infinity; // when the hand model last found a hand (s)
   let handFrame = 0;
+  let lastHands; // the hand model's last answer, reused on the frames it skips while tracking
+  const cost = { pose: 0, hands: 0, handRuns: 0 }; // running averages for timing()
+  const costRuns = { pose: 0, hands: 0, handRuns: 0 };
+  // A plain mean over the first runs, so the average does not start from 0 and creep up.
+  const average = (key, value) => (cost[key] += (value - cost[key]) * Math.max(TIMING_WEIGHT, 1 / ++costRuns[key]));
   const times = []; // when each of the last frames was processed, for fps()
   const filter = new PoseFilter();
   const facing = createFacingGuard(); // MediaPipe's mirrored reads of a back, put right (facing.js)
@@ -132,6 +144,7 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
       times.push(now);
       while (times[0] < now - 1000) times.shift();
       const res = landmarker.detectForVideo(video, now);
+      average('pose', performance.now() - now);
       let landmarks = res.landmarks[0];
       let world = res.worldLandmarks[0];
       if (!landmarks || !world) {
@@ -151,9 +164,19 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
         const w = video.videoWidth;
         const h = video.videoHeight;
         let handsSeen;
-        if (handLandmarker && (now / 1000 - handSeenAt < HAND_RECENT_S || handFrame++ % HAND_PROBE_EVERY === 0)) {
-          handsSeen = matchHands(handLandmarker.detectForVideo(video, now), landmarks, w / h);
-          if (handsSeen.left || handsSeen.right) handSeenAt = now / 1000;
+        if (handLandmarker) {
+          const tracking = now / 1000 - handSeenAt < HAND_RECENT_S;
+          const run = handFrame++ % (tracking ? HAND_TRACK_EVERY : HAND_PROBE_EVERY) === 0;
+          if (run) {
+            const start = performance.now();
+            handsSeen = matchHands(handLandmarker.detectForVideo(video, now), landmarks, w / h);
+            average('hands', performance.now() - start);
+            if (handsSeen.left || handsSeen.right) handSeenAt = now / 1000;
+            lastHands = handsSeen;
+          } else if (tracking) {
+            handsSeen = lastHands;
+          }
+          average('handRuns', run ? 1 : 0);
         }
         onPose?.({ landmarks, world, visible, t: now / 1000, camera: cameraTranslation(world, landmarks, w, h), hands: handsSeen });
         samples?.push({
@@ -185,6 +208,11 @@ export async function createLiveCapture(video, { model = DEFAULT_MODEL, facingMo
      * frame to frame, so under ~20 fps (a slow phone, a hidden tab) it loses steps: show a warning.
      */
     fps: () => times.length,
+    /**
+     * What a frame costs on the main thread, averaged over about a second: { pose, hands } in ms
+     * per run of each model, and handShare, the share of frames the hand model ran on.
+     */
+    timing: () => ({ pose: cost.pose, hands: cost.hands, handShare: cost.handRuns }),
     /** Turns the camera off and frees the model. */
     stop() {
       running = false;
