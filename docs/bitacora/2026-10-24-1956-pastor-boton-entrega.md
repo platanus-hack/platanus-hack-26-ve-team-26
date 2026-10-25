@@ -34,3 +34,17 @@ Que el capítulo "Tridi Policy" de la landing, que habla de la política entrena
 
 - Pastor buscaba el botón en Simulaciones, no en la landing (lo vio por captura). `web/src/training.js` (de César): "Ver los datos entrenados →" en la caja "Entrenar al robot con este movimiento", bajo el botón de entrenar, visible aunque el servidor esté apagado. Abre `#/entrega` (la entrega de Caminar). El botón de la landing se queda.
 - Probado en local con un clip de cámara de prueba: aparece en la caja y abre la entrega. `vite build` pasa.
+
+## Parte 3: el esqueleto sobre la persona en el video de la landing
+
+- **Qué pasó:** Pastor notó que en Capture de la landing no hay tracking sobre la persona del video. Nunca lo hubo: desde `2c67918` (Juan) la landing muestra el video y, aparte, el esqueleto 3D. El dibujo sobre el video lo agregó César en Simulaciones (`114b22e`) y en el ejemplo de Subir (`59d8b8b`); en Simulaciones sigue funcionando.
+- **`web/src/video-overlay.js`** (de César): el dibujo se separa en `createPoseDrawing(video, canvas, { fit })`, que dibuja el cuadro más cercano del archivo de poses con el ajuste del video (`contain` o `cover`). `createVideoOverlay` (Simulaciones, Subir) lo usa igual que antes.
+- **Landing** (`screens/home.js`, `landing/landing.css`, de Juan y César): un canvas sobre el video de Capture dibuja `caminar.pose2d.json` con `cover`, en el mismo reloj que ya mueve video, esqueleto 3D y robot (`walk.t`), así también retrocede cuando el scroll sube.
+
+### Qué funcionó
+
+- En el navegador: escritorio y 375 px, el esqueleto queda sobre el cuerpo; al subir el scroll el video retrocede y el dibujo cambia con él; Simulaciones sigue dibujando sobre su video. Sin errores nuevos en la consola. `vite build` pasa.
+
+### Sigue
+
+- Avisar a Juan y César (landing y `video-overlay.js` son suyos).
