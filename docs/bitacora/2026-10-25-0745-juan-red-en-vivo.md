@@ -34,3 +34,10 @@ Un entrenamiento tarda ~30 min en la Mac y la caja de Entrenar solo mostraba pas
 
 - Reiniciar `data/serve.sh` en la Mac para que sirva `GET /train/{id}/net` (después de que termine el entrenamiento en curso).
 - Shippear a `main` para que la web desplegada la muestre.
+
+## Reinicio del servidor sin esperar al gist
+
+- Al reiniciar `data/serve.sh`, la web tardaba ~60 s en ver el servidor (ni un hard refresh ayudaba): la API de GitHub sirve el gist con `cache-control: max-age=60`, y el raw hasta 5 min. La caché está en GitHub, no en el navegador.
+- `data/serve.sh`: publica en el gist solo cuando `/health` local responde (antes la web podía leer un túnel con el servidor aún cargando modelos) y **siempre** copia el link `?api=` al portapapeles: abrirlo encuentra el servidor al instante.
+- `data/live/src/api.js`: `findApiUrl` prueba primero el servidor local de desarrollo (`127.0.0.1:8000`, solo con `npm run dev`) antes del túnel recordado y del gist. Con un túnel muerto guardado, lo encuentra en ~90 ms.
+- Para la demo: levantar `serve.sh` unos minutos antes, abrir el link copiado y no reiniciarlo durante la demo (cada reinicio cambia la URL del túnel).

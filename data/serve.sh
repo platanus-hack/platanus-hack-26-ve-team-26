@@ -49,18 +49,25 @@ done
 if [ -z "${url:-}" ]; then
   echo "serve: the tunnel did not start; its log:"; cat "$log"; exit 1
 fi
-# The web finds the server through the gist; ?api= is for when the gist cannot be written, or to
-# point a page at another server.
+# Publish only once the server answers: a page that reads the gist before that shows it as off.
+# Loading the models takes a few seconds; 60 s covers a cold first run.
+for _ in $(seq 60); do
+  curl -fs "http://127.0.0.1:$port/health" >/dev/null && break
+  kill -0 $server 2>/dev/null || { echo "serve: the server exited before answering"; exit 1; }
+  sleep 1
+done
+# The web finds the server through the gist, but GitHub caches it for up to a minute after each
+# restart. The ?api= link skips that wait, so it is always copied: open it for a demo.
 link="$web/?api=$url"
+command -v pbcopy >/dev/null && printf '%s' "$link" | pbcopy && copied=" (copied)" || copied=""
 echo
 echo "serve: video server public at $url (health: $url/health)"
+echo "serve: open this link to use it right away$copied:"
+echo "       $link"
 if publish "\"$url\""; then
   published=1
-  echo "serve: published to the gist: $web finds it on its own (within ~1 min of a restart)"
-  echo "       to skip that wait, or for another server: $link"
+  echo "serve: published to the gist: $web finds it on its own within ~1 min"
 else
-  command -v pbcopy >/dev/null && printf '%s' "$link" | pbcopy && copied=" (copied)" || copied=""
-  echo "serve: could not write the gist (gh missing or no access): open the web with this link$copied:"
-  echo "       $link"
+  echo "serve: could not write the gist (gh missing or no access): only the link above finds it"
 fi
 wait $server

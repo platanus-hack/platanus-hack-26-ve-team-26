@@ -76,7 +76,8 @@ export async function publishedApiUrl(gist = SERVER_GIST, { dead = null } = {}) 
 
 /**
  * Like resolveApiUrl, but finds the server on its own: ?api= in the page address if it answers, else
- * the last one seen on this browser if it still answers, else the one data/serve.sh published, else `fallback`.
+ * `fallback` if it answers, else the last one seen on this browser if it still answers, else the
+ * one data/serve.sh published, else `fallback`.
  * null if there is none.
  */
 export async function findApiUrl({ fallback = null } = {}) {
@@ -86,6 +87,9 @@ export async function findApiUrl({ fallback = null } = {}) {
     remember(fromQuery);
     return fromQuery;
   }
+  // A local server (the dev fallback) answers at once, or refuses at once when it is off: try it
+  // before a remembered tunnel or the gist, whose copy lags a restart by up to a minute.
+  if (fallback && (await checkApi(fallback))) return fallback;
   let stored = null;
   try {
     stored = valid(localStorage.getItem(STORAGE_KEY) ?? '');
