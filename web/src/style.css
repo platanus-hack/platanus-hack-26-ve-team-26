@@ -111,12 +111,14 @@
 }
 
 .wm {
-  font-weight: 800;
-  letter-spacing: -0.06em;
+  /* 700 and near-normal tracking: at 800 and -0.06em the dotless i's and the d ran together. */
+  font-weight: 700;
+  letter-spacing: -0.015em;
   white-space: nowrap;
 }
 
-/* The i-dots: square lime joints instead of the font's round dots. */
+/* The i-dots: square lime joints instead of the font's round dots, small and with a clear gap
+   above the stem so each i still reads as an i (a bigger dot touching it read as an l). */
 .wm-i {
   position: relative;
   display: inline-block;
@@ -126,9 +128,9 @@
   content: '';
   position: absolute;
   left: 50%;
-  top: 0.16em;
-  width: 0.19em;
-  height: 0.19em;
+  top: 0.06em;
+  width: 0.15em;
+  height: 0.15em;
   background: var(--signal);
   transform: translateX(-50%);
 }
