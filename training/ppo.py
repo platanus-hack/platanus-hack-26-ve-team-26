@@ -21,6 +21,7 @@ import torch
 from torch import nn
 
 from .env import NU, OBS_DIM, PUSH_EVERY_S, PUSH_N, Stance
+from .netlive import NetLive
 from .vec import VecEnv
 
 RUNS = Path(__file__).parent / "runs"
@@ -154,6 +155,7 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
     writer.writerow(["step", "seconds", "reward_per_step", "episode_s", "falls", "steps_per_s"])
     ep_len = np.zeros(NUM_ENVS)
     step, start = 0, time.time()
+    net = NetLive(run_dir, task, total_steps)  # what the web draws while this trains (netlive.py)
 
     while step < total_steps:
         t0 = time.time()
@@ -229,6 +231,9 @@ def train(total_steps: int, run: str, device: str, init: Path | None, push_n: tu
         ep = float(np.mean(finished)) if finished else float("nan")
         writer.writerow([step, round(time.time() - start, 1), round(float(buf_rew.mean()), 4), round(ep, 2), falls, int(sps)])
         log.flush()
+        net.record(step, float(buf_rew.mean()), ep)
+        if net.due():
+            net.write(model, buf_obs[:, 0], step)
         print(f"\rstep {step:>10,} / {total_steps:,} ({100 * step / total_steps:4.1f}%)  reward/step {buf_rew.mean():.3f}  "
               f"episode {ep:5.1f} s  falls {falls:3d}  {sps:,.0f} steps/s", end="", flush=True)
         while pending and step >= pending[0]:

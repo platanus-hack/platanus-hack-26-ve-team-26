@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import gzip
 import json
 import math
 import os
@@ -755,6 +756,22 @@ def cancel_train(train_id: str) -> Response:
     if proc and proc.poll() is None:
         os.killpg(proc.pid, signal.SIGTERM)  # the worker sees `cancelled` and moves on
     return Response(status_code=204)
+
+
+@app.get("/train/{train_id}/net")
+def get_train_net(train_id: str, request: Request) -> Response:
+    """The policy network as it is right now (training/netlive.py), for the web to draw."""
+    t: Train = _get(trains, train_id, "el entrenamiento")
+    path = ROOT / "training" / "runs" / t.id / "net.json"
+    if not path.exists():
+        raise HTTPException(404, "la red todavía no empezó a practicar")
+    body = path.read_bytes()
+    headers = {"Cache-Control": "no-store"}
+    # ~80 KB of JSON every 2 s through the tunnel; gzip leaves ~25 KB (measured on a 40 k-step run).
+    if "gzip" in request.headers.get("accept-encoding", ""):
+        body = gzip.compress(body, compresslevel=5)
+        headers["Content-Encoding"] = "gzip"
+    return Response(body, media_type="application/json", headers=headers)
 
 
 # --- What training made -------------------------------------------------------------------------
